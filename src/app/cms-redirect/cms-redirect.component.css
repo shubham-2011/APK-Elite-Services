@@ -821,11 +821,31 @@
   font-weight: 500;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   max-width: 70%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.source-icon,
+.env-icon,
+.flag-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.source-icon svg,
+.env-icon svg,
+.flag-icon svg {
+  width: 15px;
+  height: 15px;
 }
 
 .row-val-group {

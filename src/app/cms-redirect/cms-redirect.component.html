@@ -490,7 +490,7 @@
                   <div class="row-bar-fill" [style.width.%]="s.percentage"></div>
                   <div class="row-content">
                     <span class="row-key">
-                      <span class="source-icon">{{ s.icon }}</span>
+                      <span class="source-icon" [innerHTML]="getIconSvg(s.name)"></span>
                       <span>{{ s.name }}</span>
                     </span>
                     <div class="row-val-group">
@@ -554,7 +554,7 @@
                   <div class="row-bar-fill" [style.width.%]="b.percentage"></div>
                   <div class="row-content">
                     <span class="row-key">
-                      <span class="env-icon">{{ b.icon }}</span>
+                      <span class="env-icon" [innerHTML]="getIconSvg(b.name)"></span>
                       <span>{{ b.name }}</span>
                     </span>
                     <div class="row-val-group">
@@ -615,7 +615,7 @@
                   <div class="row-bar-fill" [style.width.%]="l.percentage"></div>
                   <div class="row-content">
                     <span class="row-key">
-                      <span class="flag-icon">{{ l.icon }}</span>
+                      <span class="flag-icon" [innerHTML]="getIconSvg(l.name)"></span>
                       <span>{{ l.name }}</span>
                     </span>
                     <div class="row-val-group">
@@ -1181,7 +1181,7 @@
             <div class="row-bar-fill" [style.width.%]="s.percentage"></div>
             <div class="row-content">
               <span class="row-key">
-                <span class="source-icon">{{ s.icon }}</span>
+                <span class="source-icon" [innerHTML]="getIconSvg(s.name)"></span>
                 <span>{{ s.name }}</span>
               </span>
               <div class="row-val-group">
@@ -1199,7 +1199,7 @@
             <div class="row-bar-fill" [style.width.%]="b.percentage"></div>
             <div class="row-content">
               <span class="row-key">
-                <span class="env-icon">{{ b.icon }}</span>
+                <span class="env-icon" [innerHTML]="getIconSvg(b.name)"></span>
                 <span>{{ b.name }}</span>
               </span>
               <div class="row-val-group">
@@ -1217,7 +1217,7 @@
             <div class="row-bar-fill" [style.width.%]="l.percentage"></div>
             <div class="row-content">
               <span class="row-key">
-                <span class="flag-icon">{{ l.icon }}</span>
+                <span class="flag-icon" [innerHTML]="getIconSvg(l.name)"></span>
                 <span>{{ l.name }}</span>
               </span>
               <div class="row-val-group">

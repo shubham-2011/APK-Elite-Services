@@ -2,6 +2,7 @@ import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { SeoService } from '../seo.service';
 import { LeadApiService, LeadItem } from '../shared/lead-api.service';
 import { ContentApiService, DynamicContent } from '../shared/content-api.service';
@@ -124,8 +125,56 @@ export class CmsRedirectComponent implements OnInit {
     private leadApi: LeadApiService,
     private contentApi: ContentApiService,
     private footmarkApi: FootmarkApiService,
+    private sanitizer: DomSanitizer,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
+
+  getIconSvg(name: string): SafeHtml {
+    const n = (name || '').toLowerCase().trim();
+    let svg = '';
+
+    if (n.includes('windows')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m0 1.89h9.75V22.9L0 21.551m11.1-19.601L24 0v11.1H11.1m0 1.89H24V24l-12.9-1.801"/></svg>`;
+    } else if (n.includes('ios') || n.includes('apple') || n.includes('mac')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.07c.66-.8 1.11-1.92.99-3.04-.96.04-2.13.64-2.82 1.44-.61.71-1.15 1.85-.99 2.95 1.07.08 2.16-.54 2.82-1.35z"/></svg>`;
+    } else if (n.includes('android')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18c0 .55.45 1 1 1h1v3c0 .55.45 1 1 1s1-.45 1-1v-3h4v3c0 .55.45 1 1 1s1-.45 1-1v-3h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-4.42l1.37-1.37c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.5 1.5C13.88 2.38 12.97 2 12 2s-1.88.38-2.69 1l-1.5-1.5c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.37 1.37C6.9 4.8 6 6.3 6 8h12c0-1.7-.9-3.2-2.47-4.42zM10 5.5c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75zm4 0c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z"/></svg>`;
+    } else if (n.includes('linux') || n.includes('ubuntu') || n.includes('debian') || n.includes('fedora') || n.includes('arch') || n.includes('centos')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.012 2.25c-2.82 0-4.48 2.5-4.48 5.62 0 1.25.32 2.57 1.01 3.53-.41.86-1.5 2.52-2.58 3.12-.55.3-1.07.41-1.46.41-.65 0-1.04-.36-1.12-.44a.75.75 0 00-1.06 1.06c.2.2.82.78 1.83.78.73 0 1.56-.22 2.38-.67 1.21-.66 2.36-2.22 2.91-3.21.84.45 1.76.69 2.57.69.81 0 1.73-.24 2.57-.69.55.99 1.7 2.55 2.91 3.21.82.45 1.65.67 2.38.67 1.01 0 1.63-.58 1.83-.78a.75.75 0 00-1.06-1.06c-.08.08-.47.44-1.12.44-.39 0-.91-.11-1.46-.41-1.08-.6-2.17-2.26-2.58-3.12.69-.96 1.01-2.28 1.01-3.53 0-3.12-1.66-5.62-4.48-5.62zM9.5 7.5a1 1 0 112 0 1 1 0 01-2 0zm5 0a1 1 0 112 0 1 1 0 01-2 0z"/></svg>`;
+    } else if (n.includes('chromeos') || n.includes('cros')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`;
+    } else if (n.includes('chrome')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M21.17 8H12M3.95 6.06L8.54 14M10.88 21.94L15.46 14"/></svg>`;
+    } else if (n.includes('safari')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`;
+    } else if (n.includes('firefox')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a3.5 3.5 0 1 1 3.5-3.5 3.5 3.5 0 0 1-3.5 3.5z"/></svg>`;
+    } else if (n.includes('edge')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 0 0-9.8 12.2A6.5 6.5 0 0 0 8.5 20h7a6.5 6.5 0 0 0 6.3-5.8A10 10 0 0 0 12 2z"/></svg>`;
+    } else if (n.includes('opera') || n.includes('opr')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="6" ry="9"/></svg>`;
+    } else if (n.includes('brave')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5l-8-3z"/></svg>`;
+    } else if (n === 'mobile') {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+    } else if (n === 'desktop') {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+    } else if (n === 'tablet') {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>`;
+    } else if (n.includes('google')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"/></svg>`;
+    } else if (n.includes('whatsapp')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>`;
+    } else if (n.includes('direct') || n.includes('bookmark')) {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>`;
+    } else if (n.includes('india') || n === 'pune' || n === 'maharashtra') {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+    } else {
+      svg = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`;
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(svg);
+  }
 
   ngOnInit(): void {
     this.seo.generateTags({
