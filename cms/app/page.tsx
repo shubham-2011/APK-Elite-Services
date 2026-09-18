@@ -28,6 +28,16 @@ import {
   DollarSign,
   HelpCircle,
   Settings2,
+  Footprints,
+  Users,
+  Globe,
+  Laptop,
+  Smartphone,
+  Tablet,
+  Eye,
+  Activity,
+  MousePointerClick,
+  TrendingUp,
 } from 'lucide-react';
 import { DEFAULT_SITE_CONTENT, SiteContentData } from '@/lib/content-types';
 
@@ -56,9 +66,36 @@ interface LeadItem {
 interface StatsData {
   totalLeads: number;
   todayLeads: number;
+  totalFootmarks?: number;
+  todayFootmarks?: number;
   statusMap: Record<string, number>;
   topLocalities: { locality: string; count: number }[];
   topServices: { service: string; count: number }[];
+}
+
+export interface FootmarkItem {
+  _id: string;
+  visitorId: string;
+  sessionId: string;
+  path: string;
+  pageTitle: string;
+  referrer: string;
+  device: 'mobile' | 'desktop' | 'tablet';
+  browser: string;
+  os?: string;
+  city: string;
+  createdAt: string;
+}
+
+export interface FootmarkStats {
+  totalFootmarks: number;
+  uniqueVisitors: number;
+  todayFootmarks: number;
+  todayUniqueVisitors: number;
+  topPages: { path: string; title: string; count: number; percentage: number }[];
+  deviceCounts: { mobile: number; desktop: number; tablet: number };
+  topReferrers: { referrer: string; count: number }[];
+  recentFootmarks: FootmarkItem[];
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -72,7 +109,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }
 
 export default function CMSDashboard() {
   // Navigation Tabs
-  const [activeTab, setActiveTab] = useState<'leads' | 'form' | 'content'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'footmarks' | 'form' | 'content'>('leads');
 
   // Leads state
   const [leads, setLeads] = useState<LeadItem[]>([]);
@@ -80,6 +117,11 @@ export default function CMSDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Footmarks state
+  const [footmarkStats, setFootmarkStats] = useState<FootmarkStats | null>(null);
+  const [footmarkSearch, setFootmarkSearch] = useState('');
+  const [simulatingFootmark, setSimulatingFootmark] = useState(false);
 
   // Content & Form Settings state
   const [siteContent, setSiteContent] = useState<SiteContentData>(DEFAULT_SITE_CONTENT);
@@ -119,20 +161,25 @@ export default function CMSDashboard() {
       setRefreshing(true);
       setError(null);
 
-      const [leadsRes, statsRes, contentRes] = await Promise.all([
+      const [leadsRes, statsRes, contentRes, footmarkRes] = await Promise.all([
         fetch('/api/leads?limit=200'),
         fetch('/api/stats'),
         fetch('/api/content'),
+        fetch('/api/footmark'),
       ]);
 
       const leadsJson = await leadsRes.json();
       const statsJson = await statsRes.json();
       const contentJson = await contentRes.json();
+      const footmarkJson = await footmarkRes.json();
 
       if (leadsJson.success) setLeads(leadsJson.leads || []);
       if (statsJson.success) setStats(statsJson.stats);
       if (contentJson.success && contentJson.content) {
         setSiteContent(contentJson.content);
+      }
+      if (footmarkJson.success && footmarkJson.stats) {
+        setFootmarkStats(footmarkJson.stats);
       }
     } catch (err: any) {
       console.error('Error loading dashboard data:', err);
@@ -142,6 +189,46 @@ export default function CMSDashboard() {
       setRefreshing(false);
     }
   }, []);
+
+  const handleSimulateFootmark = async () => {
+    try {
+      setSimulatingFootmark(true);
+      const testPages = [
+        { path: '/', title: 'APK Elite Services | Professional Cleaning in Pune' },
+        { path: '/services/deep-cleaning', title: 'Home Deep Cleaning Services in Pune' },
+        { path: '/services/sofa-cleaning', title: 'Professional Sofa & Carpet Shampooing Pune' },
+        { path: '/services/office-cleaning', title: 'Corporate Office Cleaning & AMC Pune' },
+        { path: '/services/water-tank-cleaning', title: 'Water Tank Cleaning Services Pune' },
+        { path: '/contact', title: 'Contact Us | Request Free Quote' },
+      ];
+      const pick = testPages[Math.floor(Math.random() * testPages.length)];
+      const devices: ('mobile' | 'desktop')[] = ['mobile', 'desktop'];
+      const referrers = ['Google Search', 'WhatsApp', 'Direct', 'Instagram'];
+      const cities = ['Wakad, Pune', 'Baner, Pune', 'Hinjewadi, Pune', 'Kharadi, Pune', 'Kothrud, Pune'];
+
+      await fetch('/api/footmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorId: 'vis_' + Math.random().toString(36).substring(2, 8),
+          sessionId: 'sess_' + Math.random().toString(36).substring(2, 8),
+          path: pick.path,
+          pageTitle: pick.title,
+          referrer: referrers[Math.floor(Math.random() * referrers.length)],
+          device: devices[Math.floor(Math.random() * devices.length)],
+          browser: 'Chrome',
+          city: cities[Math.floor(Math.random() * cities.length)],
+        }),
+      });
+
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to simulate footmark:', err);
+    } finally {
+      setSimulatingFootmark(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchData();
@@ -246,6 +333,23 @@ export default function CMSDashboard() {
       return true;
     });
   }, [leads, statusFilter, localityFilter, serviceFilter, search]);
+
+  // Filtered Footmarks
+  const filteredFootmarks = useMemo(() => {
+    if (!footmarkStats?.recentFootmarks) return [];
+    if (!footmarkSearch.trim()) return footmarkStats.recentFootmarks;
+    const q = footmarkSearch.toLowerCase().trim();
+    return footmarkStats.recentFootmarks.filter(
+      (f) =>
+        f.path.toLowerCase().includes(q) ||
+        f.pageTitle.toLowerCase().includes(q) ||
+        f.referrer.toLowerCase().includes(q) ||
+        f.device.toLowerCase().includes(q) ||
+        (f.city && f.city.toLowerCase().includes(q)) ||
+        f.visitorId.toLowerCase().includes(q)
+    );
+  }, [footmarkStats, footmarkSearch]);
+
 
   // Update Status
   const handleUpdateStatus = async (leadId: string, newStatus: LeadItem['status']) => {
@@ -409,6 +513,21 @@ export default function CMSDashboard() {
               </button>
 
               <button
+                onClick={() => setActiveTab('footmarks')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
+                  activeTab === 'footmarks' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Footprints className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Footmarks & Visitors</span>
+                {(footmarkStats?.todayFootmarks ?? stats?.todayFootmarks ?? 0) > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 bg-indigo-100 text-indigo-700 rounded-full text-[10px]">
+                    +{footmarkStats?.todayFootmarks ?? stats?.todayFootmarks} today
+                  </span>
+                )}
+              </button>
+
+              <button
                 onClick={() => setActiveTab('form')}
                 className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition ${
                   activeTab === 'form' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
@@ -435,11 +554,23 @@ export default function CMSDashboard() {
               onClick={() => fetchData()}
               disabled={refreshing}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-slate-200 text-xs font-semibold rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm"
-              title="Refresh leads and settings"
+              title="Refresh data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
+
+            {activeTab === 'footmarks' && (
+              <button
+                onClick={handleSimulateFootmark}
+                disabled={simulatingFootmark}
+                className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition"
+                title="Simulate visitor for live testing"
+              >
+                <Footprints className={`w-3.5 h-3.5 ${simulatingFootmark ? 'animate-bounce' : ''}`} />
+                <span>{simulatingFootmark ? 'Simulating...' : 'Simulate Visit'}</span>
+              </button>
+            )}
 
             {activeTab === 'leads' && (
               <>
@@ -476,24 +607,30 @@ export default function CMSDashboard() {
         </div>
 
         {/* Mobile Tab Bar */}
-        <div className="md:hidden flex border-t border-slate-200 bg-slate-50 px-4 py-2 space-x-2 text-xs font-semibold">
+        <div className="md:hidden flex border-t border-slate-200 bg-slate-50 px-2 py-2 space-x-1 text-xs font-semibold overflow-x-auto">
           <button
             onClick={() => setActiveTab('leads')}
-            className={`flex-1 py-1.5 rounded-lg text-center ${activeTab === 'leads' ? 'bg-white shadow-sm text-brand-600' : 'text-slate-600'}`}
+            className={`px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap ${activeTab === 'leads' ? 'bg-white shadow-sm text-brand-600' : 'text-slate-600'}`}
           >
             Leads ({leads.length})
           </button>
           <button
-            onClick={() => setActiveTab('form')}
-            className={`flex-1 py-1.5 rounded-lg text-center ${activeTab === 'form' ? 'bg-white shadow-sm text-purple-600' : 'text-slate-600'}`}
+            onClick={() => setActiveTab('footmarks')}
+            className={`px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap ${activeTab === 'footmarks' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-600'}`}
           >
-            Form Controls
+            Footmarks ({footmarkStats?.totalFootmarks ?? stats?.totalFootmarks ?? 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('form')}
+            className={`px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap ${activeTab === 'form' ? 'bg-white shadow-sm text-purple-600' : 'text-slate-600'}`}
+          >
+            Form
           </button>
           <button
             onClick={() => setActiveTab('content')}
-            className={`flex-1 py-1.5 rounded-lg text-center ${activeTab === 'content' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-600'}`}
+            className={`px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap ${activeTab === 'content' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-600'}`}
           >
-            Content & Pricing
+            Content
           </button>
         </div>
       </header>
@@ -512,7 +649,7 @@ export default function CMSDashboard() {
         {activeTab === 'leads' && (
           <div className="space-y-6">
             {/* KPI Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Total Leads</p>
@@ -554,6 +691,25 @@ export default function CMSDashboard() {
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6" />
+                </div>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab('footmarks')}
+                className="bg-gradient-to-br from-indigo-50 to-blue-50/50 p-5 rounded-2xl border border-indigo-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:border-indigo-400 hover:shadow-md transition col-span-2 sm:col-span-1"
+                title="Click to view visitor footmarks analytics"
+              >
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                    <Footprints className="w-3.5 h-3.5" /> Footmarks
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{footmarkStats?.totalFootmarks ?? stats?.totalFootmarks ?? 0}</p>
+                  <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">
+                    +{footmarkStats?.todayFootmarks ?? stats?.todayFootmarks ?? 0} today &rarr;
+                  </span>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <Footprints className="w-6 h-6" />
                 </div>
               </div>
             </div>
@@ -761,7 +917,366 @@ export default function CMSDashboard() {
           </div>
         )}
 
-        {/* TAB 2: FORM & FIELD CONTROLS */}
+        {/* TAB 2: FOOTMARKS & VISITOR ANALYTICS */}
+        {activeTab === 'footmarks' && (
+          <div className="space-y-6">
+            {/* Header / Action Bar */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Footprints className="w-5 h-5 text-indigo-600" />
+                    Website Footmarks & Visitor Traffic
+                  </h2>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Live Tracking Active
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Real-time anonymous visitor tracking, page views, device metrics, and traffic acquisition across Pune.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSimulateFootmark}
+                  disabled={simulatingFootmark}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition"
+                  title="Simulate visitor for live testing"
+                >
+                  <Footprints className={`w-4 h-4 ${simulatingFootmark ? 'animate-bounce' : ''}`} />
+                  <span>{simulatingFootmark ? 'Simulating...' : 'Simulate Test Visit'}</span>
+                </button>
+
+                <button
+                  onClick={() => fetchData()}
+                  disabled={refreshing}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 text-xs font-semibold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Top 4 KPI Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Total Footmarks</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{footmarkStats?.totalFootmarks ?? 0}</p>
+                  <span className="text-xs text-indigo-600 font-medium mt-1 inline-block">All-Time Pageviews</span>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Activity className="w-6 h-6" />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Unique Visitors</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{footmarkStats?.uniqueVisitors ?? 0}</p>
+                  <span className="text-xs text-blue-600 font-medium mt-1 inline-block">Distinct Client Devices</span>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Users className="w-6 h-6" />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Today&apos;s Footmarks</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{footmarkStats?.todayFootmarks ?? 0}</p>
+                  <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">
+                    {footmarkStats?.todayUniqueVisitors ?? 0} unique today
+                  </span>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Calendar className="w-6 h-6" />
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Top Service Page</p>
+                  <p className="text-base font-bold text-slate-900 mt-1 truncate max-w-[150px]" title={footmarkStats?.topPages?.[0]?.title || 'Homepage'}>
+                    {footmarkStats?.topPages?.[0]?.title || 'Homepage'}
+                  </p>
+                  <span className="text-xs text-purple-600 font-medium mt-1 inline-block">
+                    {footmarkStats?.topPages?.[0]?.count ?? 0} views ({footmarkStats?.topPages?.[0]?.percentage ?? 0}%)
+                  </span>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Breakdown Grid: Top Pages & Device/Sources */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Top Visited Pages & Services */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-brand-600" />
+                    Top Visited Pages & Service Offerings
+                  </h3>
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Traffic Share</span>
+                </div>
+
+                <div className="space-y-3">
+                  {footmarkStats?.topPages && footmarkStats.topPages.length > 0 ? (
+                    footmarkStats.topPages.map((page, idx) => (
+                      <div key={page.path} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 truncate max-w-[75%]">
+                            <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-600 font-semibold text-[10px] flex items-center justify-center shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <span className="font-semibold text-slate-800 truncate" title={page.title}>
+                              {page.title}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">{page.path}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-bold text-slate-900">{page.count} visits</span>
+                            <span className="text-[11px] font-semibold text-slate-500 w-8 text-right">
+                              {page.percentage}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              idx === 0 ? 'bg-indigo-600' : idx === 1 ? 'bg-blue-500' : idx === 2 ? 'bg-purple-500' : 'bg-slate-400'
+                            }`}
+                            style={{ width: `${Math.max(page.percentage, 4)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic py-4 text-center">No page traffic recorded yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Device Split & Traffic Acquisition */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+                {/* Device Distribution */}
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-indigo-600" />
+                      Device Distribution
+                    </h3>
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Hardware Split</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                      <Smartphone className="w-5 h-5 mx-auto text-indigo-600 mb-1" />
+                      <p className="text-xs font-bold text-slate-800">Mobile</p>
+                      <p className="text-lg font-extrabold text-indigo-600">{footmarkStats?.deviceCounts?.mobile ?? 0}</p>
+                      <p className="text-[10px] text-slate-500">
+                        {footmarkStats?.totalFootmarks
+                          ? Math.round(((footmarkStats.deviceCounts.mobile || 0) / footmarkStats.totalFootmarks) * 100)
+                          : 0}
+                        % of visits
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                      <Laptop className="w-5 h-5 mx-auto text-blue-600 mb-1" />
+                      <p className="text-xs font-bold text-slate-800">Desktop</p>
+                      <p className="text-lg font-extrabold text-blue-600">{footmarkStats?.deviceCounts?.desktop ?? 0}</p>
+                      <p className="text-[10px] text-slate-500">
+                        {footmarkStats?.totalFootmarks
+                          ? Math.round(((footmarkStats.deviceCounts.desktop || 0) / footmarkStats.totalFootmarks) * 100)
+                          : 0}
+                        % of visits
+                      </p>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                      <Tablet className="w-5 h-5 mx-auto text-purple-600 mb-1" />
+                      <p className="text-xs font-bold text-slate-800">Tablet</p>
+                      <p className="text-lg font-extrabold text-purple-600">{footmarkStats?.deviceCounts?.tablet ?? 0}</p>
+                      <p className="text-[10px] text-slate-500">
+                        {footmarkStats?.totalFootmarks
+                          ? Math.round(((footmarkStats.deviceCounts.tablet || 0) / footmarkStats.totalFootmarks) * 100)
+                          : 0}
+                        % of visits
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acquisition Referrers */}
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-emerald-600" />
+                      Traffic Sources & Referrals
+                    </h3>
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Channels</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {footmarkStats?.topReferrers && footmarkStats.topReferrers.length > 0 ? (
+                      footmarkStats.topReferrers.map((ref) => (
+                        <div
+                          key={ref.referrer}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-700"
+                        >
+                          <span className="font-semibold text-slate-900">{ref.referrer}:</span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200 font-bold text-indigo-700 text-[11px]">
+                            {ref.count}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">No referrer data available.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Footmark Activity Stream */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden space-y-0">
+              <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <MousePointerClick className="w-4 h-4 text-indigo-600" />
+                    Live Footmark Activity Stream
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Recent visitor journeys, page paths, and client footprints.
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-72">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={footmarkSearch}
+                    onChange={(e) => setFootmarkSearch(e.target.value)}
+                    placeholder="Filter page, device, city, source..."
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                      <th className="px-4 sm:px-6 py-3">Page Visited</th>
+                      <th className="px-4 sm:px-6 py-3">Visitor & Device</th>
+                      <th className="px-4 sm:px-6 py-3">Referrer Source</th>
+                      <th className="px-4 sm:px-6 py-3">Location</th>
+                      <th className="px-4 sm:px-6 py-3 text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredFootmarks.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                          No footmark records match your search filter.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredFootmarks.map((f) => {
+                        const isToday = new Date(f.createdAt).toDateString() === new Date().toDateString();
+                        const timeStr = new Date(f.createdAt).toLocaleTimeString('en-IN', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+                        const dateStr = new Date(f.createdAt).toLocaleDateString('en-IN', {
+                          month: 'short',
+                          day: 'numeric',
+                        });
+
+                        return (
+                          <tr key={f._id} className="hover:bg-slate-50/60 transition">
+                            <td className="px-4 sm:px-6 py-3.5">
+                              <div className="flex items-start gap-2">
+                                <span
+                                  className={`w-2 h-2 rounded-full mt-1 shrink-0 ${
+                                    isToday ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'
+                                  }`}
+                                  title={isToday ? 'Visited today' : 'Earlier visit'}
+                                ></span>
+                                <div>
+                                  <p className="font-semibold text-slate-900">{f.pageTitle || 'APK Elite Services'}</p>
+                                  <p className="text-[10px] text-indigo-600 font-mono">{f.path}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-4 sm:px-6 py-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="p-1 rounded-lg bg-slate-100 text-slate-600">
+                                  {f.device === 'mobile' ? (
+                                    <Smartphone className="w-3.5 h-3.5" />
+                                  ) : f.device === 'tablet' ? (
+                                    <Tablet className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Laptop className="w-3.5 h-3.5" />
+                                  )}
+                                </span>
+                                <div>
+                                  <p className="font-semibold text-slate-800 capitalize">
+                                    {f.device} · {f.browser}
+                                  </p>
+                                  <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1 py-0.2 rounded">
+                                    {f.visitorId.slice(0, 10)}...
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="px-4 sm:px-6 py-3.5">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-semibold border ${
+                                  f.referrer.includes('Google')
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : f.referrer.includes('WhatsApp')
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : f.referrer.includes('Instagram')
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                {f.referrer}
+                              </span>
+                            </td>
+
+                            <td className="px-4 sm:px-6 py-3.5 text-xs text-slate-600">
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-400" />
+                                {f.city || 'Pune'}
+                              </span>
+                            </td>
+
+                            <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
+                              <p className="font-semibold text-slate-900">{timeStr}</p>
+                              <p className="text-[10px] text-slate-400">{dateStr}</p>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: FORM & FIELD CONTROLS */}
         {activeTab === 'form' && (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">

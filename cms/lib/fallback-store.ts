@@ -150,3 +150,238 @@ export function deleteFallbackLead(id: string): boolean {
   fs.writeFileSync(DATA_FILE, JSON.stringify(filtered, null, 2), 'utf-8');
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// Footmarks / Visitor Tracking Fallback Store
+// ---------------------------------------------------------------------------
+export interface FallbackFootmark {
+  _id: string;
+  visitorId: string;
+  sessionId: string;
+  path: string;
+  pageTitle: string;
+  referrer: string;
+  device: 'mobile' | 'desktop' | 'tablet';
+  browser: string;
+  os?: string;
+  city: string;
+  ip?: string;
+  createdAt: string;
+}
+
+const FOOTMARKS_FILE = path.join(DATA_DIR, 'footmarks.json');
+
+const INITIAL_SAMPLE_FOOTMARKS: FallbackFootmark[] = [
+  {
+    _id: 'foot_1',
+    visitorId: 'vis_wakad_891',
+    sessionId: 'sess_1',
+    path: '/',
+    pageTitle: 'APK Elite Services | Professional Cleaning in Pune',
+    referrer: 'Google Search',
+    device: 'mobile',
+    browser: 'Chrome Mobile',
+    os: 'Android',
+    city: 'Wakad, Pune',
+    createdAt: new Date(Date.now() - 300000).toISOString(),
+  },
+  {
+    _id: 'foot_2',
+    visitorId: 'vis_wakad_891',
+    sessionId: 'sess_1',
+    path: '/services/deep-cleaning',
+    pageTitle: 'Home Deep Cleaning Services in Pune',
+    referrer: 'Direct',
+    device: 'mobile',
+    browser: 'Chrome Mobile',
+    os: 'Android',
+    city: 'Wakad, Pune',
+    createdAt: new Date(Date.now() - 180000).toISOString(),
+  },
+  {
+    _id: 'foot_3',
+    visitorId: 'vis_baner_442',
+    sessionId: 'sess_2',
+    path: '/services/sofa-cleaning',
+    pageTitle: 'Professional Sofa & Carpet Shampooing Pune',
+    referrer: 'WhatsApp',
+    device: 'mobile',
+    browser: 'Safari',
+    os: 'iOS',
+    city: 'Baner, Pune',
+    createdAt: new Date(Date.now() - 900000).toISOString(),
+  },
+  {
+    _id: 'foot_4',
+    visitorId: 'vis_hinj_109',
+    sessionId: 'sess_3',
+    path: '/services/office-cleaning',
+    pageTitle: 'Corporate Office Cleaning & AMC Pune',
+    referrer: 'Google Search',
+    device: 'desktop',
+    browser: 'Chrome',
+    os: 'Windows',
+    city: 'Hinjewadi, Pune',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    _id: 'foot_5',
+    visitorId: 'vis_kharadi_310',
+    sessionId: 'sess_4',
+    path: '/services/water-tank-cleaning',
+    pageTitle: 'Water Tank Cleaning Services Pune',
+    referrer: 'Direct',
+    device: 'mobile',
+    browser: 'Chrome Mobile',
+    os: 'Android',
+    city: 'Kharadi, Pune',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    _id: 'foot_6',
+    visitorId: 'vis_pimple_512',
+    sessionId: 'sess_5',
+    path: '/contact',
+    pageTitle: 'Contact Us | Request Free Quote',
+    referrer: 'Google Search',
+    device: 'mobile',
+    browser: 'Chrome Mobile',
+    os: 'Android',
+    city: 'Pimple Saudagar, Pune',
+    createdAt: new Date(Date.now() - 14400000).toISOString(),
+  },
+  {
+    _id: 'foot_7',
+    visitorId: 'vis_aundh_602',
+    sessionId: 'sess_6',
+    path: '/',
+    pageTitle: 'APK Elite Services | Professional Cleaning in Pune',
+    referrer: 'Instagram',
+    device: 'mobile',
+    browser: 'Instagram InApp',
+    os: 'iOS',
+    city: 'Aundh, Pune',
+    createdAt: new Date(Date.now() - 28800000).toISOString(),
+  },
+  {
+    _id: 'foot_8',
+    visitorId: 'vis_kothrud_781',
+    sessionId: 'sess_7',
+    path: '/services/pest-control',
+    pageTitle: 'Pest Control & Sanitization Pune',
+    referrer: 'Google Search',
+    device: 'desktop',
+    browser: 'Edge',
+    os: 'Windows',
+    city: 'Kothrud, Pune',
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  }
+];
+
+function ensureFootmarksFile() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(FOOTMARKS_FILE)) {
+    fs.writeFileSync(FOOTMARKS_FILE, JSON.stringify(INITIAL_SAMPLE_FOOTMARKS, null, 2), 'utf-8');
+  }
+}
+
+export function getFallbackFootmarks(): FallbackFootmark[] {
+  ensureFootmarksFile();
+  try {
+    const raw = fs.readFileSync(FOOTMARKS_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return INITIAL_SAMPLE_FOOTMARKS;
+  }
+}
+
+export function saveFallbackFootmark(data: Partial<FallbackFootmark>): FallbackFootmark {
+  ensureFootmarksFile();
+  const footmarks = getFallbackFootmarks();
+  const newFootmark: FallbackFootmark = {
+    _id: 'foot_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    visitorId: data.visitorId || 'vis_anon_' + Math.random().toString(36).substring(2, 6),
+    sessionId: data.sessionId || 'sess_anon_' + Math.random().toString(36).substring(2, 6),
+    path: data.path || '/',
+    pageTitle: data.pageTitle || 'APK Elite Services',
+    referrer: data.referrer || 'Direct',
+    device: data.device || 'mobile',
+    browser: data.browser || 'Chrome',
+    os: data.os || 'Android',
+    city: data.city || 'Pune',
+    ip: data.ip || 'anonymous',
+    createdAt: new Date().toISOString(),
+  };
+
+  footmarks.unshift(newFootmark);
+  // Cap at 1000 items in fallback storage to prevent huge JSON files
+  const capped = footmarks.slice(0, 1000);
+  fs.writeFileSync(FOOTMARKS_FILE, JSON.stringify(capped, null, 2), 'utf-8');
+  return newFootmark;
+}
+
+export function getFallbackFootmarkStats() {
+  const footmarks = getFallbackFootmarks();
+  const totalFootmarks = footmarks.length;
+  const uniqueVisitorSet = new Set(footmarks.map((f) => f.visitorId));
+  const uniqueVisitors = uniqueVisitorSet.size;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayFootmarksList = footmarks.filter((f) => f.createdAt.startsWith(todayStr));
+  const todayFootmarks = todayFootmarksList.length;
+  const todayUniqueVisitors = new Set(todayFootmarksList.map((f) => f.visitorId)).size;
+
+  // Page distribution
+  const pageMap: Record<string, { count: number; title: string }> = {};
+  footmarks.forEach((f) => {
+    if (!pageMap[f.path]) {
+      pageMap[f.path] = { count: 0, title: f.pageTitle || f.path };
+    }
+    pageMap[f.path].count++;
+  });
+  const topPages = Object.entries(pageMap)
+    .map(([path, data]) => ({
+      path,
+      title: data.title,
+      count: data.count,
+      percentage: totalFootmarks > 0 ? Math.round((data.count / totalFootmarks) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  // Device distribution
+  const deviceCounts = { mobile: 0, desktop: 0, tablet: 0 };
+  footmarks.forEach((f) => {
+    const dev = f.device?.toLowerCase() as 'mobile' | 'desktop' | 'tablet';
+    if (deviceCounts[dev] !== undefined) {
+      deviceCounts[dev]++;
+    } else {
+      deviceCounts.mobile++;
+    }
+  });
+
+  // Referrer distribution
+  const refMap: Record<string, number> = {};
+  footmarks.forEach((f) => {
+    const ref = f.referrer || 'Direct';
+    refMap[ref] = (refMap[ref] || 0) + 1;
+  });
+  const topReferrers = Object.entries(refMap)
+    .map(([referrer, count]) => ({ referrer, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  return {
+    totalFootmarks,
+    uniqueVisitors,
+    todayFootmarks,
+    todayUniqueVisitors,
+    topPages,
+    deviceCounts,
+    topReferrers,
+    recentFootmarks: footmarks.slice(0, 50),
+  };
+}
+
