@@ -311,7 +311,7 @@
             <div class="metric-big-val">{{ metricVisitors }}</div>
             <div class="metric-trend-pill up">
               <span class="trend-arrow">↑</span>
-              <span>1750%</span>
+              <span>{{ metricVisitors > 0 ? '100%' : '0%' }}</span>
             </div>
           </div>
 
@@ -321,7 +321,7 @@
             <div class="metric-big-val">{{ metricVisits }}</div>
             <div class="metric-trend-pill up">
               <span class="trend-arrow">↑</span>
-              <span>2500%</span>
+              <span>{{ Math.round((metricVisits / (metricVisitors || 1)) * 100) }}%</span>
             </div>
           </div>
 
@@ -331,7 +331,7 @@
             <div class="metric-big-val">{{ metricViews }}</div>
             <div class="metric-trend-pill up">
               <span class="trend-arrow">↑</span>
-              <span>23000%</span>
+              <span>{{ metricViews }} total</span>
             </div>
           </div>
 
@@ -339,9 +339,9 @@
           <div class="metric-box">
             <div class="metric-header-lbl">Bounce rate</div>
             <div class="metric-big-val">{{ metricBounceRate }}%</div>
-            <div class="metric-trend-pill up">
-              <span class="trend-arrow">↓</span>
-              <span>67%</span>
+            <div class="metric-trend-pill" [class.up]="metricBounceRate <= 50" [style.color]="metricBounceRate > 50 ? '#fb923c' : '#22c55e'">
+              <span class="trend-arrow">{{ metricBounceRate > 50 ? '↑' : '↓' }}</span>
+              <span>{{ metricBounceRate }}%</span>
             </div>
           </div>
 
@@ -350,8 +350,8 @@
             <div class="metric-header-lbl">Visit duration</div>
             <div class="metric-big-val">{{ metricVisitDuration }}</div>
             <div class="metric-trend-pill up">
-              <span class="trend-arrow">↑</span>
-              <span>100%</span>
+              <span class="trend-arrow">⏱</span>
+              <span>Avg</span>
             </div>
           </div>
         </div>
