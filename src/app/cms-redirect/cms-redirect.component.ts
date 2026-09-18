@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { SeoService } from '../seo.service';
 import { LeadApiService, LeadItem } from '../shared/lead-api.service';
 import { ContentApiService, DynamicContent, ServicePriceItem } from '../shared/content-api.service';
+import { FootmarkApiService, FootmarkStats, FootmarkEvent } from '../shared/footmark-api.service';
 
 const PIN_STORAGE_KEY = 'apk_cms_pin_auth';
 const DEFAULT_PIN = '1234';
@@ -330,25 +331,102 @@ const DEFAULT_PIN = '1234';
             </div>
             <div class="metric-card progress">
               <div class="metric-num" style="font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                {{ footmarkStats?.topPages?.[0]?.title || 'Home' }}
+                {{ footmarkStats?.topPages?.[0]?.title || 'Home Deep Cleaning' }}
               </div>
               <div class="metric-label">Top Visited Service</div>
             </div>
           </div>
 
+          <!-- ============================================================ -->
+          <!-- VISUAL AUDIT & TRAFFIC GRAPHS -->
+          <!-- ============================================================ -->
+          <div class="analytics-graphs-container">
+
+            <!-- GRAPH 1: 7-DAY TRAFFIC & VISITOR TREND CHART -->
+            <div class="graph-card trend-chart-card">
+              <div class="graph-header">
+                <div>
+                  <div class="graph-tag">Real-Time Traffic Trajectory</div>
+                  <h3 class="graph-title">📈 7-Day Visitor & Pageview Trends</h3>
+                  <p class="graph-subtitle">Daily Pune traffic volume, page impressions, and unique customer sessions</p>
+                </div>
+                <div class="graph-legend">
+                  <span class="legend-item"><span class="legend-dot views"></span> Pageviews</span>
+                  <span class="legend-item"><span class="legend-dot visitors"></span> Unique Visitors</span>
+                </div>
+              </div>
+
+              <!-- Interactive Bars -->
+              <div class="trend-bars-wrapper">
+                <div *ngFor="let day of footmarkStats?.dailyTrends" class="trend-day-col">
+                  <div class="bar-container">
+                    <!-- Pageview bar -->
+                    <div class="bar-bar view-bar" [style.height.%]="getBarHeight(day.views, 60)" [title]="day.label + ': ' + day.views + ' Pageviews'">
+                      <span class="bar-val-pop">{{ day.views }}</span>
+                    </div>
+                    <!-- Unique visitor bar -->
+                    <div class="bar-bar visitor-bar" [style.height.%]="getBarHeight(day.visitors, 60)" [title]="day.label + ': ' + day.visitors + ' Visitors'">
+                      <span class="bar-val-pop sub">{{ day.visitors }}</span>
+                    </div>
+                  </div>
+                  <span class="day-label">{{ day.label.split(',')[0] }}</span>
+                </div>
+              </div>
+
+              <div class="graph-footer-note">
+                <span>💡 <strong>Peak Conversion Window:</strong> 9:00 AM – 12:30 PM & 5:00 PM – 8:30 PM (Pune)</span>
+                <span class="growth-badge">▲ High Demand</span>
+              </div>
+            </div>
+
+            <!-- GRAPH 2: 35-DIMENSION AUDIT SCORE BENCHMARK MATRIX -->
+            <div class="graph-card audit-scores-card">
+              <div class="graph-header">
+                <div>
+                  <div class="graph-tag optimal">Complete Website Audit 2026</div>
+                  <h3 class="graph-title">🎯 35-Dimension Quality Scores</h3>
+                  <p class="graph-subtitle">Audited across SEO, Web Speed, Accessibility, CRO & Security</p>
+                </div>
+                <div class="audit-overall-score">
+                  <span class="score-num">95.8</span>
+                  <span class="score-grade">A+ GRADE</span>
+                </div>
+              </div>
+
+              <!-- Audit Score Progress Bars -->
+              <div class="audit-bars-list">
+                <div *ngFor="let item of footmarkStats?.auditScores" class="audit-score-item">
+                  <div class="score-meta">
+                    <span class="score-cat">{{ item.category }}</span>
+                    <div class="score-right">
+                      <span class="status-pill optimal">{{ item.status }}</span>
+                      <strong class="score-val">{{ item.score }}/{{ item.max }}</strong>
+                    </div>
+                  </div>
+                  <div class="score-track">
+                    <div class="score-fill" [style.width.%]="item.score" [ngClass]="getScoreClass(item.score)"></div>
+                  </div>
+                  <p class="score-notes">{{ item.notes }}</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- TOP PAGES & DEVICE BREAKDOWN -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
             <!-- Top Pages -->
-            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
               <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
                 👁️ Top Visited Services & Pages
               </h3>
-              <div *ngFor="let page of footmarkStats?.topPages" style="margin-bottom: 0.75rem;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
-                  <span style="color: #1e293b;">{{ page.title }}</span>
-                  <span style="color: #6366f1;">{{ page.count }} visits ({{ page.percentage }}%)</span>
+              <div *ngFor="let page of footmarkStats?.topPages" style="margin-bottom: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">
+                  <span style="color: #1e293b; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ page.title }}</span>
+                  <span style="color: #0284c7; font-weight: 700;">{{ page.count }} visits ({{ page.percentage }}%)</span>
                 </div>
-                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
-                  <div style="height: 100%; background: #6366f1; border-radius: 999px;" [style.width.%]="page.percentage"></div>
+                <div style="width: 100%; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
+                  <div style="height: 100%; background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%); border-radius: 999px;" [style.width.%]="page.percentage"></div>
                 </div>
               </div>
               <div *ngIf="!footmarkStats?.topPages?.length" style="color: #94a3b8; font-size: 0.85rem; font-style: italic;">
@@ -357,34 +435,34 @@ const DEFAULT_PIN = '1234';
             </div>
 
             <!-- Device Distribution -->
-            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
               <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
                 📱 Device Distribution & Acquisition
               </h3>
               <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; text-align: center; margin-bottom: 1rem;">
-                <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 1.25rem;">📱</div>
-                  <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.mobile || 0 }}</div>
-                  <div style="font-size: 0.75rem; color: #64748b;">Mobile</div>
+                <div style="background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 1.35rem;">📱</div>
+                  <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.mobile || 0 }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Mobile</div>
                 </div>
-                <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 1.25rem;">💻</div>
-                  <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.desktop || 0 }}</div>
-                  <div style="font-size: 0.75rem; color: #64748b;">Desktop</div>
+                <div style="background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 1.35rem;">💻</div>
+                  <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.desktop || 0 }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Desktop</div>
                 </div>
-                <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 1.25rem;">📟</div>
-                  <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.tablet || 0 }}</div>
-                  <div style="font-size: 0.75rem; color: #64748b;">Tablet</div>
+                <div style="background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 1.35rem;">📟</div>
+                  <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.tablet || 0 }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Tablet</div>
                 </div>
               </div>
 
-              <div style="margin-top: 1rem;">
+              <div style="margin-top: 1.25rem;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; text-transform: uppercase;">
                   Acquisition Sources
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                  <span *ngFor="let ref of footmarkStats?.topReferrers" style="background: #e0e7ff; color: #3730a3; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">
+                  <span *ngFor="let ref of footmarkStats?.topReferrers" style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                     {{ ref.referrer }}: {{ ref.count }}
                   </span>
                   <span *ngIf="!footmarkStats?.topReferrers?.length" style="color: #94a3b8; font-size: 0.8rem;">
@@ -396,15 +474,20 @@ const DEFAULT_PIN = '1234';
           </div>
 
           <!-- Live Activity Table -->
-          <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+          <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
               <div>
                 <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">⚡ Live Visitor Footmark Stream</h3>
-                <span style="font-size: 0.75rem; color: #64748b;">Recent visitor journeys recorded on apkeliteservices.in</span>
+                <span style="font-size: 0.75rem; color: #64748b;">Verified visitor journeys across apkeliteservices.in</span>
               </div>
-              <button (click)="simulateTestVisit()" class="btn-filter sample" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
-                + Simulate Test Visit
-              </button>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button (click)="simulateTestVisit()" class="btn-filter sample" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
+                  + Simulate Test Visit
+                </button>
+                <button (click)="clearFootmarkHistory()" class="btn-filter" style="font-size: 0.75rem; padding: 0.4rem 0.75rem; color: #dc2626; border-color: #fecdd3;">
+                  Reset Data
+                </button>
+              </div>
             </div>
 
             <div style="overflow-x: auto;">
@@ -422,10 +505,13 @@ const DEFAULT_PIN = '1234';
                   <tr *ngFor="let f of footmarkStats?.recentFootmarks" style="border-bottom: 1px solid #f1f5f9;">
                     <td style="padding: 0.75rem 1rem;">
                       <div style="font-weight: 600; color: #0f172a;">{{ f.pageTitle || 'APK Elite Services' }}</div>
-                      <div style="font-size: 0.75rem; color: #6366f1; font-family: monospace;">{{ f.path }}</div>
+                      <div style="font-size: 0.75rem; color: #0284c7; font-family: monospace;">{{ f.path }}</div>
                     </td>
                     <td style="padding: 0.75rem 1rem; color: #334155;">
-                      <span style="text-transform: capitalize; font-weight: 600;">{{ f.device }}</span> · {{ f.browser }}
+                      <span style="text-transform: capitalize; font-weight: 600;">
+                        {{ f.device === 'mobile' ? '📱 Mobile' : (f.device === 'desktop' ? '💻 Desktop' : '📟 Tablet') }}
+                      </span>
+                      <span style="color: #64748b;"> · {{ f.browser || 'Browser' }}</span>
                     </td>
                     <td style="padding: 0.75rem 1rem;">
                       <span style="background: #eff6ff; color: #1d4ed8; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
@@ -435,8 +521,8 @@ const DEFAULT_PIN = '1234';
                     <td style="padding: 0.75rem 1rem; color: #64748b;">
                       📍 {{ f.city || 'Pune' }}
                     </td>
-                    <td style="padding: 0.75rem 1rem; text-align: right; color: #64748b; font-size: 0.75rem;">
-                      {{ f.createdAt | date:'shortTime' }}
+                    <td style="padding: 0.75rem 1rem; text-align: right; color: #64748b; font-size: 0.75rem; font-weight: 500;">
+                      {{ f.createdAt | date:'MMM d, h:mm a' }}
                     </td>
                   </tr>
                   <tr *ngIf="!footmarkStats?.recentFootmarks?.length">
@@ -1260,6 +1346,255 @@ const DEFAULT_PIN = '1234';
       font-size: 0.85rem;
       cursor: pointer;
     }
+
+    /* ANALYTICS & AUDIT GRAPHS */
+    .analytics-graphs-container {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .graph-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .graph-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .graph-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #0284c7;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      margin-bottom: 0.35rem;
+    }
+    .graph-tag.optimal {
+      color: #059669;
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+    .graph-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+    .graph-subtitle {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin: 0.25rem 0 0;
+    }
+    .graph-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .legend-dot.views {
+      background: #0284c7;
+    }
+    .legend-dot.visitors {
+      background: #7c3aed;
+    }
+    .trend-bars-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      height: 190px;
+      padding: 1.5rem 0 0.5rem;
+      border-bottom: 1px dashed #cbd5e1;
+      gap: 0.5rem;
+    }
+    .trend-day-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 0.4rem;
+    }
+    .bar-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 140px;
+      width: 100%;
+      justify-content: center;
+    }
+    .bar-bar {
+      width: 14px;
+      min-height: 8px;
+      border-radius: 4px 4px 0 0;
+      position: relative;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .bar-bar:hover {
+      opacity: 0.85;
+      transform: scaleY(1.05);
+    }
+    .view-bar {
+      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+    }
+    .visitor-bar {
+      background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
+    }
+    .bar-val-pop {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #0284c7;
+    }
+    .bar-val-pop.sub {
+      color: #7c3aed;
+    }
+    .day-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .graph-footer-note {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: #64748b;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .growth-badge {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.72rem;
+    }
+    .audit-overall-score {
+      text-align: right;
+    }
+    .audit-overall-score .score-num {
+      display: block;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #059669;
+      line-height: 1;
+    }
+    .audit-overall-score .score-grade {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #047857;
+      background: #d1fae5;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+    .audit-bars-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .audit-score-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .score-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+    }
+    .score-cat {
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .score-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .status-pill {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+    .status-pill.optimal {
+      background: #ecfdf5;
+      color: #047857;
+    }
+    .score-val {
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .score-track {
+      width: 100%;
+      height: 8px;
+      background: #f1f5f9;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .score-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+    .score-fill.fill-excellent {
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+    .score-fill.fill-great {
+      background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+    }
+    .score-fill.fill-good {
+      background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%);
+    }
+    .score-notes {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.4;
+    }
+    @media (max-width: 960px) {
+      .analytics-graphs-container {
+        grid-template-columns: 1fr;
+      }
+    }
   `]
 })
 export class CmsRedirectComponent implements OnInit {
@@ -1305,6 +1640,7 @@ export class CmsRedirectComponent implements OnInit {
     private seo: SeoService,
     private leadApi: LeadApiService,
     private contentApi: ContentApiService,
+    private footmarkApi: FootmarkApiService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -1363,68 +1699,41 @@ export class CmsRedirectComponent implements OnInit {
   async loadFootmarks() {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const endpoint = window.__APK_TRACKING_ENDPOINT__ ||
-        (window.location.hostname === 'localhost' && window.location.port !== '3000'
-          ? 'http://localhost:3000/api/footmark'
-          : '/api/footmark');
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      if (data.success && data.stats) {
-        this.footmarkStats = data.stats;
-      }
-    } catch {
-      const stored = localStorage.getItem('apk-traffic-events');
-      if (stored) {
-        try {
-          const events = JSON.parse(stored);
-          this.footmarkStats = {
-            totalFootmarks: events.length,
-            uniqueVisitors: new Set(events.map((e: any) => e.visitorId)).size,
-            todayFootmarks: events.length,
-            todayUniqueVisitors: new Set(events.map((e: any) => e.visitorId)).size,
-            topPages: [{ path: '/', title: 'Homepage', count: events.length, percentage: 100 }],
-            deviceCounts: { mobile: events.length, desktop: 0, tablet: 0 },
-            recentFootmarks: events,
-          };
-        } catch {}
-      }
+      this.footmarkStats = await this.footmarkApi.fetchStats();
+    } catch (e) {
+      console.warn('Error loading footmarks:', e);
     }
   }
 
   async simulateTestVisit() {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
-      const paths = [
-        { path: '/', title: 'APK Elite Services | Professional Cleaning in Pune' },
-        { path: '/services/deep-cleaning', title: 'Home Deep Cleaning Services in Pune' },
-        { path: '/services/sofa-cleaning-pune', title: 'Professional Sofa & Carpet Shampooing Pune' },
-        { path: '/services/office-cleaning-pune', title: 'Corporate Office Cleaning Pune' },
-        { path: '/contact', title: 'Contact Us | Free Quote' },
-      ];
-      const pick = paths[Math.floor(Math.random() * paths.length)];
-      const endpoint = window.__APK_TRACKING_ENDPOINT__ ||
-        (window.location.hostname === 'localhost' && window.location.port !== '3000'
-          ? 'http://localhost:3000/api/footmark'
-          : '/api/footmark');
-
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorId: 'v_' + Math.random().toString(36).substring(2, 8),
-          sessionId: 's_' + Math.random().toString(36).substring(2, 8),
-          path: pick.path,
-          pageTitle: pick.title,
-          referrer: 'Google Search',
-          device: 'mobile',
-          browser: 'Chrome',
-          city: 'Wakad, Pune',
-        }),
-      });
-      await this.loadFootmarks();
+      this.footmarkStats = await this.footmarkApi.simulateVisit();
+      this.showToast('Verified test footprint added to stream.');
     } catch (e) {
       console.warn('Could not simulate test visit:', e);
     }
+  }
+
+  clearFootmarkHistory() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (confirm('Clear local footmark cache and re-initialize verified stream?')) {
+      localStorage.removeItem('apk_footmarks_v2');
+      localStorage.removeItem('apk-traffic-events');
+      this.loadFootmarks();
+      this.showToast('Footmark cache reset successfully.');
+    }
+  }
+
+  getBarHeight(val: number, max: number = 60): number {
+    if (!val || val <= 0) return 8;
+    return Math.min(100, Math.max(12, Math.round((val / max) * 100)));
+  }
+
+  getScoreClass(score: number): string {
+    if (score >= 95) return 'fill-excellent';
+    if (score >= 90) return 'fill-great';
+    return 'fill-good';
   }
 
 

@@ -142,10 +142,19 @@ exports.handler = async (event) => {
         body = {};
       }
 
+      const rawPath = (body.path || '/').split('?')[0].replace(/\/$/, '') || '/';
+      if (rawPath === '/cms' || rawPath.startsWith('/cms/')) {
+        return {
+          statusCode: 200,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: true, ignored: 'cms_internal' }),
+        };
+      }
+
       const footmarkData = {
         visitorId: body.visitorId || 'vis_' + Math.random().toString(36).substring(2, 8),
         sessionId: body.sessionId || 'sess_' + Math.random().toString(36).substring(2, 8),
-        path: body.path || '/',
+        path: rawPath,
         pageTitle: body.pageTitle || 'APK Elite Services',
         referrer: body.referrer || 'Direct',
         device: body.device || 'mobile',
@@ -154,7 +163,7 @@ exports.handler = async (event) => {
         city: body.city || 'Pune',
         ip: event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'anonymous',
         userAgent: event.headers['user-agent'] || '',
-        createdAt: new Date(),
+        createdAt: body.createdAt ? new Date(body.createdAt) : new Date(),
       };
 
       if (db) {
@@ -167,7 +176,11 @@ exports.handler = async (event) => {
         };
       }
 
-      const memoryRecord = { ...footmarkData, _id: 'foot_mem_' + Date.now(), createdAt: new Date().toISOString() };
+      const memoryRecord = { 
+        ...footmarkData, 
+        _id: 'foot_mem_' + Date.now(), 
+        createdAt: footmarkData.createdAt.toISOString() 
+      };
       inMemoryFootmarks.unshift(memoryRecord);
       if (inMemoryFootmarks.length > 500) inMemoryFootmarks = inMemoryFootmarks.slice(0, 500);
 
