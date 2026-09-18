@@ -1,5 +1,5 @@
 import { Component, Inject, PLATFORM_ID, HostListener, OnInit } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { NavBarComponent } from './nav-bar/nav-bar.component';
 import { AddFooterComponent } from './add-footer/add-footer.component';
@@ -18,11 +18,12 @@ declare global {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavBarComponent, AddFooterComponent, QuoteModalComponent],
+  imports: [CommonModule, RouterOutlet, NavBarComponent, AddFooterComponent, QuoteModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
+  isCmsRoute: boolean = false;
   constructor(
     private router: Router,
     private footmarkApi: FootmarkApiService,
@@ -65,30 +66,38 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
+    const updateRouteFlags = (url: string) => {
+      this.isCmsRoute = (url || '').startsWith('/cms');
+    };
+
+    if (isPlatformBrowser(this.platformId)) {
+      updateRouteFlags(window.location.pathname || this.router.url);
+
+      // Immediately track initial landing page on first load
+      setTimeout(() => {
+        const initialPath = this.router.url && this.router.url !== '/' 
+          ? this.router.url 
+          : (window.location.pathname || '/');
+        updateRouteFlags(initialPath);
+        this.footmarkApi.track(initialPath, document.title);
+      }, 150);
+
+      // Track on subsequent client navigation ends
+      this.router.events
+        .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+        .subscribe((event) => {
+          updateRouteFlags(event.urlAfterRedirects);
+          this.footmarkApi.track(event.urlAfterRedirects, document.title);
+          if (typeof window.gtag === 'function') {
+            window.gtag('event', 'page_view', {
+              page_path: event.urlAfterRedirects,
+              page_title: document.title
+            });
+          }
+        });
+    } else {
+      updateRouteFlags(this.router.url);
     }
-
-    // Immediately track initial landing page on first load
-    setTimeout(() => {
-      const initialPath = this.router.url && this.router.url !== '/' 
-        ? this.router.url 
-        : (window.location.pathname || '/');
-      this.footmarkApi.track(initialPath, document.title);
-    }, 150);
-
-    // Track on subsequent client navigation ends
-    this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event) => {
-        this.footmarkApi.track(event.urlAfterRedirects, document.title);
-        if (typeof window.gtag === 'function') {
-          window.gtag('event', 'page_view', {
-            page_path: event.urlAfterRedirects,
-            page_title: document.title
-          });
-        }
-      });
   }
 
   @HostListener('window:scroll')

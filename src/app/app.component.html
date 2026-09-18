@@ -1,19 +1,19 @@
-<div class="bdy">
-  <div class="nav">
+<div class="bdy" [class.cms-mode]="isCmsRoute">
+  <div class="nav" *ngIf="!isCmsRoute">
     <app-nav-bar></app-nav-bar>
   </div>
 
-  <main id="main-content">
+  <main id="main-content" [class.cms-viewport]="isCmsRoute">
     <router-outlet></router-outlet>
   </main>
 
-  <app-add-footer></app-add-footer>
+  <app-add-footer *ngIf="!isCmsRoute"></app-add-footer>
 
   <!-- Global Quote Popup Modal -->
-  <app-quote-modal></app-quote-modal>
+  <app-quote-modal *ngIf="!isCmsRoute"></app-quote-modal>
 
   <!-- Floating Action Buttons -->
-  <div class="floating-icons">
+  <div class="floating-icons" *ngIf="!isCmsRoute">
     <a [href]="getDynamicWhatsAppUrl('FloatingIcon')"
        (click)="trackCtaClick('whatsapp', 'floating-icon')"
        target="_blank"
@@ -34,6 +34,7 @@
   </div>
 
   <a [href]="getDynamicWhatsAppUrl('FloatBox')"
+     *ngIf="!isCmsRoute"
      (click)="trackCtaClick('whatsapp', 'floating-box')"
      target="_blank"
      rel="noopener"
@@ -45,7 +46,7 @@
   </a>
 
   <!-- Mobile Sticky CTA Bar -->
-  <div class="mobile-sticky-cta">
+  <div class="mobile-sticky-cta" *ngIf="!isCmsRoute">
     <a href="tel:+918830167863"
        (click)="trackCtaClick('call', 'mobile-sticky')"
        class="cta-call"

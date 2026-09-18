@@ -1,0 +1,919 @@
+<div class="umami-root">
+
+  <!-- ============================================================ -->
+  <!-- 1. PIN AUTHENTICATION SCREEN -->
+  <!-- ============================================================ -->
+  <div *ngIf="!isAuthenticated" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h2>Umami Analytics</h2>
+      <p class="auth-sub">APK Elite Services · Admin Portal</p>
+
+      <form (submit)="onPinSubmit($event)" class="pin-form">
+        <div class="form-group">
+          <label for="pinInput">Enter Admin PIN</label>
+          <input
+            id="pinInput"
+            type="password"
+            maxlength="20"
+            [(ngModel)]="enteredPin"
+            name="enteredPin"
+            placeholder="••••"
+            class="pin-input"
+            autofocus
+          />
+        </div>
+
+        <div *ngIf="pinError" class="error-msg">
+          Incorrect PIN. Please try again.
+        </div>
+
+        <button type="submit" class="btn-unlock">Unlock Dashboard</button>
+
+        <div class="auth-hint">
+          <span>Admin PIN: <strong>{{ getStoredPin() }}</strong></span>
+          <a routerLink="/" class="back-link">← Return to Website</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. FULL-SCREEN UMAMI DASHBOARD -->
+  <!-- ============================================================ -->
+  <div *ngIf="isAuthenticated" class="umami-app-layout">
+
+    <!-- ==================== LEFT SIDEBAR ==================== -->
+    <aside class="umami-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-badge">
+          <span class="brand-logo-icon">●</span>
+          <span class="brand-name">umami</span>
+        </div>
+        <button class="sidebar-icon-btn" title="Toggle Sidebar">◫</button>
+      </div>
+
+      <div class="back-wrap">
+        <a routerLink="/" class="sidebar-back-link">
+          <span class="back-arrow">←</span>
+          <span>Back</span>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- TRAFFIC SECTION -->
+        <div class="nav-section-title">Traffic</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'overview'"
+              [class.active]="activeSection === 'overview'"
+              class="nav-link"
+            >
+              <span class="nav-icon">👁</span>
+              <span class="nav-label">Overview</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'realtime'"
+              [class.active]="activeSection === 'realtime'"
+              class="nav-link"
+            >
+              <span class="nav-icon">⚡</span>
+              <span class="nav-label">Events &amp; Realtime</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'sessions'"
+              [class.active]="activeSection === 'sessions'"
+              class="nav-link"
+            >
+              <span class="nav-icon">👤</span>
+              <span class="nav-label">Sessions</span>
+            </button>
+          </li>
+        </ul>
+
+        <!-- BEHAVIOR SECTION -->
+        <div class="nav-section-title">Behavior</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button class="nav-link" (click)="activeSection = 'overview'">
+              <span class="nav-icon">🎯</span>
+              <span class="nav-label">Goals</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" (click)="activeSection = 'overview'">
+              <span class="nav-icon">🔻</span>
+              <span class="nav-label">Funnels</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" (click)="activeSection = 'overview'">
+              <span class="nav-icon">🔄</span>
+              <span class="nav-label">Retention</span>
+            </button>
+          </li>
+        </ul>
+
+        <!-- APK MANAGEMENT SECTION -->
+        <div class="nav-section-title">APK Management</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'leads'"
+              [class.active]="activeSection === 'leads'"
+              class="nav-link"
+            >
+              <span class="nav-icon">📋</span>
+              <span class="nav-label">Leads &amp; Inquiries</span>
+              <span class="sidebar-pill-badge" *ngIf="leads.length > 0">{{ leads.length }}</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'form'"
+              [class.active]="activeSection === 'form'"
+              class="nav-link"
+            >
+              <span class="nav-icon">🛠</span>
+              <span class="nav-label">Form Controls</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'content'"
+              [class.active]="activeSection === 'content'"
+              class="nav-link"
+            >
+              <span class="nav-icon">🏷</span>
+              <span class="nav-label">Content &amp; Pricing</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- SIDEBAR BOTTOM PROFILE -->
+      <div class="sidebar-footer">
+        <div class="user-profile-row" title="Active Admin Account">
+          <span class="user-avatar-icon">👤</span>
+          <span class="user-email-text">shubhammisra800&#64;gmail.com</span>
+        </div>
+        <div class="sidebar-actions-row">
+          <button (click)="openPinModal()" class="btn-sidebar-sub" title="Change Admin PIN">
+            <span>🔐 PIN</span>
+          </button>
+          <button (click)="logout()" class="btn-sidebar-sub danger" title="Sign Out">
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="umami-main-viewport">
+
+      <!-- TOP BAR -->
+      <header class="umami-topbar">
+        <div class="topbar-left">
+          <div class="dropdown-identity">
+            <span class="identity-icon">👤</span>
+            <span class="identity-name">shubhammisra800&#64;gm...</span>
+            <span class="caret">▾</span>
+          </div>
+          <span class="separator">|</span>
+          <div class="dropdown-identity">
+            <span class="identity-icon">🌐</span>
+            <span class="identity-site">APK Elite Services</span>
+            <span class="caret">▾</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- DB Cloud Sync Pill -->
+          <div
+            class="db-sync-badge"
+            [class.synced]="isDbConnected"
+            [class.isolated]="!isDbConnected"
+            (click)="showDbHelpModal = !showDbHelpModal"
+            title="Database Sync Status"
+          >
+            <span class="sync-dot"></span>
+            <span>{{ isDbConnected ? 'MongoDB Cloud' : 'Local Storage Mode' }}</span>
+          </div>
+
+          <!-- Timeframe Switcher -->
+          <div class="timeframe-group">
+            <button
+              (click)="analyticsTimeframe = 'today'"
+              [class.active]="analyticsTimeframe === 'today'"
+              class="tf-btn"
+            >
+              Today
+            </button>
+            <button
+              (click)="analyticsTimeframe = '24h'"
+              [class.active]="analyticsTimeframe === '24h'"
+              class="tf-btn"
+            >
+              24h
+            </button>
+            <button
+              (click)="analyticsTimeframe = '7d'"
+              [class.active]="analyticsTimeframe === '7d'"
+              class="tf-btn"
+            >
+              7d
+            </button>
+            <button
+              (click)="analyticsTimeframe = '30d'"
+              [class.active]="analyticsTimeframe === '30d'"
+              class="tf-btn"
+            >
+              30d
+            </button>
+            <button
+              (click)="analyticsTimeframe = 'all'"
+              [class.active]="analyticsTimeframe === 'all'"
+              class="tf-btn"
+            >
+              All
+            </button>
+          </div>
+
+          <button (click)="loadAllData()" [disabled]="refreshing" class="btn-refresh" title="Sync live telemetry">
+            <span [class.spin]="refreshing">⟳</span>
+          </button>
+          <a routerLink="/" target="_blank" class="btn-live-site">Live Site ↗</a>
+        </div>
+      </header>
+
+      <!-- TOAST MESSAGE -->
+      <div *ngIf="toastMessage" class="toast-alert">
+        {{ toastMessage }}
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW A: OVERVIEW TAB (EXACT MATCH FOR SCREENSHOTS 1, 2, 3)    -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'overview'" class="umami-overview-content">
+
+        <!-- 1. 5 METRIC CARDS ROW (SCREENSHOT 1) -->
+        <div class="metric-cards-5">
+          <!-- Card 1: Visitors -->
+          <div class="metric-box">
+            <div class="metric-header-lbl">Visitors</div>
+            <div class="metric-big-val">{{ metricVisitors }}</div>
+            <div class="metric-trend-pill up">
+              <span class="trend-arrow">↑</span>
+              <span>1750%</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Visits -->
+          <div class="metric-box">
+            <div class="metric-header-lbl">Visits</div>
+            <div class="metric-big-val">{{ metricVisits }}</div>
+            <div class="metric-trend-pill up">
+              <span class="trend-arrow">↑</span>
+              <span>2500%</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Views -->
+          <div class="metric-box">
+            <div class="metric-header-lbl">Views</div>
+            <div class="metric-big-val">{{ metricViews }}</div>
+            <div class="metric-trend-pill up">
+              <span class="trend-arrow">↑</span>
+              <span>23000%</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Bounce rate -->
+          <div class="metric-box">
+            <div class="metric-header-lbl">Bounce rate</div>
+            <div class="metric-big-val">{{ metricBounceRate }}%</div>
+            <div class="metric-trend-pill up">
+              <span class="trend-arrow">↓</span>
+              <span>67%</span>
+            </div>
+          </div>
+
+          <!-- Card 5: Visit duration -->
+          <div class="metric-box">
+            <div class="metric-header-lbl">Visit duration</div>
+            <div class="metric-big-val">{{ metricVisitDuration }}</div>
+            <div class="metric-trend-pill up">
+              <span class="trend-arrow">↑</span>
+              <span>100%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. FULL-WIDTH TWO-TONE STACKED BAR GRAPH (SCREENSHOT 1) -->
+        <div class="umami-chart-card">
+          <div class="chart-canvas-area">
+            <!-- Y-Axis Grid Lines & Numbers -->
+            <div class="chart-y-axis">
+              <div *ngFor="let line of stackedChartData.gridLines" class="y-tick">
+                <span class="y-num">{{ line }}</span>
+                <span class="y-rule"></span>
+              </div>
+            </div>
+
+            <!-- Stacked Bars Container -->
+            <div class="chart-bars-flow">
+              <div *ngFor="let b of stackedChartData.bars" class="stacked-bar-col">
+                <div class="stacked-pillar-wrapper" [title]="b.label + ': ' + b.views + ' Views, ' + b.visitors + ' Visitors'">
+                  <!-- Top Layer: Dark Blue (Total Views Segment) -->
+                  <div
+                    class="bar-layer views-layer"
+                    [style.height.%]="b.viewsHeightPct"
+                  >
+                    <!-- Base Layer: Bright Blue (Unique Visitors / Visits Segment) -->
+                    <div
+                      class="bar-layer visitors-layer"
+                      [style.height.%]="b.views > 0 ? (b.visitors / b.views) * 100 : 0"
+                    ></div>
+                  </div>
+                </div>
+                <span class="x-label">{{ b.label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. MID-FOLD CARDS: PAGES & SOURCES (SCREENSHOT 2) -->
+        <div class="dual-panel-grid">
+          <!-- CARD A: PAGES -->
+          <div class="umami-panel-card">
+            <h3 class="panel-main-title">Pages</h3>
+            <div class="panel-subtabs-row">
+              <button
+                (click)="pagesSubTab = 'path'"
+                [class.active]="pagesSubTab === 'path'"
+                class="subtab-btn"
+              >
+                Path
+              </button>
+              <button
+                (click)="pagesSubTab = 'url'"
+                [class.active]="pagesSubTab === 'url'"
+                class="subtab-btn"
+              >
+                URL
+              </button>
+              <button
+                (click)="pagesSubTab = 'entry'"
+                [class.active]="pagesSubTab === 'entry'"
+                class="subtab-btn"
+              >
+                Entry page
+              </button>
+              <button
+                (click)="pagesSubTab = 'exit'"
+                [class.active]="pagesSubTab === 'exit'"
+                class="subtab-btn"
+              >
+                Exit page
+              </button>
+            </div>
+
+            <div class="panel-table-wrap">
+              <div class="panel-table-header">
+                <span class="col-head-left">Path</span>
+                <span class="col-head-right">Visitors</span>
+              </div>
+
+              <div class="panel-table-body">
+                <div *ngFor="let p of filteredPagesList" class="panel-row">
+                  <div class="row-bar-fill" [style.width.%]="p.percentage"></div>
+                  <div class="row-content">
+                    <span class="row-key">{{ p.path }}</span>
+                    <div class="row-val-group">
+                      <span class="row-val">{{ p.visitors }}</span>
+                      <span class="row-pct">{{ p.percentage }}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="filteredPagesList.length === 0" class="panel-empty">
+                  No page visits recorded for this timeframe.
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-bottom-action">
+              <button class="btn-more-panel" (click)="showToast('Showing all recent pages')">
+                <span>⛶ More</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CARD B: SOURCES -->
+          <div class="umami-panel-card">
+            <h3 class="panel-main-title">Sources</h3>
+            <div class="panel-subtabs-row">
+              <button
+                (click)="sourcesSubTab = 'referrers'"
+                [class.active]="sourcesSubTab === 'referrers'"
+                class="subtab-btn"
+              >
+                Referrers
+              </button>
+              <button
+                (click)="sourcesSubTab = 'channels'"
+                [class.active]="sourcesSubTab === 'channels'"
+                class="subtab-btn"
+              >
+                Channels
+              </button>
+            </div>
+
+            <div class="panel-table-wrap">
+              <div class="panel-table-header">
+                <span class="col-head-left">Referrer</span>
+                <span class="col-head-right">Visitors</span>
+              </div>
+
+              <div class="panel-table-body">
+                <div *ngFor="let s of filteredSourcesList" class="panel-row">
+                  <div class="row-bar-fill" [style.width.%]="s.percentage"></div>
+                  <div class="row-content">
+                    <span class="row-key">
+                      <span class="source-icon">{{ s.icon }}</span>
+                      <span>{{ s.name }}</span>
+                    </span>
+                    <div class="row-val-group">
+                      <span class="row-val">{{ s.visitors }}</span>
+                      <span class="row-pct">{{ s.percentage }}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="filteredSourcesList.length === 0" class="panel-empty">
+                  Direct visits only (no external referrers).
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-bottom-action">
+              <button class="btn-more-panel" (click)="showToast('Showing all traffic acquisition')">
+                <span>⛶ More</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. BOTTOM-FOLD CARDS: ENVIRONMENT & LOCATION (SCREENSHOT 3) -->
+        <div class="dual-panel-grid">
+          <!-- CARD C: ENVIRONMENT -->
+          <div class="umami-panel-card">
+            <h3 class="panel-main-title">Environment</h3>
+            <div class="panel-subtabs-row">
+              <button
+                (click)="envSubTab = 'browsers'"
+                [class.active]="envSubTab === 'browsers'"
+                class="subtab-btn"
+              >
+                Browsers
+              </button>
+              <button
+                (click)="envSubTab = 'os'"
+                [class.active]="envSubTab === 'os'"
+                class="subtab-btn"
+              >
+                OS
+              </button>
+              <button
+                (click)="envSubTab = 'devices'"
+                [class.active]="envSubTab === 'devices'"
+                class="subtab-btn"
+              >
+                Devices
+              </button>
+            </div>
+
+            <div class="panel-table-wrap">
+              <div class="panel-table-header">
+                <span class="col-head-left">Browser</span>
+                <span class="col-head-right">Visitors</span>
+              </div>
+
+              <div class="panel-table-body">
+                <div *ngFor="let b of filteredBrowsersList" class="panel-row">
+                  <div class="row-bar-fill" [style.width.%]="b.percentage"></div>
+                  <div class="row-content">
+                    <span class="row-key">
+                      <span class="env-icon">{{ b.icon }}</span>
+                      <span>{{ b.name }}</span>
+                    </span>
+                    <div class="row-val-group">
+                      <span class="row-val">{{ b.visitors }}</span>
+                      <span class="row-pct">{{ b.percentage }}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="filteredBrowsersList.length === 0" class="panel-empty">
+                  No browser data captured.
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-bottom-action">
+              <button class="btn-more-panel" (click)="showToast('Showing full client environments')">
+                <span>⛶ More</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CARD D: LOCATION -->
+          <div class="umami-panel-card">
+            <h3 class="panel-main-title">Location</h3>
+            <div class="panel-subtabs-row">
+              <button
+                (click)="locSubTab = 'countries'"
+                [class.active]="locSubTab === 'countries'"
+                class="subtab-btn"
+              >
+                Countries
+              </button>
+              <button
+                (click)="locSubTab = 'regions'"
+                [class.active]="locSubTab === 'regions'"
+                class="subtab-btn"
+              >
+                Regions
+              </button>
+              <button
+                (click)="locSubTab = 'cities'"
+                [class.active]="locSubTab === 'cities'"
+                class="subtab-btn"
+              >
+                Cities
+              </button>
+            </div>
+
+            <div class="panel-table-wrap">
+              <div class="panel-table-header">
+                <span class="col-head-left">Country</span>
+                <span class="col-head-right">Visitors</span>
+              </div>
+
+              <div class="panel-table-body">
+                <div *ngFor="let l of filteredLocationList" class="panel-row">
+                  <div class="row-bar-fill" [style.width.%]="l.percentage"></div>
+                  <div class="row-content">
+                    <span class="row-key">
+                      <span class="flag-icon">{{ l.flag }}</span>
+                      <span>{{ l.name }}</span>
+                    </span>
+                    <div class="row-val-group">
+                      <span class="row-val">{{ l.visitors }}</span>
+                      <span class="row-pct">{{ l.percentage }}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="filteredLocationList.length === 0" class="panel-empty">
+                  No geographic visits recorded.
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-bottom-action">
+              <button class="btn-more-panel" (click)="showToast('Showing global locations')">
+                <span>⛶ More</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW B: LEADS & INQUIRIES (INTEGRATED CRM)                   -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'leads'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Leads &amp; Customer Inquiries</h2>
+            <p class="section-sub">Real-time incoming quote requests and conversion tracking</p>
+          </div>
+          <div class="crm-actions-bar">
+            <button (click)="exportCSV()" class="btn-subtle">Export to CSV</button>
+            <button (click)="addSampleLead()" class="btn-primary-blue">+ Add Test Lead</button>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="crm-filters-box">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Search by customer name, phone, service, locality..."
+            class="umami-input"
+          />
+          <select [(ngModel)]="statusFilter" class="umami-select">
+            <option value="ALL">All Statuses</option>
+            <option value="NEW">New</option>
+            <option value="CONTACTED">Contacted</option>
+            <option value="QUOTE_SENT">Quote Sent</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="LOST">Lost / Cancelled</option>
+          </select>
+        </div>
+
+        <!-- Leads List Grid -->
+        <div class="leads-cards-grid">
+          <div *ngFor="let lead of filteredLeads" class="lead-item-card">
+            <div class="lead-head-row">
+              <div>
+                <h4 class="lead-cust-name">{{ lead.name }}</h4>
+                <div class="lead-meta">{{ lead.source }} · {{ lead.createdAt | date:'short' }}</div>
+                <div class="lead-attr-tags" *ngIf="lead.utm_source || lead.utm_campaign || lead.gclid || (lead.visit_count && lead.visit_count > 1)">
+                  <span class="attr-pill" *ngIf="lead.utm_source">📢 {{ lead.utm_source }}</span>
+                  <span class="attr-pill" *ngIf="lead.utm_campaign">🎯 {{ lead.utm_campaign }}</span>
+                  <span class="attr-pill" *ngIf="lead.gclid">⭐ Google Ads</span>
+                  <span class="attr-pill" *ngIf="lead.visit_count && lead.visit_count > 1">🔁 Visit #{{ lead.visit_count }}</span>
+                </div>
+              </div>
+              <select
+                [ngModel]="lead.status"
+                (ngModelChange)="onStatusChange(lead._id, $event)"
+                class="status-dropdown"
+                [ngClass]="'status-' + lead.status.toLowerCase()"
+              >
+                <option value="NEW">NEW</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="QUOTE_SENT">QUOTE SENT</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="LOST">LOST</option>
+              </select>
+            </div>
+
+            <div class="lead-info-grid">
+              <div class="info-cell">
+                <span class="info-lbl">Service:</span>
+                <strong>{{ lead.service }}</strong>
+              </div>
+              <div class="info-cell" *ngIf="lead.locality">
+                <span class="info-lbl">Locality:</span>
+                <span>📍 {{ lead.locality }}</span>
+              </div>
+              <div class="info-cell">
+                <span class="info-lbl">Phone:</span>
+                <a [href]="'tel:+91' + lead.phone" class="phone-link">+91 {{ lead.phone }}</a>
+              </div>
+              <div class="info-cell" *ngIf="lead.email">
+                <span class="info-lbl">Email:</span>
+                <a [href]="'mailto:' + lead.email" class="email-link">{{ lead.email }}</a>
+              </div>
+            </div>
+
+            <div *ngIf="lead.message" class="lead-message-box">
+              "{{ lead.message }}"
+            </div>
+
+            <!-- Customer Actions -->
+            <div class="lead-buttons-row">
+              <a [href]="getWhatsAppLink(lead)" target="_blank" class="btn-wa">💬 WhatsApp Customer</a>
+              <a [href]="'tel:+91' + lead.phone" class="btn-call">📞 Call</a>
+              <button (click)="deleteLead(lead._id)" class="btn-del">🗑</button>
+            </div>
+
+            <!-- Staff Notes -->
+            <div class="notes-block">
+              <div *ngFor="let n of lead.notes" class="single-note">
+                <span class="note-time">{{ n.createdAt | date:'shortTime' }}:</span>
+                <span>{{ n.note }}</span>
+              </div>
+              <div class="add-note-row">
+                <input
+                  type="text"
+                  #noteInput
+                  placeholder="Add internal staff note..."
+                  class="note-input-inline"
+                  (keyup.enter)="addNote(lead._id, noteInput.value); noteInput.value = ''"
+                />
+                <button (click)="addNote(lead._id, noteInput.value); noteInput.value = ''" class="btn-note-save">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="filteredLeads.length === 0" class="panel-empty">
+            No leads found matching your search.
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW C: REALTIME & EVENTS                                    -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'realtime' || activeSection === 'sessions'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Live Verified Visitor Stream</h2>
+            <p class="section-sub">Telemetry logs captured across apkeliteservices.in</p>
+          </div>
+          <div class="crm-actions-bar">
+            <button (click)="simulateTestVisit()" class="btn-primary-blue">+ Simulate Visit</button>
+            <button (click)="clearFootmarkHistory()" class="btn-subtle">Reset Cache</button>
+          </div>
+        </div>
+
+        <div class="umami-panel-card" style="padding: 0; overflow: hidden;">
+          <table class="stream-table">
+            <thead>
+              <tr class="stream-th-row">
+                <th>Page</th>
+                <th>Device / Browser</th>
+                <th>Source</th>
+                <th>Location</th>
+                <th style="text-align: right;">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of filteredFootmarks" class="stream-data-row">
+                <td>
+                  <div class="stream-title">{{ f.pageTitle || 'APK Elite Services' }}</div>
+                  <div class="stream-path">{{ f.path }}</div>
+                </td>
+                <td>
+                  <span>{{ f.device === 'mobile' ? '📱 Mobile' : '💻 Desktop' }}</span>
+                  <span class="dim"> · {{ f.browser || 'Browser' }}</span>
+                </td>
+                <td>
+                  <span class="source-tag">{{ f.referrer || 'Direct' }}</span>
+                </td>
+                <td>
+                  <span>📍 {{ f.city || 'Pune' }}</span>
+                </td>
+                <td style="text-align: right;" class="dim">
+                  {{ f.createdAt | date:'shortTime' }}
+                </td>
+              </tr>
+              <tr *ngIf="filteredFootmarks.length === 0">
+                <td colspan="5" class="panel-empty">No visitor events recorded.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW D: FORM CONTROLS & CONTENT PRICING                      -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'form' || activeSection === 'content'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Dynamic Website Content &amp; Pricing</h2>
+            <p class="section-sub">Edit live form dropdowns and promotional copy</p>
+          </div>
+          <button (click)="saveContentChanges()" [disabled]="savingContent" class="btn-primary-blue">
+            {{ savingContent ? 'Saving...' : 'Save All Changes' }}
+          </button>
+        </div>
+
+        <div class="dual-panel-grid">
+          <div class="umami-panel-card">
+            <h4 class="panel-main-title">Service Localities in Pune</h4>
+            <div class="tag-cloud">
+              <span *ngFor="let loc of dynamicContent.formConfig.localities; let idx = index" class="tag-pill">
+                {{ loc }}
+                <button (click)="removeLocality(idx)" class="tag-x">✕</button>
+              </span>
+            </div>
+            <div class="tag-add-row">
+              <input
+                type="text"
+                [(ngModel)]="newLocalityName"
+                placeholder="Add locality (e.g. Aundh)"
+                class="umami-input"
+                (keyup.enter)="addLocality()"
+              />
+              <button (click)="addLocality()" class="btn-subtle">+ Add</button>
+            </div>
+          </div>
+
+          <div class="umami-panel-card">
+            <h4 class="panel-main-title">Offered Cleaning Services</h4>
+            <div class="tag-cloud">
+              <span *ngFor="let s of dynamicContent.formConfig.services; let idx = index" class="tag-pill">
+                {{ s }}
+                <button (click)="removeService(idx)" class="tag-x">✕</button>
+              </span>
+            </div>
+            <div class="tag-add-row">
+              <input
+                type="text"
+                [(ngModel)]="newServiceName"
+                placeholder="Add service (e.g. Carpet Shampooing)"
+                class="umami-input"
+                (keyup.enter)="addService()"
+              />
+              <button (click)="addService()" class="btn-subtle">+ Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- CHANGE ADMIN PIN MODAL -->
+  <!-- ============================================================ -->
+  <div *ngIf="showPinModal" class="modal-backdrop" (click)="closePinModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>🔐 Change Admin PIN</h3>
+        <button type="button" (click)="closePinModal()" class="btn-modal-close">✕</button>
+      </div>
+
+      <form (submit)="onSaveNewPin($event)" class="modal-form">
+        <div class="form-group">
+          <label>Current PIN</label>
+          <input
+            type="password"
+            maxlength="20"
+            [(ngModel)]="currentPinInput"
+            name="currentPinInput"
+            placeholder="Enter current PIN"
+            class="umami-input"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>New PIN (Min 4 digits)</label>
+          <input
+            type="password"
+            maxlength="20"
+            [(ngModel)]="newPinInput"
+            name="newPinInput"
+            placeholder="Enter new 4+ digit PIN"
+            class="umami-input"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Confirm New PIN</label>
+          <input
+            type="password"
+            maxlength="20"
+            [(ngModel)]="confirmPinInput"
+            name="confirmPinInput"
+            placeholder="Re-enter new PIN"
+            class="umami-input"
+            required
+          />
+        </div>
+
+        <div *ngIf="pinChangeError" class="modal-error">
+          {{ pinChangeError }}
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closePinModal()" class="btn-subtle">Cancel</button>
+          <button type="submit" class="btn-primary-blue">Update PIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DATABASE STATUS MODAL -->
+  <div *ngIf="showDbHelpModal" class="modal-backdrop" (click)="showDbHelpModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Database &amp; Multi-Device Sync</h3>
+        <button type="button" (click)="showDbHelpModal = false" class="btn-modal-close">✕</button>
+      </div>
+      <div class="modal-body-text">
+        <p><strong>Current Status:</strong> {{ isDbConnected ? '🟢 Connected to MongoDB Cloud' : '🟡 Local Storage Mode' }}</p>
+        <p *ngIf="!isDbConnected" style="color: #a1a1aa; font-size: 0.88rem; line-height: 1.5;">
+          To merge phone and laptop visits into one unified live stream, add your <code>MONGODB_URI</code> environment variable in your Netlify Site Settings.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" (click)="showDbHelpModal = false" class="btn-primary-blue">Close</button>
+      </div>
+    </div>
+  </div>
+
+</div>

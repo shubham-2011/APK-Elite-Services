@@ -11,6 +11,10 @@
   padding-top: 70px;
 }
 
+.bdy.cms-mode {
+  padding-top: 0;
+}
+
 /* Floating Icon Stack (Exact Screenshot Match) */
 .floating-icons {
   position: fixed;
