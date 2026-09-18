@@ -441,34 +441,43 @@ const DEFAULT_PIN = '1234';
 
             <!-- Chart Type Switcher -->
             <div class="control-group chart-toggle-group">
-              <span class="control-label">Chart Mode:</span>
+              <span class="control-label">Chart View:</span>
               <div class="chart-type-toggle">
+                <button
+                  type="button"
+                  (click)="activeChartType = 'both'"
+                  [class.active]="activeChartType === 'both'"
+                  class="toggle-btn"
+                  title="Show Both Line & Bar Graphs"
+                >
+                  📊 Both Graphs
+                </button>
                 <button
                   type="button"
                   (click)="activeChartType = 'line'"
                   [class.active]="activeChartType === 'line'"
                   class="toggle-btn"
-                  title="Line Graph"
+                  title="Line Graph Only"
                 >
-                  📈 Line Chart
+                  📈 Line Only
                 </button>
                 <button
                   type="button"
                   (click)="activeChartType = 'bar'"
                   [class.active]="activeChartType === 'bar'"
                   class="toggle-btn"
-                  title="Bar Graph"
+                  title="Black & White Bar Graph Only"
                 >
-                  📊 Bar Graph
+                  📊 Bar Only
                 </button>
                 <button
                   type="button"
                   (click)="activeChartType = 'pie'"
                   [class.active]="activeChartType === 'pie'"
                   class="toggle-btn"
-                  title="Pie / Donut Chart"
+                  title="Distribution Donut"
                 >
-                  🍩 Donut Chart
+                  🍩 Donut
                 </button>
               </div>
             </div>
@@ -477,60 +486,34 @@ const DEFAULT_PIN = '1234';
           <!-- ============================================================ -->
           <!-- VISUAL TRAFFIC GRAPHS -->
           <!-- ============================================================ -->
-          <div class="analytics-graphs-container">
+          <div class="analytics-graphs-container" [class.split-view]="activeChartType === 'both'">
 
-            <!-- MAIN GRAPH CARD -->
-            <div class="graph-card trend-chart-card">
+            <!-- GRAPH 1: VISITOR & PAGEVIEW LINE TREND -->
+            <div class="graph-card trend-chart-card" *ngIf="activeChartType === 'both' || activeChartType === 'line'">
               <div class="graph-header">
                 <div>
                   <div class="graph-tag">
                     {{ analyticsTimeframe === 'today' ? 'Today' : (analyticsTimeframe === '30d' ? '30-Day View' : (analyticsTimeframe === 'all' ? 'All-Time' : '7-Day Trend')) }}
                   </div>
-                  <h3 class="graph-title">
-                    {{ activeChartType === 'line' ? 'Visitor & Pageview Line Trend' : (activeChartType === 'bar' ? 'Traffic Volume Bar Graph' : 'Distribution Donut Breakdown') }}
-                  </h3>
-                  <p class="graph-subtitle">
-                    {{ activeChartType === 'pie' ? 'Visual segmentation by device and traffic channel' : 'Continuous daily volume, impressions, and unique user journeys' }}
-                  </p>
+                  <h3 class="graph-title">Visitor &amp; Pageview Line Trend</h3>
+                  <p class="graph-subtitle">Continuous daily volume, impressions, and unique user journeys</p>
                 </div>
 
-                <!-- Legend / Controls -->
-                <div class="graph-legend" *ngIf="activeChartType !== 'pie'">
+                <!-- Legend -->
+                <div class="graph-legend">
                   <span class="legend-item"><span class="legend-dot views"></span> Pageviews</span>
                   <span class="legend-item"><span class="legend-dot visitors"></span> Unique Visitors</span>
                 </div>
-                <div class="pie-metric-toggle" *ngIf="activeChartType === 'pie'">
-                  <button
-                    type="button"
-                    (click)="activePieMetric = 'device'"
-                    [class.active]="activePieMetric === 'device'"
-                    class="pie-sub-btn"
-                  >
-                    Devices
-                  </button>
-                  <button
-                    type="button"
-                    (click)="activePieMetric = 'channel'"
-                    [class.active]="activePieMetric === 'channel'"
-                    class="pie-sub-btn"
-                  >
-                    Sources
-                  </button>
-                </div>
               </div>
 
-              <!-- ========================================== -->
-              <!-- VIEW 1: LINE GRAPH (SVG CURVES & NODES)    -->
-              <!-- ========================================== -->
-              <div *ngIf="activeChartType === 'line'" class="line-chart-wrapper">
+              <!-- VIEW 1: LINE GRAPH (SVG CURVES & NODES) -->
+              <div class="line-chart-wrapper">
                 <svg viewBox="0 0 600 220" class="svg-line-chart" preserveAspectRatio="none">
                   <defs>
-                    <!-- Gradient fill for views area -->
                     <linearGradient id="viewsAreaGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#ea580c" stop-opacity="0.32"/>
                       <stop offset="100%" stop-color="#ea580c" stop-opacity="0.0"/>
                     </linearGradient>
-                    <!-- Gradient fill for visitors area -->
                     <linearGradient id="visitorsAreaGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.25"/>
                       <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.0"/>
@@ -584,7 +567,6 @@ const DEFAULT_PIN = '1234';
 
                   <!-- Data Point Nodes (Circles) & Interactive Hover Popups -->
                   <g class="nodes-group" *ngFor="let pt of lineChartData.points">
-                    <!-- Views Node -->
                     <circle
                       [attr.cx]="pt.x"
                       [attr.cy]="pt.yViews"
@@ -594,7 +576,6 @@ const DEFAULT_PIN = '1234';
                       stroke-width="2"
                       class="chart-node"
                     />
-                    <!-- Visitors Node -->
                     <circle
                       [attr.cx]="pt.x"
                       [attr.cy]="pt.yVisitors"
@@ -604,7 +585,6 @@ const DEFAULT_PIN = '1234';
                       stroke-width="2"
                       class="chart-node"
                     />
-                    <!-- X-Axis Date Labels -->
                     <text
                       [attr.x]="pt.x"
                       y="212"
@@ -620,40 +600,87 @@ const DEFAULT_PIN = '1234';
                   No verified traffic matching the selected filters yet.
                 </div>
               </div>
+            </div>
 
-              <!-- ========================================== -->
-              <!-- VIEW 2: BAR GRAPH (VERTICAL BARS)          -->
-              <!-- ========================================== -->
-              <div *ngIf="activeChartType === 'bar'" class="trend-bars-wrapper">
-                <div *ngFor="let day of filteredDailyTrends" class="trend-day-col">
-                  <div class="bar-container">
+            <!-- GRAPH 2: UNIQUE VS REPEATED USERS (BLACK & WHITE BAR GRAPH) -->
+            <div class="graph-card bw-bar-card" *ngIf="activeChartType === 'both' || activeChartType === 'bar'">
+              <div class="graph-header">
+                <div>
+                  <div class="graph-tag optimal">
+                    {{ analyticsTimeframe === 'today' ? 'Today' : (analyticsTimeframe === '30d' ? '30-Day View' : (analyticsTimeframe === 'all' ? 'All-Time' : '7-Day Trend')) }}
+                  </div>
+                  <h3 class="graph-title">Unique vs Repeated Users</h3>
+                  <p class="graph-subtitle">New unique visitors (White) vs returning repeated visitors (Black)</p>
+                </div>
+
+                <!-- Black & White Legend -->
+                <div class="graph-legend">
+                  <span class="legend-item"><span class="legend-dot-bw white"></span> Unique Users</span>
+                  <span class="legend-item"><span class="legend-dot-bw black"></span> Repeated Users</span>
+                </div>
+              </div>
+
+              <!-- Black & White Bar Visualization -->
+              <div class="bw-bars-wrapper">
+                <div *ngFor="let day of filteredDailyTrends" class="bw-day-col">
+                  <div class="bw-bar-container">
+                    <!-- White Bar: Unique Users -->
                     <div
-                      class="bar-bar view-bar"
-                      [style.height.%]="getBarHeight(day.views, maxTrendVal)"
-                      [title]="day.label + ': ' + day.views + ' Pageviews'"
+                      class="bw-bar white-bar"
+                      [style.height.%]="getBarHeight(day.uniqueUsers, maxBwVal)"
+                      [title]="day.label + ': ' + day.uniqueUsers + ' Unique Users (New)'"
                     >
-                      <span class="bar-val-pop" *ngIf="day.views > 0">{{ day.views }}</span>
+                      <span class="bw-val-pop white" *ngIf="day.uniqueUsers > 0">{{ day.uniqueUsers }}</span>
                     </div>
+
+                    <!-- Black Bar: Repeated Users -->
                     <div
-                      class="bar-bar visitor-bar"
-                      [style.height.%]="getBarHeight(day.visitors, maxTrendVal)"
-                      [title]="day.label + ': ' + day.visitors + ' Visitors'"
+                      class="bw-bar black-bar"
+                      [style.height.%]="getBarHeight(day.repeatedUsers, maxBwVal)"
+                      [title]="day.label + ': ' + day.repeatedUsers + ' Repeated Users (Returning)'"
                     >
-                      <span class="bar-val-pop sub" *ngIf="day.visitors > 0">{{ day.visitors }}</span>
+                      <span class="bw-val-pop black" *ngIf="day.repeatedUsers > 0">{{ day.repeatedUsers }}</span>
                     </div>
                   </div>
                   <span class="day-label">{{ day.label.split(',')[0] }}</span>
                 </div>
+              </div>
 
-                <div *ngIf="filteredFootmarks.length === 0" class="empty-chart-note">
-                  No traffic data recorded for this timeframe.
+              <div *ngIf="filteredFootmarks.length === 0" class="empty-chart-note">
+                No visitor data recorded for this timeframe.
+              </div>
+            </div>
+
+            <!-- GRAPH 3: PIE / DONUT BREAKDOWN (WHEN SELECTED) -->
+            <div class="graph-card" *ngIf="activeChartType === 'pie'">
+              <div class="graph-header">
+                <div>
+                  <div class="graph-tag">Distribution Breakdown</div>
+                  <h3 class="graph-title">Acquisition &amp; Device Segmentation</h3>
+                  <p class="graph-subtitle">Visual breakdown by device type and traffic channels</p>
+                </div>
+
+                <div class="pie-metric-toggle">
+                  <button
+                    type="button"
+                    (click)="activePieMetric = 'device'"
+                    [class.active]="activePieMetric === 'device'"
+                    class="pie-sub-btn"
+                  >
+                    Devices
+                  </button>
+                  <button
+                    type="button"
+                    (click)="activePieMetric = 'channel'"
+                    [class.active]="activePieMetric === 'channel'"
+                    class="pie-sub-btn"
+                  >
+                    Sources
+                  </button>
                 </div>
               </div>
 
-              <!-- ========================================== -->
-              <!-- VIEW 3: PIE / DONUT CHART BREAKDOWN        -->
-              <!-- ========================================== -->
-              <div *ngIf="activeChartType === 'pie'" class="pie-chart-wrapper">
+              <div class="pie-chart-wrapper">
                 <div class="pie-svg-col">
                   <svg viewBox="0 0 160 160" class="svg-pie">
                     <circle
@@ -697,7 +724,6 @@ const DEFAULT_PIN = '1234';
                   </div>
                 </div>
               </div>
-
             </div>
 
           </div>
@@ -2160,9 +2186,14 @@ const DEFAULT_PIN = '1234';
     /* ANALYTICS & AUDIT GRAPHS */
     .analytics-graphs-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
       gap: 1.25rem;
       margin-bottom: 1.5rem;
+    }
+    @media (max-width: 960px) {
+      .analytics-graphs-container {
+        grid-template-columns: 1fr;
+      }
     }
     .graph-card {
       background: var(--s1);
@@ -2364,8 +2395,8 @@ const DEFAULT_PIN = '1234';
       stroke-width: 3;
     }
 
-    /* BAR GRAPH VIEW */
-    .trend-bars-wrapper {
+    /* BAR GRAPH VIEW (BLACK & WHITE: UNIQUE VS REPEATED USERS) */
+    .bw-bars-wrapper {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
@@ -2374,7 +2405,7 @@ const DEFAULT_PIN = '1234';
       border-bottom: 1px dashed var(--bd);
       gap: 0.5rem;
     }
-    .trend-day-col {
+    .bw-day-col {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -2383,34 +2414,84 @@ const DEFAULT_PIN = '1234';
       justify-content: flex-end;
       gap: 0.4rem;
     }
-    .bar-container {
+    .bw-bar-container {
       display: flex;
       align-items: flex-end;
-      gap: 4px;
+      gap: 5px;
       height: 150px;
       width: 100%;
       justify-content: center;
     }
-    .bar-bar {
-      width: 14px;
+    .bw-bar {
+      width: 16px;
       min-height: 6px;
       border-radius: 4px 4px 0 0;
       position: relative;
-      transition: transform 0.2s, opacity 0.2s;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      cursor: pointer;
     }
-    .bar-bar:hover { opacity: 0.85; transform: scaleY(1.05); }
-    .view-bar { background: linear-gradient(180deg, #ea580c 0%, #9a3412 100%); }
-    .visitor-bar { background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%); }
-    .bar-val-pop {
+    .bw-bar:hover {
+      opacity: 0.88;
+      transform: scaleY(1.06);
+    }
+    /* White Bar = Unique Users */
+    .white-bar {
+      background: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+    :host(.light) .white-bar {
+      background: #ffffff;
+      border: 1.5px solid #18181b;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    /* Black Bar = Repeated Users */
+    .black-bar {
+      background: #09090b;
+      border: 1.5px solid #e4e4e7;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    :host(.light) .black-bar {
+      background: #09090b;
+      border: 1.5px solid #09090b;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+    }
+    .bw-val-pop {
       position: absolute;
       top: -20px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.67rem;
+      font-size: 0.68rem;
       font-weight: 700;
-      color: #ea580c;
+      pointer-events: none;
     }
-    .bar-val-pop.sub { color: #8b5cf6; }
+    .bw-val-pop.white {
+      color: #ffffff;
+    }
+    :host(.light) .bw-val-pop.white {
+      color: #18181b;
+    }
+    .bw-val-pop.black {
+      color: #a1a1aa;
+    }
+    :host(.light) .bw-val-pop.black {
+      color: #09090b;
+    }
+    .legend-dot-bw {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .legend-dot-bw.white {
+      background: #ffffff;
+      border: 1px solid #d4d4d8;
+    }
+    .legend-dot-bw.black {
+      background: #09090b;
+      border: 1px solid #a1a1aa;
+    }
     .day-label { font-size: 0.72rem; color: var(--t2); font-weight: 600; }
 
     /* PIE / DONUT CHART VIEW */
@@ -2948,7 +3029,7 @@ export class CmsRedirectComponent implements OnInit {
   analyticsTimeframe: 'today' | '7d' | '30d' | 'all' = '7d';
   analyticsDeviceFilter: string = 'all';
   analyticsChannelFilter: string = 'all';
-  activeChartType: 'line' | 'bar' | 'pie' = 'line';
+  activeChartType: 'both' | 'line' | 'bar' | 'pie' = 'both';
   activePieMetric: 'device' | 'channel' = 'device';
 
   get filteredFootmarks(): FootmarkEvent[] {
@@ -3001,11 +3082,35 @@ export class CmsRedirectComponent implements OnInit {
     return new Set(todayList.map((e: FootmarkEvent) => e.visitorId)).size;
   }
 
-  get filteredDailyTrends(): Array<{ date: string; label: string; views: number; visitors: number }> {
-    const numDays = this.analyticsTimeframe === 'today' ? 1 : (this.analyticsTimeframe === '30d' ? 30 : 7);
-    const days: Array<{ date: string; label: string; views: number; visitors: number }> = [];
+  get filteredDailyTrends(): Array<{
+    date: string;
+    label: string;
+    views: number;
+    visitors: number;
+    uniqueUsers: number;
+    repeatedUsers: number;
+  }> {
+    const numDays = this.analyticsTimeframe === 'today' ? 1 : (this.analyticsTimeframe === '30d' ? 30 : (this.analyticsTimeframe === 'all' ? 14 : 7));
+    const days: Array<{
+      date: string;
+      label: string;
+      views: number;
+      visitors: number;
+      uniqueUsers: number;
+      repeatedUsers: number;
+    }> = [];
     const now = new Date();
     const events = this.filteredFootmarks;
+
+    // Track first-seen date across all stored events
+    const allFootmarks: FootmarkEvent[] = this.footmarkStats?.recentFootmarks || [];
+    const firstSeenMap = new Map<string, string>();
+    const sortedAll = [...allFootmarks].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    for (const ev of sortedAll) {
+      if (ev.visitorId && !firstSeenMap.has(ev.visitorId)) {
+        firstSeenMap.set(ev.visitorId, (ev.createdAt || '').split('T')[0]);
+      }
+    }
 
     for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date(now);
@@ -3014,8 +3119,27 @@ export class CmsRedirectComponent implements OnInit {
       const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       const dayEvents = events.filter((e: FootmarkEvent) => (e.createdAt || '').startsWith(dateStr));
       const views = dayEvents.length;
-      const visitors = new Set(dayEvents.map((e: FootmarkEvent) => e.visitorId)).size;
-      days.push({ date: dateStr, label, views, visitors });
+
+      const dayVisitors = Array.from(new Set(dayEvents.map((e: FootmarkEvent) => e.visitorId)));
+      const visitors = dayVisitors.length;
+
+      let uniqueUsers = 0;
+      let repeatedUsers = 0;
+
+      for (const vid of dayVisitors) {
+        const vEvents = dayEvents.filter(e => e.visitorId === vid);
+        const hasExplicitRepeat = vEvents.some(e => e.isReturning === true || (e.visitCount != null && e.visitCount > 1));
+        const firstDate = firstSeenMap.get(vid);
+        const isPriorVisitor = Boolean(firstDate && firstDate < dateStr);
+
+        if (hasExplicitRepeat || isPriorVisitor) {
+          repeatedUsers++;
+        } else {
+          uniqueUsers++;
+        }
+      }
+
+      days.push({ date: dateStr, label, views, visitors, uniqueUsers, repeatedUsers });
     }
     return days;
   }
@@ -3028,6 +3152,16 @@ export class CmsRedirectComponent implements OnInit {
       if (t.visitors > max) max = t.visitors;
     }
     return Math.max(max, 5);
+  }
+
+  get maxBwVal(): number {
+    const trends = this.filteredDailyTrends;
+    let max = 1;
+    for (const t of trends) {
+      if (t.uniqueUsers > max) max = t.uniqueUsers;
+      if (t.repeatedUsers > max) max = t.repeatedUsers;
+    }
+    return Math.max(max, 4);
   }
 
   get lineChartData() {
