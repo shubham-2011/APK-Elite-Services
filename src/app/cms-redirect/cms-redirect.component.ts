@@ -336,76 +336,362 @@ const DEFAULT_PIN = '1234';
         <!-- TAB 2: FOOTMARKS & VISITOR ANALYTICS -->
         <!-- ============================================================ -->
         <div *ngIf="activeTab === 'footmarks'" class="tab-content">
-          <!-- METRICS CARDS -->
+
+          <!-- METRICS CARDS (FILTER AWARE) -->
           <div class="metrics-grid">
             <div class="metric-card footmarks">
-              <div class="metric-num">{{ footmarkStats?.totalFootmarks || 0 }}</div>
-              <div class="metric-label">Total Pageviews</div>
+              <div class="metric-num">{{ filteredFootmarks.length }}</div>
+              <div class="metric-label">Filtered Pageviews</div>
             </div>
             <div class="metric-card total">
-              <div class="metric-num">{{ footmarkStats?.uniqueVisitors || 0 }}</div>
+              <div class="metric-num">{{ filteredUniqueVisitorCount }}</div>
               <div class="metric-label">Unique Visitors</div>
             </div>
             <div class="metric-card converted">
-              <div class="metric-num">{{ footmarkStats?.todayFootmarks || 0 }}</div>
-              <div class="metric-label">Today's Visits ({{ footmarkStats?.todayUniqueVisitors || 0 }} unique)</div>
+              <div class="metric-num">{{ todayFilteredViews }}</div>
+              <div class="metric-label">Today's Visits ({{ todayFilteredVisitors }} unique)</div>
             </div>
             <div class="metric-card progress">
               <div class="metric-num metric-num--sm">
-                {{ footmarkStats?.topPages?.[0]?.title || 'Home Deep Cleaning' }}
+                {{ filteredTopPages[0]?.title || 'Home Deep Cleaning' }}
               </div>
               <div class="metric-label">Top Visited Service</div>
             </div>
           </div>
 
+          <!-- ANALYTICS FILTRATION & VIEW CONTROL BAR -->
+          <div class="analytics-control-bar">
+            <!-- Timeframe Filter -->
+            <div class="control-group">
+              <span class="control-label">Timeframe:</span>
+              <div class="timeframe-pills">
+                <button
+                  type="button"
+                  (click)="analyticsTimeframe = 'today'"
+                  [class.active]="analyticsTimeframe === 'today'"
+                  class="pill-btn"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  (click)="analyticsTimeframe = '7d'"
+                  [class.active]="analyticsTimeframe === '7d'"
+                  class="pill-btn"
+                >
+                  7 Days
+                </button>
+                <button
+                  type="button"
+                  (click)="analyticsTimeframe = '30d'"
+                  [class.active]="analyticsTimeframe === '30d'"
+                  class="pill-btn"
+                >
+                  30 Days
+                </button>
+                <button
+                  type="button"
+                  (click)="analyticsTimeframe = 'all'"
+                  [class.active]="analyticsTimeframe === 'all'"
+                  class="pill-btn"
+                >
+                  All Time
+                </button>
+              </div>
+            </div>
+
+            <!-- Device Filter -->
+            <div class="control-group">
+              <span class="control-label">Device:</span>
+              <select [(ngModel)]="analyticsDeviceFilter" class="filter-select">
+                <option value="all">All Devices</option>
+                <option value="desktop">Desktop</option>
+                <option value="mobile">Mobile</option>
+                <option value="tablet">Tablet</option>
+              </select>
+            </div>
+
+            <!-- Channel Filter -->
+            <div class="control-group">
+              <span class="control-label">Channel:</span>
+              <select [(ngModel)]="analyticsChannelFilter" class="filter-select">
+                <option value="all">All Channels</option>
+                <option value="google">Google Search / Ads</option>
+                <option value="whatsapp">WhatsApp Inbound</option>
+                <option value="direct">Direct Traffic</option>
+                <option value="social">Social Media</option>
+              </select>
+            </div>
+
+            <!-- Chart Type Switcher -->
+            <div class="control-group chart-toggle-group">
+              <span class="control-label">Chart Mode:</span>
+              <div class="chart-type-toggle">
+                <button
+                  type="button"
+                  (click)="activeChartType = 'line'"
+                  [class.active]="activeChartType === 'line'"
+                  class="toggle-btn"
+                  title="Line Graph"
+                >
+                  📈 Line Chart
+                </button>
+                <button
+                  type="button"
+                  (click)="activeChartType = 'bar'"
+                  [class.active]="activeChartType === 'bar'"
+                  class="toggle-btn"
+                  title="Bar Graph"
+                >
+                  📊 Bar Graph
+                </button>
+                <button
+                  type="button"
+                  (click)="activeChartType = 'pie'"
+                  [class.active]="activeChartType === 'pie'"
+                  class="toggle-btn"
+                  title="Pie / Donut Chart"
+                >
+                  🍩 Donut Chart
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- ============================================================ -->
-          <!-- VISUAL AUDIT & TRAFFIC GRAPHS -->
+          <!-- VISUAL TRAFFIC GRAPHS -->
           <!-- ============================================================ -->
           <div class="analytics-graphs-container">
 
-            <!-- 7-DAY TRAFFIC & VISITOR TREND CHART -->
+            <!-- MAIN GRAPH CARD -->
             <div class="graph-card trend-chart-card">
               <div class="graph-header">
                 <div>
-                  <div class="graph-tag">7-Day Traffic</div>
-                  <h3 class="graph-title">Visitor &amp; Pageview Trends</h3>
-                  <p class="graph-subtitle">Daily traffic volume, page impressions, and unique sessions</p>
+                  <div class="graph-tag">
+                    {{ analyticsTimeframe === 'today' ? 'Today' : (analyticsTimeframe === '30d' ? '30-Day View' : (analyticsTimeframe === 'all' ? 'All-Time' : '7-Day Trend')) }}
+                  </div>
+                  <h3 class="graph-title">
+                    {{ activeChartType === 'line' ? 'Visitor & Pageview Line Trend' : (activeChartType === 'bar' ? 'Traffic Volume Bar Graph' : 'Distribution Donut Breakdown') }}
+                  </h3>
+                  <p class="graph-subtitle">
+                    {{ activeChartType === 'pie' ? 'Visual segmentation by device and traffic channel' : 'Continuous daily volume, impressions, and unique user journeys' }}
+                  </p>
                 </div>
-                <div class="graph-legend">
+
+                <!-- Legend / Controls -->
+                <div class="graph-legend" *ngIf="activeChartType !== 'pie'">
                   <span class="legend-item"><span class="legend-dot views"></span> Pageviews</span>
-                  <span class="legend-item"><span class="legend-dot visitors"></span> Visitors</span>
+                  <span class="legend-item"><span class="legend-dot visitors"></span> Unique Visitors</span>
+                </div>
+                <div class="pie-metric-toggle" *ngIf="activeChartType === 'pie'">
+                  <button
+                    type="button"
+                    (click)="activePieMetric = 'device'"
+                    [class.active]="activePieMetric === 'device'"
+                    class="pie-sub-btn"
+                  >
+                    Devices
+                  </button>
+                  <button
+                    type="button"
+                    (click)="activePieMetric = 'channel'"
+                    [class.active]="activePieMetric === 'channel'"
+                    class="pie-sub-btn"
+                  >
+                    Sources
+                  </button>
                 </div>
               </div>
 
-              <!-- Interactive Bars -->
-              <div class="trend-bars-wrapper">
-                <div *ngFor="let day of footmarkStats?.dailyTrends" class="trend-day-col">
+              <!-- ========================================== -->
+              <!-- VIEW 1: LINE GRAPH (SVG CURVES & NODES)    -->
+              <!-- ========================================== -->
+              <div *ngIf="activeChartType === 'line'" class="line-chart-wrapper">
+                <svg viewBox="0 0 600 220" class="svg-line-chart" preserveAspectRatio="none">
+                  <defs>
+                    <!-- Gradient fill for views area -->
+                    <linearGradient id="viewsAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#ea580c" stop-opacity="0.32"/>
+                      <stop offset="100%" stop-color="#ea580c" stop-opacity="0.0"/>
+                    </linearGradient>
+                    <!-- Gradient fill for visitors area -->
+                    <linearGradient id="visitorsAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.0"/>
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Horizontal Reference Grid Lines & Y-labels -->
+                  <g class="grid-group">
+                    <g *ngFor="let grid of lineChartData.gridLines">
+                      <line
+                        [attr.x1]="lineChartData.padL"
+                        [attr.y1]="grid.y"
+                        x2="580"
+                        [attr.y2]="grid.y"
+                        class="grid-line"
+                      />
+                      <text
+                        x="34"
+                        [attr.y]="grid.y + 4"
+                        text-anchor="end"
+                        class="grid-text"
+                      >
+                        {{ grid.val }}
+                      </text>
+                    </g>
+                  </g>
+
+                  <!-- Area Fills -->
+                  <path [attr.d]="lineChartData.viewsArea" fill="url(#viewsAreaGrad)" />
+                  <path [attr.d]="lineChartData.visitorsArea" fill="url(#visitorsAreaGrad)" />
+
+                  <!-- Trend Lines -->
+                  <path
+                    [attr.d]="lineChartData.visitorsPath"
+                    fill="none"
+                    stroke="#8b5cf6"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="trend-path"
+                  />
+                  <path
+                    [attr.d]="lineChartData.viewsPath"
+                    fill="none"
+                    stroke="#ea580c"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="trend-path"
+                  />
+
+                  <!-- Data Point Nodes (Circles) & Interactive Hover Popups -->
+                  <g class="nodes-group" *ngFor="let pt of lineChartData.points">
+                    <!-- Views Node -->
+                    <circle
+                      [attr.cx]="pt.x"
+                      [attr.cy]="pt.yViews"
+                      r="4.5"
+                      fill="#ea580c"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      class="chart-node"
+                    />
+                    <!-- Visitors Node -->
+                    <circle
+                      [attr.cx]="pt.x"
+                      [attr.cy]="pt.yVisitors"
+                      r="4"
+                      fill="#8b5cf6"
+                      stroke="#ffffff"
+                      stroke-width="2"
+                      class="chart-node"
+                    />
+                    <!-- X-Axis Date Labels -->
+                    <text
+                      [attr.x]="pt.x"
+                      y="212"
+                      text-anchor="middle"
+                      class="axis-label"
+                    >
+                      {{ pt.label.split(',')[0] }}
+                    </text>
+                  </g>
+                </svg>
+
+                <div *ngIf="filteredFootmarks.length === 0" class="empty-chart-note">
+                  No verified traffic matching the selected filters yet.
+                </div>
+              </div>
+
+              <!-- ========================================== -->
+              <!-- VIEW 2: BAR GRAPH (VERTICAL BARS)          -->
+              <!-- ========================================== -->
+              <div *ngIf="activeChartType === 'bar'" class="trend-bars-wrapper">
+                <div *ngFor="let day of filteredDailyTrends" class="trend-day-col">
                   <div class="bar-container">
-                    <div class="bar-bar view-bar" [style.height.%]="getBarHeight(day.views, 60)" [title]="day.label + ': ' + day.views + ' Pageviews'">
-                      <span class="bar-val-pop">{{ day.views }}</span>
+                    <div
+                      class="bar-bar view-bar"
+                      [style.height.%]="getBarHeight(day.views, maxTrendVal)"
+                      [title]="day.label + ': ' + day.views + ' Pageviews'"
+                    >
+                      <span class="bar-val-pop" *ngIf="day.views > 0">{{ day.views }}</span>
                     </div>
-                    <div class="bar-bar visitor-bar" [style.height.%]="getBarHeight(day.visitors, 60)" [title]="day.label + ': ' + day.visitors + ' Visitors'">
-                      <span class="bar-val-pop sub">{{ day.visitors }}</span>
+                    <div
+                      class="bar-bar visitor-bar"
+                      [style.height.%]="getBarHeight(day.visitors, maxTrendVal)"
+                      [title]="day.label + ': ' + day.visitors + ' Visitors'"
+                    >
+                      <span class="bar-val-pop sub" *ngIf="day.visitors > 0">{{ day.visitors }}</span>
                     </div>
                   </div>
                   <span class="day-label">{{ day.label.split(',')[0] }}</span>
                 </div>
+
+                <div *ngIf="filteredFootmarks.length === 0" class="empty-chart-note">
+                  No traffic data recorded for this timeframe.
+                </div>
               </div>
 
-              <div *ngIf="!footmarkStats?.dailyTrends?.length" class="empty-inline" style="padding: 2rem 0; text-align:center;">
-                No traffic data yet. Visit pages to start recording sessions.
+              <!-- ========================================== -->
+              <!-- VIEW 3: PIE / DONUT CHART BREAKDOWN        -->
+              <!-- ========================================== -->
+              <div *ngIf="activeChartType === 'pie'" class="pie-chart-wrapper">
+                <div class="pie-svg-col">
+                  <svg viewBox="0 0 160 160" class="svg-pie">
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="55"
+                      fill="transparent"
+                      stroke="var(--bd)"
+                      stroke-width="20"
+                    />
+                    <circle
+                      *ngFor="let slice of pieChartData.slices"
+                      cx="80"
+                      cy="80"
+                      r="55"
+                      fill="transparent"
+                      [attr.stroke]="slice.color"
+                      stroke-width="20"
+                      [attr.stroke-dasharray]="slice.dash"
+                      [attr.stroke-dashoffset]="slice.offset"
+                      transform="rotate(-90 80 80)"
+                      class="donut-segment"
+                    />
+                  </svg>
+                  <div class="donut-center-info">
+                    <span class="donut-total">{{ pieChartData.total }}</span>
+                    <span class="donut-lbl">{{ activePieMetric === 'device' ? 'Total Visits' : 'Total Hits' }}</span>
+                  </div>
+                </div>
+
+                <!-- Donut Legend & Percentages -->
+                <div class="pie-legend-col">
+                  <div *ngFor="let slice of pieChartData.slices" class="pie-legend-row">
+                    <div class="pie-color-indicator" [style.background]="slice.color"></div>
+                    <div class="pie-slice-name">{{ slice.label }}</div>
+                    <div class="pie-slice-val">{{ slice.count }}</div>
+                    <div class="pie-slice-pct">{{ slice.percentage }}%</div>
+                  </div>
+                  <div *ngIf="pieChartData.slices.length === 0" class="empty-inline">
+                    No data to display in breakdown.
+                  </div>
+                </div>
               </div>
+
             </div>
-
 
           </div>
 
-          <!-- TOP PAGES & DEVICE BREAKDOWN -->
+          <!-- TOP PAGES & DEVICE BREAKDOWN (FILTER-SYNCED) -->
           <div class="data-panels-grid">
             <!-- Top Pages -->
             <div class="data-panel">
               <h3 class="panel-title">Top Visited Services &amp; Pages</h3>
-              <div *ngFor="let page of footmarkStats?.topPages" class="page-row">
+              <div *ngFor="let page of filteredTopPages" class="page-row">
                 <div class="page-row-meta">
                   <span class="page-row-title">{{ page.title }}</span>
                   <span class="page-row-count">{{ page.count }} visits ({{ page.percentage }}%)</span>
@@ -414,8 +700,8 @@ const DEFAULT_PIN = '1234';
                   <div class="mini-fill" [style.width.%]="page.percentage"></div>
                 </div>
               </div>
-              <div *ngIf="!footmarkStats?.topPages?.length" class="empty-inline">
-                No page visits recorded yet.
+              <div *ngIf="!filteredTopPages.length" class="empty-inline">
+                No page visits match the selected filter.
               </div>
             </div>
 
@@ -425,17 +711,17 @@ const DEFAULT_PIN = '1234';
               <div class="device-grid">
                 <div class="device-cell">
                   <div class="device-icon">Mobile</div>
-                  <div class="device-count">{{ footmarkStats?.deviceCounts?.mobile || 0 }}</div>
+                  <div class="device-count">{{ filteredDeviceCounts.mobile }}</div>
                   <div class="device-label">visitors</div>
                 </div>
                 <div class="device-cell">
                   <div class="device-icon">Desktop</div>
-                  <div class="device-count">{{ footmarkStats?.deviceCounts?.desktop || 0 }}</div>
+                  <div class="device-count">{{ filteredDeviceCounts.desktop }}</div>
                   <div class="device-label">visitors</div>
                 </div>
                 <div class="device-cell">
                   <div class="device-icon">Tablet</div>
-                  <div class="device-count">{{ footmarkStats?.deviceCounts?.tablet || 0 }}</div>
+                  <div class="device-count">{{ filteredDeviceCounts.tablet }}</div>
                   <div class="device-label">visitors</div>
                 </div>
               </div>
@@ -443,11 +729,11 @@ const DEFAULT_PIN = '1234';
               <div class="acquisition-block">
                 <div class="acq-label">Acquisition Sources</div>
                 <div class="acq-tags">
-                  <span *ngFor="let ref of footmarkStats?.topReferrers" class="acq-tag">
+                  <span *ngFor="let ref of filteredTopReferrers" class="acq-tag">
                     {{ ref.referrer }}: {{ ref.count }}
                   </span>
-                  <span *ngIf="!footmarkStats?.topReferrers?.length" class="acq-empty">
-                    Direct &amp; organic search visitors
+                  <span *ngIf="!filteredTopReferrers.length" class="acq-empty">
+                    No traffic channels recorded in this timeframe
                   </span>
                 </div>
               </div>
@@ -458,7 +744,7 @@ const DEFAULT_PIN = '1234';
           <div class="stream-panel">
             <div class="stream-header">
               <div>
-                <h3 class="stream-title">Live Visitor Stream</h3>
+                <h3 class="stream-title">Live Visitor Stream (Filtered: {{ filteredFootmarks.length }})</h3>
                 <span class="stream-sub">Verified visitor journeys across apkeliteservices.in</span>
               </div>
               <div class="stream-actions">
@@ -483,7 +769,7 @@ const DEFAULT_PIN = '1234';
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of footmarkStats?.recentFootmarks" class="stream-row">
+                  <tr *ngFor="let f of filteredFootmarks" class="stream-row">
                     <td class="stream-td">
                       <div class="stream-page-title">{{ f.pageTitle || 'APK Elite Services' }}</div>
                       <div class="stream-page-path">{{ f.path }}</div>
@@ -506,9 +792,9 @@ const DEFAULT_PIN = '1234';
                       {{ f.createdAt | date:'MMM d, h:mm a' }}
                     </td>
                   </tr>
-                  <tr *ngIf="!footmarkStats?.recentFootmarks?.length">
+                  <tr *ngIf="!filteredFootmarks.length">
                     <td colspan="5" class="stream-empty">
-                      No footmarks recorded yet. Visit any page or click &ldquo;+ Simulate Visit&rdquo;.
+                      No footmarks match your filter criteria.
                     </td>
                   </tr>
                 </tbody>
@@ -1656,13 +1942,154 @@ const DEFAULT_PIN = '1234';
     }
     .legend-item { display: flex; align-items: center; gap: 0.35rem; }
     .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
-    .legend-dot.views { background: var(--ac); }
-    .legend-dot.visitors { background: #7c3aed; }
+    .legend-dot.views { background: #ea580c; }
+    .legend-dot.visitors { background: #8b5cf6; }
+
+    /* FILTRATION CONTROLS */
+    .analytics-control-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      background: var(--s1);
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .control-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--t2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .timeframe-pills {
+      display: flex;
+      gap: 0.3rem;
+      background: var(--s2);
+      padding: 0.2rem;
+      border-radius: 8px;
+      border: 1px solid var(--bd);
+    }
+    .pill-btn {
+      background: transparent;
+      border: none;
+      color: var(--t2);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pill-btn:hover { color: var(--t1); }
+    .pill-btn.active {
+      background: var(--ac);
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .chart-type-toggle {
+      display: flex;
+      gap: 0.3rem;
+      background: var(--s2);
+      padding: 0.2rem;
+      border-radius: 8px;
+      border: 1px solid var(--bd);
+    }
+    .toggle-btn {
+      background: transparent;
+      border: none;
+      color: var(--t2);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .toggle-btn:hover { color: var(--t1); }
+    .toggle-btn.active {
+      background: var(--s0);
+      color: var(--t1);
+      border: 1px solid var(--bd);
+      box-shadow: var(--shadow-sm);
+    }
+    .pie-metric-toggle {
+      display: flex;
+      gap: 0.3rem;
+      background: var(--s2);
+      padding: 0.2rem;
+      border-radius: 6px;
+      border: 1px solid var(--bd);
+    }
+    .pie-sub-btn {
+      background: transparent;
+      border: none;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--t2);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .pie-sub-btn.active {
+      background: var(--ac);
+      color: #fff;
+    }
+
+    /* LINE CHART VIEW (SVG) */
+    .line-chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      margin-top: 0.5rem;
+    }
+    .svg-line-chart {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .grid-line {
+      stroke: var(--bd);
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+    }
+    .grid-text {
+      font-size: 10px;
+      fill: var(--t3);
+      font-weight: 600;
+    }
+    .axis-label {
+      font-size: 10.5px;
+      fill: var(--t2);
+      font-weight: 600;
+    }
+    .trend-path {
+      transition: d 0.3s ease;
+    }
+    .chart-node {
+      cursor: pointer;
+      transition: r 0.2s, stroke-width 0.2s;
+    }
+    .chart-node:hover {
+      r: 6.5;
+      stroke-width: 3;
+    }
+
+    /* BAR GRAPH VIEW */
     .trend-bars-wrapper {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      height: 190px;
+      height: 200px;
       padding: 1.5rem 0 0.5rem;
       border-bottom: 1px dashed var(--bd);
       gap: 0.5rem;
@@ -1680,20 +2107,20 @@ const DEFAULT_PIN = '1234';
       display: flex;
       align-items: flex-end;
       gap: 4px;
-      height: 140px;
+      height: 150px;
       width: 100%;
       justify-content: center;
     }
     .bar-bar {
       width: 14px;
-      min-height: 8px;
+      min-height: 6px;
       border-radius: 4px 4px 0 0;
       position: relative;
       transition: transform 0.2s, opacity 0.2s;
     }
-    .bar-bar:hover { opacity: 0.8; transform: scaleY(1.05); }
-    .view-bar { background: linear-gradient(180deg, var(--ac) 0%, #9a3412 100%); }
-    .visitor-bar { background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%); }
+    .bar-bar:hover { opacity: 0.85; transform: scaleY(1.05); }
+    .view-bar { background: linear-gradient(180deg, #ea580c 0%, #9a3412 100%); }
+    .visitor-bar { background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%); }
     .bar-val-pop {
       position: absolute;
       top: -20px;
@@ -1701,79 +2128,104 @@ const DEFAULT_PIN = '1234';
       transform: translateX(-50%);
       font-size: 0.67rem;
       font-weight: 700;
-      color: var(--ac);
+      color: #ea580c;
     }
-    .bar-val-pop.sub { color: #7c3aed; }
+    .bar-val-pop.sub { color: #8b5cf6; }
     .day-label { font-size: 0.72rem; color: var(--t2); font-weight: 600; }
-    .graph-footer-note {
+
+    /* PIE / DONUT CHART VIEW */
+    .pie-chart-wrapper {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-top: 1rem;
-      font-size: 0.77rem;
-      color: var(--t2);
+      justify-content: space-around;
+      gap: 2rem;
+      padding: 1.5rem 0;
       flex-wrap: wrap;
-      gap: 0.5rem;
     }
-    .growth-badge {
-      background: var(--ok-bg);
-      color: var(--ok);
-      border: 1px solid #a7f3d0;
-      padding: 0.18rem 0.5rem;
-      border-radius: 5px;
-      font-weight: 700;
-      font-size: 0.7rem;
-    }
-    .audit-overall-score { text-align: right; }
-    .audit-overall-score .score-num {
-      display: block;
-      font-size: 2rem;
-      font-weight: 900;
-      color: var(--ok);
-      line-height: 1;
-      letter-spacing: -0.04em;
-    }
-    .audit-overall-score .score-grade {
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      color: var(--ok);
-      background: var(--ok-bg);
-      border: 1px solid #a7f3d0;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-    }
-    .audit-bars-list { display: flex; flex-direction: column; gap: 0.85rem; }
-    .audit-score-item { display: flex; flex-direction: column; gap: 0.3rem; }
-    .score-meta {
+    .pie-svg-col {
+      position: relative;
+      width: 160px;
+      height: 160px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.82rem;
+      justify-content: center;
     }
-    .score-cat { font-weight: 700; color: var(--t1); }
-    .score-right { display: flex; align-items: center; gap: 0.5rem; }
-    .status-pill {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 0.12rem 0.4rem;
-      border-radius: 4px;
-    }
-    .status-pill.optimal { background: var(--ok-bg); color: var(--ok); }
-    .score-val { font-weight: 800; color: var(--t1); }
-    .score-track {
+    .svg-pie {
       width: 100%;
-      height: 7px;
-      background: var(--s2);
-      border-radius: 999px;
-      overflow: hidden;
+      height: 100%;
+      transform: rotate(0deg);
     }
-    .score-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
-    .score-fill.fill-excellent { background: linear-gradient(90deg, #10b981 0%, #059669 100%); }
-    .score-fill.fill-great { background: linear-gradient(90deg, var(--ac) 0%, #9a3412 100%); }
-    .score-fill.fill-good { background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%); }
-    .score-notes { font-size: 0.73rem; color: var(--t2); margin: 0; line-height: 1.4; }
+    .donut-segment {
+      transition: stroke-dasharray 0.4s ease, stroke-dashoffset 0.4s ease;
+    }
+    .donut-center-info {
+      position: absolute;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .donut-total {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--t1);
+      line-height: 1;
+    }
+    .donut-lbl {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--t2);
+      margin-top: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .pie-legend-col {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .pie-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .pie-color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .pie-slice-name {
+      flex: 1;
+      font-weight: 600;
+      color: var(--t1);
+    }
+    .pie-slice-val {
+      font-weight: 700;
+      color: var(--t1);
+    }
+    .pie-slice-pct {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--t2);
+      background: var(--s2);
+      border: 1px solid var(--bd);
+      padding: 0.12rem 0.45rem;
+      border-radius: 4px;
+      min-width: 40px;
+      text-align: center;
+    }
+    .empty-chart-note {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      font-size: 0.85rem;
+      color: var(--t2);
+    }
 
     /* ===================== EXTRACTED INLINE STYLES — DATA PANELS ===================== */
     .data-panels-grid {
@@ -2158,15 +2610,265 @@ export class CmsRedirectComponent implements OnInit {
     }
   }
 
-  getBarHeight(val: number, max: number = 60): number {
-    if (!val || val <= 0) return 8;
-    return Math.min(100, Math.max(12, Math.round((val / max) * 100)));
+  // Analytics Filtering & Chart State
+  analyticsTimeframe: 'today' | '7d' | '30d' | 'all' = '7d';
+  analyticsDeviceFilter: string = 'all';
+  analyticsChannelFilter: string = 'all';
+  activeChartType: 'line' | 'bar' | 'pie' = 'line';
+  activePieMetric: 'device' | 'channel' = 'device';
+
+  get filteredFootmarks(): FootmarkEvent[] {
+    const list: FootmarkEvent[] = this.footmarkStats?.recentFootmarks || [];
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    return list.filter((e: FootmarkEvent) => {
+      // 1. Device filter
+      if (this.analyticsDeviceFilter !== 'all') {
+        const d = (e.device || 'mobile').toLowerCase();
+        if (d !== this.analyticsDeviceFilter.toLowerCase()) return false;
+      }
+      // 2. Channel filter
+      if (this.analyticsChannelFilter !== 'all') {
+        const r = (e.referrer || 'Direct').toLowerCase();
+        if (this.analyticsChannelFilter === 'google' && !r.includes('google')) return false;
+        if (this.analyticsChannelFilter === 'whatsapp' && !r.includes('whatsapp') && !r.includes('wa.me')) return false;
+        if (this.analyticsChannelFilter === 'direct' && r !== 'direct') return false;
+        if (this.analyticsChannelFilter === 'social' && !['instagram', 'facebook', 'linkedin', 'twitter'].some(s => r.includes(s))) return false;
+      }
+      // 3. Timeframe filter
+      if (this.analyticsTimeframe === 'today') {
+        return (e.createdAt || '').startsWith(todayStr);
+      }
+      if (this.analyticsTimeframe === '7d') {
+        const cutoff = new Date(now.getTime() - 7 * 86400000);
+        return new Date(e.createdAt || 0) >= cutoff;
+      }
+      if (this.analyticsTimeframe === '30d') {
+        const cutoff = new Date(now.getTime() - 30 * 86400000);
+        return new Date(e.createdAt || 0) >= cutoff;
+      }
+      return true;
+    });
   }
 
-  getScoreClass(score: number): string {
-    if (score >= 95) return 'fill-excellent';
-    if (score >= 90) return 'fill-great';
-    return 'fill-good';
+  get filteredUniqueVisitorCount(): number {
+    return new Set(this.filteredFootmarks.map((e: FootmarkEvent) => e.visitorId)).size;
+  }
+
+  get todayFilteredViews(): number {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return this.filteredFootmarks.filter((e: FootmarkEvent) => (e.createdAt || '').startsWith(todayStr)).length;
+  }
+
+  get todayFilteredVisitors(): number {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayList = this.filteredFootmarks.filter((e: FootmarkEvent) => (e.createdAt || '').startsWith(todayStr));
+    return new Set(todayList.map((e: FootmarkEvent) => e.visitorId)).size;
+  }
+
+  get filteredDailyTrends(): Array<{ date: string; label: string; views: number; visitors: number }> {
+    const numDays = this.analyticsTimeframe === 'today' ? 1 : (this.analyticsTimeframe === '30d' ? 30 : 7);
+    const days: Array<{ date: string; label: string; views: number; visitors: number }> = [];
+    const now = new Date();
+    const events = this.filteredFootmarks;
+
+    for (let i = numDays - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const dayEvents = events.filter((e: FootmarkEvent) => (e.createdAt || '').startsWith(dateStr));
+      const views = dayEvents.length;
+      const visitors = new Set(dayEvents.map((e: FootmarkEvent) => e.visitorId)).size;
+      days.push({ date: dateStr, label, views, visitors });
+    }
+    return days;
+  }
+
+  get maxTrendVal(): number {
+    const trends = this.filteredDailyTrends;
+    let max = 1;
+    for (const t of trends) {
+      if (t.views > max) max = t.views;
+      if (t.visitors > max) max = t.visitors;
+    }
+    return Math.max(max, 5);
+  }
+
+  get lineChartData() {
+    const trends = this.filteredDailyTrends;
+    const count = trends.length;
+    const width = 580;
+    const height = 180;
+    const padL = 45;
+    const padR = 20;
+    const padT = 20;
+    const padB = 35;
+    const chartW = width - padL - padR;
+    const chartH = height - padT - padB;
+    const baselineY = padT + chartH;
+    const maxVal = this.maxTrendVal;
+
+    const points = trends.map((t, idx) => {
+      const x = count === 1 ? padL + chartW / 2 : padL + (idx / (count - 1)) * chartW;
+      const yViews = baselineY - (t.views / maxVal) * chartH;
+      const yVisitors = baselineY - (t.visitors / maxVal) * chartH;
+      return {
+        x,
+        yViews,
+        yVisitors,
+        views: t.views,
+        visitors: t.visitors,
+        label: t.label,
+        date: t.date
+      };
+    });
+
+    let viewsPath = '';
+    let viewsArea = '';
+    let visitorsPath = '';
+    let visitorsArea = '';
+
+    if (points.length > 0) {
+      viewsPath = `M ${points[0].x} ${points[0].yViews}` + points.slice(1).map(p => ` L ${p.x} ${p.yViews}`).join('');
+      viewsArea = `${viewsPath} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`;
+
+      visitorsPath = `M ${points[0].x} ${points[0].yVisitors}` + points.slice(1).map(p => ` L ${p.x} ${p.yVisitors}`).join('');
+      visitorsArea = `${visitorsPath} L ${points[points.length - 1].x} ${baselineY} L ${points[0].x} ${baselineY} Z`;
+    }
+
+    const gridLines = [
+      { y: padT, val: maxVal },
+      { y: padT + chartH * 0.5, val: Math.round(maxVal * 0.5) },
+      { y: baselineY, val: 0 }
+    ];
+
+    return {
+      width,
+      height,
+      padL,
+      baselineY,
+      points,
+      viewsPath,
+      viewsArea,
+      visitorsPath,
+      visitorsArea,
+      gridLines
+    };
+  }
+
+  getBarHeight(val: number, max: number = 60): number {
+    if (!val || val <= 0) return 8;
+    return Math.min(100, Math.max(10, Math.round((val / max) * 100)));
+  }
+
+  get pieChartData() {
+    const events = this.filteredFootmarks;
+    const total = events.length;
+    let slices: Array<{ label: string; count: number; percentage: number; color: string; dash: string; offset: number }> = [];
+    const C = 2 * Math.PI * 55; // ~ 345.575
+
+    if (this.activePieMetric === 'device') {
+      const counts: Record<string, number> = { Mobile: 0, Desktop: 0, Tablet: 0 };
+      events.forEach((e: FootmarkEvent) => {
+        const d = (e.device || 'mobile').toLowerCase();
+        if (d === 'desktop') counts['Desktop'] = (counts['Desktop'] || 0) + 1;
+        else if (d === 'tablet') counts['Tablet'] = (counts['Tablet'] || 0) + 1;
+        else counts['Mobile'] = (counts['Mobile'] || 0) + 1;
+      });
+      const colors: Record<string, string> = {
+        Mobile: '#ea580c',
+        Desktop: '#3b82f6',
+        Tablet: '#10b981'
+      };
+
+      let accumPercent = 0;
+      slices = Object.entries(counts).map(([label, count]) => {
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const dash = `${(pct / 100) * C} ${C}`;
+        const offset = -1 * (accumPercent / 100) * C;
+        accumPercent += pct;
+        return {
+          label,
+          count,
+          percentage: pct,
+          color: colors[label] || '#94a3b8',
+          dash,
+          offset
+        };
+      });
+    } else {
+      const counts: Record<string, number> = {};
+      events.forEach((e: FootmarkEvent) => {
+        const ref = e.referrer || 'Direct';
+        counts[ref] = (counts[ref] || 0) + 1;
+      });
+      const palette = ['#ea580c', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4'];
+      let accumPercent = 0;
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      slices = sorted.map(([label, count], i) => {
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+        const dash = `${(pct / 100) * C} ${C}`;
+        const offset = -1 * (accumPercent / 100) * C;
+        accumPercent += pct;
+        return {
+          label,
+          count,
+          percentage: pct,
+          color: palette[i % palette.length],
+          dash,
+          offset
+        };
+      });
+    }
+
+    return {
+      total,
+      slices
+    };
+  }
+
+  get filteredDeviceCounts() {
+    const counts = { mobile: 0, desktop: 0, tablet: 0 };
+    this.filteredFootmarks.forEach((e: FootmarkEvent) => {
+      const d = (e.device || 'mobile').toLowerCase();
+      if (counts[d as keyof typeof counts] !== undefined) counts[d as keyof typeof counts]++;
+      else counts.mobile++;
+    });
+    return counts;
+  }
+
+  get filteredTopPages() {
+    const map: Record<string, { count: number; title: string }> = {};
+    const list = this.filteredFootmarks;
+    const total = list.length;
+    list.forEach((e: FootmarkEvent) => {
+      const p = e.path || '/';
+      if (!map[p]) map[p] = { count: 0, title: e.pageTitle || p };
+      map[p].count++;
+    });
+    return Object.entries(map)
+      .map(([path, data]) => ({
+        path,
+        title: data.title,
+        count: data.count,
+        percentage: total > 0 ? Math.round((data.count / total) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }
+
+  get filteredTopReferrers() {
+    const map: Record<string, number> = {};
+    this.filteredFootmarks.forEach((e: FootmarkEvent) => {
+      const r = e.referrer || 'Direct';
+      map[r] = (map[r] || 0) + 1;
+    });
+    return Object.entries(map)
+      .map(([referrer, count]) => ({ referrer, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
   }
 
 
