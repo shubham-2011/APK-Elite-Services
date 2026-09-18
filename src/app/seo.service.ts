@@ -40,6 +40,7 @@ export class SeoService {
     this.metaService.updateTag({ property: 'og:url', content: url });
     this.metaService.updateTag({ property: 'og:image', content: image });
     this.metaService.updateTag({ property: 'og:image:alt', content: `${config.title} - APK Elite Services` });
+    this.metaService.updateTag({ property: 'article:publisher', content: 'https://www.facebook.com/profile.php?id=61594602086607' });
 
     // Twitter Cards
     this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
