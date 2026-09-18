@@ -684,6 +684,7 @@ export class FootmarkApiService {
     if (ua.includes('Macintosh') || ua.includes('Mac OS')) return 'macOS';
     if (ua.includes('Android')) return 'Android';
     if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iOS')) return 'iOS';
+    if (ua.includes('CrOS')) return 'ChromeOS';
     if (ua.includes('Linux')) return 'Linux';
     return 'Other';
   }

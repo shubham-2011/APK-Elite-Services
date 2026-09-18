@@ -642,10 +642,14 @@ export class CmsRedirectComponent implements OnInit {
         const n = name.toLowerCase();
         if (n.includes('chrome')) icon = '🌐';
         else if (n.includes('safari')) icon = '🧭';
+        else if (n.includes('firefox')) icon = '🦊';
         else if (n.includes('edge')) icon = '🌊';
+        else if (n.includes('opera')) icon = '⭕';
         else if (n.includes('ios') || n.includes('apple') || n.includes('mac')) icon = '🍎';
         else if (n.includes('android')) icon = '🤖';
         else if (n.includes('windows')) icon = '🪟';
+        else if (n.includes('linux')) icon = '🐧';
+        else if (n.includes('chromeos') || n.includes('cros')) icon = '💿';
         else if (n === 'mobile') icon = '📱';
         else if (n === 'desktop') icon = '💻';
         else if (n === 'tablet') icon = '📟';
