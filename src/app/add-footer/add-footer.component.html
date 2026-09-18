@@ -14,22 +14,59 @@
     <!-- MIDDLE -->
     <div class="footer-links">
       <h4>Quick Links</h4>
-      <ul>
-        <li><a routerLink="/">HOME</a></li>
-        <li><a routerLink="/about">ABOUT</a></li>
-        <li><a routerLink="/services">SERVICES</a></li>
-        <li><a routerLink="/contact">CONTACT</a></li>
+      <ul class="clean-list">
+        <li>
+          <a routerLink="/" class="icon-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            HOME
+          </a>
+        </li>
+        <li>
+          <a routerLink="/about" class="icon-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            ABOUT
+          </a>
+        </li>
+        <li>
+          <a routerLink="/services" class="icon-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            SERVICES
+          </a>
+        </li>
+        <li>
+          <a routerLink="/contact" class="icon-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            CONTACT
+          </a>
+        </li>
       </ul>
     </div>
 
     <div class="footer-contact">
       <h4>Contact</h4>
-      <p><a [href]="'mailto:' + email" style="color: inherit; text-decoration: none;">Email: {{email}}</a></p>
-      <p><a [href]="'tel:+91' + phone" style="color: inherit; text-decoration: none;">Phone: +91 {{phone|phone}}</a></p>
-      <h4>Follow APK Elite Services</h4>
-      <p><a href="https://www.facebook.com/profile.php?id=61594602086607" target="_blank" rel="noopener noreferrer" aria-label="APK Elite Services on Facebook" style="color: inherit; text-decoration: underline;">Facebook</a></p>
-      <p><a href="https://www.instagram.com/apk_elite_services/" target="_blank" rel="noopener noreferrer" aria-label="APK Elite Services on Instagram" style="color: inherit; text-decoration: underline;">Instagram</a></p>
-      <p><a href="https://www.linkedin.com/company/apk-elite-services/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="APK Elite Services on LinkedIn" style="color: inherit; text-decoration: underline;">LinkedIn</a></p>
+      <div class="contact-info">
+        <a [href]="'mailto:' + email" class="contact-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="contact-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span class="text">{{email}}</span>
+        </a>
+        <a [href]="'tel:+91' + phone" class="contact-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="contact-icon"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          <span class="text nowrap">+91 {{phone|phone}}</span>
+        </a>
+      </div>
+
+      <h4 class="mt-4">Follow APK Elite Services</h4>
+      <div class="social-links">
+        <a href="https://www.facebook.com/profile.php?id=61594602086607" target="_blank" rel="noopener noreferrer" aria-label="Facebook" class="social-icon" title="Facebook">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3.81l.19-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+        </a>
+        <a href="https://www.instagram.com/apk_elite_services/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="social-icon" title="Instagram">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+        </a>
+        <a href="https://www.linkedin.com/company/apk-elite-services/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" class="social-icon" title="LinkedIn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+        </a>
+      </div>
     </div>
 
   </div>
