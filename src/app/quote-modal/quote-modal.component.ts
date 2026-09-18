@@ -61,18 +61,24 @@ interface ModalForm {
         <!-- Form View -->
         <form *ngIf="!submitted" (ngSubmit)="onSubmit()" #modalFormRef="ngForm" novalidate>
           <div class="form-row">
-            <div class="field" [class.error]="nameFld.invalid && nameFld.touched">
+            <div class="field" [class.error]="nameFld.invalid && (nameFld.dirty || nameFld.touched)">
               <label for="modal-name">Full Name <span class="req">*</span></label>
               <input id="modal-name" name="name" type="text" [(ngModel)]="form.name"
                      required minlength="2" #nameFld="ngModel"
                      placeholder="Your name" autocomplete="name" />
+              <div *ngIf="nameFld.invalid && (nameFld.dirty || nameFld.touched)" class="field-error-msg">
+                Please enter your full name (at least 2 characters)
+              </div>
             </div>
 
-            <div class="field" [class.error]="phoneFld.invalid && phoneFld.touched">
+            <div class="field" [class.error]="phoneFld.invalid && (phoneFld.dirty || phoneFld.touched)">
               <label for="modal-phone">Mobile Number <span class="req">*</span></label>
               <input id="modal-phone" name="phone" type="tel" [(ngModel)]="form.phone"
                      required pattern="[6-9][0-9]{9}" #phoneFld="ngModel"
                      placeholder="10-digit phone" autocomplete="tel" />
+              <div *ngIf="phoneFld.invalid && (phoneFld.dirty || phoneFld.touched)" class="field-error-msg">
+                Enter a 10-digit mobile number starting with 6-9
+              </div>
             </div>
           </div>
 
@@ -124,6 +130,8 @@ interface ModalForm {
     `.opt { color: #94a3b8; font-weight: 400; font-size: 0.75rem; }`,
     `.field input, .field select, .field textarea { width: 100%; padding: 0.65rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.88rem; color: #0f172a; background: white; font-family: inherit; box-sizing: border-box; }`,
     `.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }`,
+    `.field.error input { border-color: #ef4444; background: #fff5f5; }`,
+    `.field-error-msg { color: #dc2626; font-size: 0.72rem; margin-top: 0.25rem; font-weight: 500; }`,
     `.btn-submit { width: 100%; padding: 0.8rem; border-radius: 8px; background: #0284c7; color: white; border: none; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.4rem; }`,
     `.btn-submit:hover:not(:disabled) { background: #0369a1; }`,
     `.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }`,
@@ -235,7 +243,7 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     this.mailtoUrl = `mailto:${this.targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     // 2. Prepare WhatsApp backup URL using dynamic CMS WhatsApp number
-    const waMsg = `Hi, I submitted a Quote request: Name: ${this.form.name}, Phone: ${this.form.phone}, Service: ${this.form.service}, Locality: ${this.form.locality}, Details: ${this.form.message || 'N/A'}`;
+    const waMsg = `Hi, I submitted a Quote request: Name: ${this.form.name}, Phone: ${this.form.phone}, Service: ${this.form.service}, Locality: ${this.form.locality}, Details: ${this.form.message || 'N/A'} [Ref: Web/QuoteModal/${this.form.locality}]`;
     this.whatsAppUrl = `https://wa.me/${this.targetWhatsApp}?text=${encodeURIComponent(waMsg)}`;
 
     // 3. Open user's email client directly pre-filled with all details

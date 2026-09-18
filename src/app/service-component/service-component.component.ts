@@ -20,6 +20,7 @@ export class ServiceComponentComponent {
   {
     title: "Deep Cleaning Services",
     slug: 'deep-cleaning',
+    badge: '🔥 Most Booked in Pune',
     description: "Our deep cleaning services go beyond regular cleaning to deliver a thorough, top-to-bottom transformation of your space. We meticulously clean hard-to-reach areas, remove stubborn stains, grease, and accumulated dust, and sanitize high-touch surfaces such as switches, handles, and countertops. Using advanced equipment and eco-friendly chemicals, we eliminate harmful bacteria, allergens, and odors, ensuring a hygienic, fresh, and healthier living or working environment.",
     imageUrl: "/assets/images/deep-clean.webp",
     expanded: false
@@ -34,6 +35,7 @@ export class ServiceComponentComponent {
   {
     title: "Floor Polishing Services",
     slug: 'floor-polishing',
+    badge: '⭐ 5-Star Rated',
     description: "We provide expert floor polishing services to bring back the original shine and durability of your flooring. Whether it's marble, granite, vitrified tiles, or wooden floors, we use high-grade polishing compounds and modern machines to remove scratches, stains, and dullness. Our process enhances surface smoothness, adds a glossy finish, and protects your floors from future wear and tear.",
     imageUrl: "/assets/images/floor-clean.webp",
     expanded: false
@@ -48,6 +50,7 @@ export class ServiceComponentComponent {
   {
     title: "Office Cleaning Services",
     slug: 'office-cleaning',
+    badge: '🏢 Top B2B Pick',
     description: "We offer comprehensive office cleaning services to maintain a clean, organized, and productive workspace. Our services include dusting, vacuuming, floor cleaning, sanitizing workstations, and maintaining common areas such as meeting rooms and restrooms. A clean office boosts employee productivity, promotes health, and leaves a lasting impression on clients and visitors.",
     imageUrl: "/assets/images/office-clean.webp",
     expanded: false
@@ -90,6 +93,7 @@ export class ServiceComponentComponent {
   {
     title: "Sofa Shampooing / Cleaning Services",
     slug: 'sofa-cleaning',
+    badge: '🛋️ Customer Favorite',
     description: "Our sofa cleaning services restore the beauty and hygiene of your furniture by removing dirt, stains, allergens, and odors. We use fabric-safe and leather-friendly cleaning methods to ensure deep cleaning without damage. This improves comfort, appearance, and the lifespan of your sofas.",
     imageUrl: "/assets/images/Sofacleaning.webp",
     expanded: false

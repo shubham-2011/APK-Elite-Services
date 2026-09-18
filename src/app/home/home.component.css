@@ -1,6 +1,6 @@
 .home-container {
   height: calc(100vh - 70px);
-  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), url("/assets/images/home-img1.webp");
+  background: linear-gradient(to right, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.68) 55%, rgba(15, 23, 42, 0.42) 100%), url("/assets/images/home-img1.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

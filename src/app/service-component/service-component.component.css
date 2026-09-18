@@ -79,7 +79,23 @@
 
 .service-card.reverse.show .image,
 .service-card.reverse.show .content {
+  opacity: 1;
   transform: translateX(0);
+}
+
+.service-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .content h2 {

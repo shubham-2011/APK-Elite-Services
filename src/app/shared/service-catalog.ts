@@ -24,7 +24,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Professional deep cleaning services in Pune for homes, offices, and commercial spaces with trusted eco-friendly methods.',
     keywords: 'deep cleaning Pune, home deep cleaning Pune, office deep cleaning Pune',
     startingPrice: 'Starting from ₹2,799',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Deep%20Cleaning%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Deep%20Cleaning%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fdeep-cleaning%5D'
   },
   {
     slug: 'facade-cleaning',
@@ -36,7 +36,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Professional facade cleaning for homes and commercial buildings in Pune, using safe and efficient methods.',
     keywords: 'facade cleaning Pune, building exterior cleaning Pune',
     startingPrice: 'Get a free quote',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Facade%20Cleaning%20quote%20for%20my%20building%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Facade%20Cleaning%20quote%20for%20my%20building%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Ffacade-cleaning%5D'
   },
   {
     slug: 'floor-polishing',
@@ -48,7 +48,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Revive marble, granite, tile, and wooden floors with expert polishing services in Pune.',
     keywords: 'floor polishing Pune, marble polishing Pune, granite polishing Pune',
     startingPrice: 'Starting from ₹1,999',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Floor%20Polishing%20quote%20for%20my%20property%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Floor%20Polishing%20quote%20for%20my%20property%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Ffloor-polishing%5D'
   },
   {
     slug: 'water-tank-cleaning',
@@ -60,7 +60,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Hygienic water tank cleaning services in Pune for homes and commercial properties.',
     keywords: 'water tank cleaning Pune, tank cleaning services Pune, overhead tank cleaning',
     startingPrice: 'Starting from ₹2,499',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Water%20Tank%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Water%20Tank%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fwater-tank-cleaning%5D'
   },
   {
     slug: 'office-cleaning',
@@ -72,7 +72,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Trusted office cleaning services in Pune for corporate spaces, coworking spaces, and commercial facilities.',
     keywords: 'office cleaning Pune, commercial cleaning Pune, janitorial services Pune',
     startingPrice: 'Starting from ₹3,999/month',
-    whatsappMessage: 'Hi%2C%20I%20need%20an%20Office%20Cleaning%20quote%20for%20my%20workplace%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20an%20Office%20Cleaning%20quote%20for%20my%20workplace%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Foffice-cleaning%5D'
   },
   {
     slug: 'post-construction-cleaning',
@@ -84,7 +84,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Post construction cleaning services in Pune for homes, offices, and renovated projects.',
     keywords: 'post construction cleaning Pune, renovation cleaning Pune',
     startingPrice: 'Starting from ₹4,999',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Post-Construction%20Cleaning%20quote%20for%20my%20property%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Post-Construction%20Cleaning%20quote%20for%20my%20property%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fpost-construction-cleaning%5D'
   },
   {
     slug: 'pest-control',
@@ -96,7 +96,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Professional pest control services in Pune for homes and businesses with safe treatments.',
     keywords: 'pest control Pune, cockroach control Pune, termite control Pune',
     startingPrice: 'Starting from ₹899',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Pest%20Control%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Pest%20Control%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fpest-control%5D'
   },
   {
     slug: 'sanitization',
@@ -108,7 +108,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Reliable sanitization services in Pune for homes, clinics, and office spaces.',
     keywords: 'sanitization Pune, disinfecting services Pune, virus sanitization Pune',
     startingPrice: 'Starting from ₹1,499',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Sanitization%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Sanitization%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fsanitization%5D'
   },
   {
     slug: 'carpet-cleaning',
@@ -120,7 +120,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Professional carpet cleaning in Pune for homes and offices using deep-cleaning extraction methods.',
     keywords: 'carpet cleaning Pune, sofa shampooing Pune, upholstery cleaning Pune',
     startingPrice: 'Starting from ₹499',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Carpet%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Carpet%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fcarpet-cleaning%5D'
   },
   {
     slug: 'chair-shampooing',
@@ -132,7 +132,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Chair shampooing and upholstery cleaning services in Pune for homes and business spaces.',
     keywords: 'chair cleaning Pune, chair shampooing Pune, upholstery cleaning Pune',
     startingPrice: 'Starting from ₹199/chair',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Chair%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Chair%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fchair-shampooing%5D'
   },
   {
     slug: 'sofa-cleaning',
@@ -144,7 +144,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Sofa shampooing and upholstery cleaning in Pune with safe, professional care for fabric and leather.',
     keywords: 'sofa cleaning Pune, sofa shampooing Pune, upholstery cleaning Pune',
     startingPrice: 'Starting from ₹199/seat',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Sofa%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Sofa%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fsofa-cleaning%5D'
   },
   {
     slug: 'gardening',
@@ -156,7 +156,7 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     metaDescription: 'Professional gardening and landscaping services in Pune to keep your outdoor spaces beautiful.',
     keywords: 'gardening Pune, landscaping Pune, garden maintenance Pune',
     startingPrice: 'Starting from ₹1,499/visit',
-    whatsappMessage: 'Hi%2C%20I%20need%20a%20Gardening%20Services%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.'
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Gardening%20Services%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fgardening%5D'
   }
 ];
 

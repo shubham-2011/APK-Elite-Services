@@ -21,12 +21,13 @@
   ngSrcset="400w, 800w, 1200w"
   sizes="(max-width: 768px) 100vw, 400px"
   [priority]="i < 2"
-  alt="{{ service.title }}"
-/>
+   alt="{{ service.title }} in Pune by APK Elite Services"
+ />
   </div>
 
   <!-- CONTENT -->
   <div class="content">
+    <span *ngIf="service.badge" class="service-badge">{{ service.badge }}</span>
     <h2>{{ service.title }}</h2>
 
     <!-- SHORT / FULL TEXT -->

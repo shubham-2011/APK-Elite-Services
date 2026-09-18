@@ -7,6 +7,8 @@ import { AddWhyChooseComponent } from '../add-why-choose/add-why-choose.componen
 import { AddMissionComponent } from '../add-mission/add-mission.component';
 import { AboutSectionsComponent } from '../about-sections/about-sections.component';
 import { JobShowcaseComponent } from '../job-showcase/job-showcase.component';
+import { TestimonialsComponent } from '../shared/testimonials.component';
+import { BeforeAfterComponent } from '../shared/before-after.component';
 
 @Component({
   selector: 'app-home',
@@ -18,7 +20,9 @@ import { JobShowcaseComponent } from '../job-showcase/job-showcase.component';
     AddWhyChooseComponent,
     AddMissionComponent,
     AboutSectionsComponent,
-    JobShowcaseComponent
+    JobShowcaseComponent,
+    TestimonialsComponent,
+    BeforeAfterComponent
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
