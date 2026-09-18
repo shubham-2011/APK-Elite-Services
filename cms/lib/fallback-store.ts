@@ -20,54 +20,7 @@ export interface FallbackLead {
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DATA_FILE = path.join(DATA_DIR, 'leads.json');
 
-const INITIAL_SAMPLE_LEADS: FallbackLead[] = [
-  {
-    _id: 'lead_sample_1',
-    name: 'Rahul Deshmukh',
-    phone: '9876543210',
-    email: 'rahul.d@gmail.com',
-    service: 'Deep Cleaning',
-    locality: 'Baner',
-    propertyType: '3 BHK',
-    message: 'Need complete deep home cleaning before moving in this Saturday.',
-    source: 'quote_modal',
-    status: 'NEW',
-    notes: [{ note: 'Inquiry received via Quote Modal', author: 'System', createdAt: new Date().toISOString() }],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'lead_sample_2',
-    name: 'Pooja Kulkarni',
-    phone: '9822012345',
-    email: 'pooja.k@outlook.com',
-    service: 'Sofa Cleaning',
-    locality: 'Wakad',
-    propertyType: '5 Seater + Lounger',
-    message: 'Stains on fabric sofa, need shampooing.',
-    source: 'contact_page',
-    status: 'CONTACTED',
-    notes: [
-      { note: 'Called client, shared quote ₹1,499 on WhatsApp', author: 'Staff', createdAt: new Date(Date.now() - 3600000).toISOString() },
-    ],
-    createdAt: new Date(Date.now() - 7200000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'lead_sample_3',
-    name: 'Amit Patel',
-    phone: '9765432109',
-    service: 'Office Cleaning',
-    locality: 'Hinjewadi Phase 1',
-    propertyType: '2,500 sq ft Commercial',
-    message: 'Looking for monthly AMC cleaning contract for IT startup.',
-    source: 'quote_modal',
-    status: 'QUOTE_SENT',
-    notes: [{ note: 'Sent commercial proposal PDF via email', author: 'Staff', createdAt: new Date(Date.now() - 86400000).toISOString() }],
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+const INITIAL_SAMPLE_LEADS: FallbackLead[] = [];
 
 function ensureFile() {
   if (!fs.existsSync(DATA_DIR)) {
