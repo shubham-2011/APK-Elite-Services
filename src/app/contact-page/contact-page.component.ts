@@ -1,8 +1,11 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { SeoService } from '../seo.service';
+import { LeadApiService } from '../shared/lead-api.service';
+import { ContentApiService } from '../shared/content-api.service';
 
 const WA_NUMBER = '918830167863';
 
@@ -101,19 +104,7 @@ interface ContactForm {
                 <label for="contact-service">Service Required <span class="req">*</span></label>
                 <select id="contact-service" name="service" [(ngModel)]="form.service" required #serviceFld="ngModel">
                   <option value="" disabled>Select service</option>
-                  <option value="Deep Cleaning">Deep Cleaning</option>
-                  <option value="Sofa Cleaning">Sofa Cleaning</option>
-                  <option value="Carpet Cleaning">Carpet Cleaning</option>
-                  <option value="Office Cleaning">Office Cleaning</option>
-                  <option value="Post-Construction Cleaning">Post-Construction Cleaning</option>
-                  <option value="Pest Control">Pest Control</option>
-                  <option value="Sanitization">Sanitization</option>
-                  <option value="Water Tank Cleaning">Water Tank Cleaning</option>
-                  <option value="Floor Polishing">Floor Polishing</option>
-                  <option value="Facade Cleaning">Facade Cleaning</option>
-                  <option value="Chair Shampooing">Chair Shampooing</option>
-                  <option value="Gardening">Gardening</option>
-                  <option value="Other / Commercial">Other / Commercial Query</option>
+                  <option *ngFor="let s of servicesList" [value]="s">{{ s }}</option>
                 </select>
               </div>
 
@@ -121,22 +112,7 @@ interface ContactForm {
                 <label for="contact-locality">Locality in Pune <span class="req">*</span></label>
                 <select id="contact-locality" name="locality" [(ngModel)]="form.locality" required>
                   <option value="" disabled>Select locality</option>
-                  <option value="Baner">Baner</option>
-                  <option value="Balewadi">Balewadi</option>
-                  <option value="Wakad">Wakad</option>
-                  <option value="Hinjewadi">Hinjewadi</option>
-                  <option value="Kharadi">Kharadi</option>
-                  <option value="Viman Nagar">Viman Nagar</option>
-                  <option value="Kothrud">Kothrud</option>
-                  <option value="Hadapsar">Hadapsar</option>
-                  <option value="Magarpatta">Magarpatta</option>
-                  <option value="Pimpri-Chinchwad">Pimpri-Chinchwad</option>
-                  <option value="Aundh">Aundh</option>
-                  <option value="Koregaon Park">Koregaon Park</option>
-                  <option value="Kalyani Nagar">Kalyani Nagar</option>
-                  <option value="Undri">Undri</option>
-                  <option value="Bavdhan">Bavdhan</option>
-                  <option value="Other Area">Other Pune Location</option>
+                  <option *ngFor="let loc of localitiesList" [value]="loc">{{ loc }}</option>
                 </select>
               </div>
             </div>
@@ -331,13 +307,19 @@ interface ContactForm {
     `@media (max-width: 840px) { .contact-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }`
   ]
 })
-export class ContactPageComponent implements OnInit {
-  readonly waNumber = WA_NUMBER;
+export class ContactPageComponent implements OnInit, OnDestroy {
+  waNumber = WA_NUMBER;
+  targetEmail = 'info@apkeliteservices.in';
   submitted = false;
   sending = false;
   submitError = '';
   successWhatsAppUrl = '';
   successEmailUrl = '';
+
+  localitiesList: string[] = ['Baner', 'Wakad', 'Hinjewadi', 'Kharadi', 'Viman Nagar', 'Kothrud', 'Aundh', 'Hadapsar', 'Other Area'];
+  servicesList: string[] = ['Deep Cleaning', 'Sofa Cleaning', 'Office Cleaning', 'Post-Construction Cleaning', 'Pest Control', 'Water Tank Cleaning', 'Floor Polishing', 'Facade Cleaning'];
+
+  private contentSub?: Subscription;
 
   form: ContactForm = {
     name: '',
@@ -350,6 +332,8 @@ export class ContactPageComponent implements OnInit {
 
   constructor(
     private seo: SeoService,
+    private leadApi: LeadApiService,
+    private contentApi: ContentApiService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -359,20 +343,48 @@ export class ContactPageComponent implements OnInit {
       description: 'Contact APK Elite Services for professional cleaning, sanitization, and facility services in Pune. Request a quote or get in touch with our team.',
       path: '/contact'
     });
+
+    this.contentSub = this.contentApi.content$.subscribe(content => {
+      if (content && content.formConfig) {
+        if (content.formConfig.localities && content.formConfig.localities.length) {
+          this.localitiesList = content.formConfig.localities;
+        }
+        if (content.formConfig.services && content.formConfig.services.length) {
+          this.servicesList = content.formConfig.services;
+        }
+      }
+      if (content.email) this.targetEmail = content.email;
+      if (content.whatsapp) this.waNumber = content.whatsapp;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.contentSub?.unsubscribe();
   }
 
   onSubmit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
+    // Asynchronously capture lead in Next.js + MongoDB CMS
+    this.leadApi.submitLead({
+      name: this.form.name,
+      phone: this.form.phone,
+      email: this.form.email,
+      service: this.form.service,
+      locality: this.form.locality,
+      message: this.form.message,
+      source: 'contact_page'
+    });
+
     const subject = `Website Contact Form: ${this.form.service} (${this.form.locality})`;
     const body = `Hi APK Elite Services Team,\n\nI submitted an enquiry via your website:\n\nName: ${this.form.name}\nPhone: ${this.form.phone}\nService Required: ${this.form.service}\nLocality: ${this.form.locality}\nMessage: ${this.form.message || 'None'}\n\nPlease contact me promptly.`;
 
-    this.successEmailUrl = `mailto:info@apkeliteservices.in?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    this.successEmailUrl = `mailto:${this.targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     const msg = `Hi%2C%20I%27m%20${encodeURIComponent(this.form.name)}%20from%20${encodeURIComponent(this.form.locality)}.%20I%20need%20${encodeURIComponent(this.form.service)}.%20My%20number%20is%20${encodeURIComponent(this.form.phone)}.%20${encodeURIComponent(this.form.message)}`;
-    this.successWhatsAppUrl = `https://wa.me/${WA_NUMBER}?text=${msg}`;
+    this.successWhatsAppUrl = `https://wa.me/${this.waNumber}?text=${msg}`;
 
-    // Trigger direct native email draft open to info@apkeliteservices.in
+    // Trigger direct native email draft open to target email
     window.location.href = this.successEmailUrl;
 
     if ((window as any).umami) {

@@ -2,6 +2,7 @@
 /about
 /contact
 /privacy-policy
+/cms
 /diwali-deep-cleaning-pune
 /services
 /services/deep-cleaning-baner

@@ -3,6 +3,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { QuoteModalService } from '../shared/quote-modal.service';
+import { LeadApiService } from '../shared/lead-api.service';
+import { ContentApiService } from '../shared/content-api.service';
 
 const WA_NUMBER = '918830167863';
 const TARGET_EMAIL = 'info@apkeliteservices.in';
@@ -30,9 +32,9 @@ interface ModalForm {
 
         <!-- Header -->
         <div class="modal-header">
-          <span class="badge-tag">Direct Email · Pune</span>
-          <h2>Request a Free Service Quote</h2>
-          <p>Fill out your details below to send a quote request directly to info&#64;apkeliteservices.in.</p>
+          <span class="badge-tag">Direct Inquiry · Pune</span>
+          <h2>{{ modalTitle }}</h2>
+          <p>{{ modalSubtitle }}</p>
         </div>
 
         <!-- Success State -->
@@ -41,7 +43,7 @@ interface ModalForm {
             <svg viewBox="0 0 24 24" width="28" height="28"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           </div>
           <h3>Quote Details Ready to Send!</h3>
-          <p>Thank you, <strong>{{ form.name }}</strong>. Click below to send your request via Email or WhatsApp:</p>
+          <p>Thank you, <strong>{{ form.name }}</strong>. Click below to confirm via Email or WhatsApp:</p>
           
           <div class="success-actions">
             <a [href]="mailtoUrl" class="btn-email" data-umami-event="modal-email-click">
@@ -78,32 +80,14 @@ interface ModalForm {
             <div class="field">
               <label for="modal-service">Service <span class="req">*</span></label>
               <select id="modal-service" name="service" [(ngModel)]="form.service" required>
-                <option value="Deep Cleaning">Deep Cleaning</option>
-                <option value="Sofa Cleaning">Sofa Cleaning</option>
-                <option value="Carpet Cleaning">Carpet Cleaning</option>
-                <option value="Office Cleaning">Office Cleaning</option>
-                <option value="Pest Control">Pest Control</option>
-                <option value="Water Tank Cleaning">Water Tank Cleaning</option>
-                <option value="Floor Polishing">Floor Polishing</option>
-                <option value="Facade Cleaning">Facade Cleaning</option>
-                <option value="Post-Construction Cleaning">Post-Construction Cleaning</option>
-                <option value="Other">Other Service</option>
+                <option *ngFor="let s of servicesList" [value]="s">{{ s }}</option>
               </select>
             </div>
 
             <div class="field">
               <label for="modal-locality">Locality in Pune <span class="req">*</span></label>
               <select id="modal-locality" name="locality" [(ngModel)]="form.locality" required>
-                <option value="Baner">Baner</option>
-                <option value="Wakad">Wakad</option>
-                <option value="Kharadi">Kharadi</option>
-                <option value="Hinjewadi">Hinjewadi</option>
-                <option value="Viman Nagar">Viman Nagar</option>
-                <option value="Kothrud">Kothrud</option>
-                <option value="Hadapsar">Hadapsar</option>
-                <option value="Pimpri-Chinchwad">Pimpri-Chinchwad</option>
-                <option value="Aundh">Aundh</option>
-                <option value="Other">Other Area</option>
+                <option *ngFor="let loc of localitiesList" [value]="loc">{{ loc }}</option>
               </select>
             </div>
           </div>
@@ -161,8 +145,15 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
   submitted = false;
   whatsAppUrl = '';
   mailtoUrl = '';
-  readonly targetEmail = TARGET_EMAIL;
+  modalTitle = 'Request a Free Service Quote';
+  modalSubtitle = 'Fill out your details below to send a quote request directly to our team.';
+  targetEmail = TARGET_EMAIL;
+  targetWhatsApp = WA_NUMBER;
+  localitiesList: string[] = ['Baner', 'Wakad', 'Kharadi', 'Hinjewadi', 'Viman Nagar', 'Kothrud', 'Aundh', 'Hadapsar', 'Other Area'];
+  servicesList: string[] = ['Deep Cleaning', 'Sofa Cleaning', 'Office Cleaning', 'Post-Construction Cleaning', 'Pest Control', 'Water Tank Cleaning', 'Floor Polishing', 'Facade Cleaning'];
+
   private sub?: Subscription;
+  private contentSub?: Subscription;
 
   form: ModalForm = {
     name: '',
@@ -174,6 +165,8 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
 
   constructor(
     private modalService: QuoteModalService,
+    private leadApi: LeadApiService,
+    private contentApi: ContentApiService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -184,10 +177,32 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
         this.resetForm();
       }
     });
+
+    this.contentSub = this.contentApi.content$.subscribe(content => {
+      if (content && content.formConfig) {
+        this.modalTitle = content.formConfig.modalTitle || this.modalTitle;
+        this.modalSubtitle = content.formConfig.modalSubtitle || this.modalSubtitle;
+        if (content.formConfig.localities && content.formConfig.localities.length) {
+          this.localitiesList = content.formConfig.localities;
+          if (!this.form.locality) {
+            this.form.locality = this.localitiesList[0];
+          }
+        }
+        if (content.formConfig.services && content.formConfig.services.length) {
+          this.servicesList = content.formConfig.services;
+          if (!this.form.service) {
+            this.form.service = this.servicesList[0];
+          }
+        }
+      }
+      if (content.email) this.targetEmail = content.email;
+      if (content.whatsapp) this.targetWhatsApp = content.whatsapp;
+    });
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+    this.contentSub?.unsubscribe();
   }
 
   close(): void {
@@ -203,15 +218,25 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
   onSubmit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    // 1. Prepare formatted mailto URL (Direct email to info@apkeliteservices.in)
+    // Asynchronously capture lead in Next.js + MongoDB CMS
+    this.leadApi.submitLead({
+      name: this.form.name,
+      phone: this.form.phone,
+      service: this.form.service,
+      locality: this.form.locality,
+      message: this.form.message,
+      source: 'quote_modal'
+    });
+
+    // 1. Prepare formatted mailto URL (Direct email to dynamic CMS email)
     const subject = `Service Quote Request: ${this.form.service} (${this.form.locality})`;
     const body = `Hi APK Elite Services Team,\n\nI would like to request a quote with the following details:\n\nName: ${this.form.name}\nPhone / Mobile: ${this.form.phone}\nService Required: ${this.form.service}\nLocality: ${this.form.locality}\nProperty Details: ${this.form.message || 'None'}\n\nPlease respond with pricing and availability.`;
 
-    this.mailtoUrl = `mailto:${TARGET_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    this.mailtoUrl = `mailto:${this.targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    // 2. Prepare WhatsApp backup URL
+    // 2. Prepare WhatsApp backup URL using dynamic CMS WhatsApp number
     const waMsg = `Hi, I submitted a Quote request: Name: ${this.form.name}, Phone: ${this.form.phone}, Service: ${this.form.service}, Locality: ${this.form.locality}, Details: ${this.form.message || 'N/A'}`;
-    this.whatsAppUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waMsg)}`;
+    this.whatsAppUrl = `https://wa.me/${this.targetWhatsApp}?text=${encodeURIComponent(waMsg)}`;
 
     // 3. Open user's email client directly pre-filled with all details
     window.location.href = this.mailtoUrl;
@@ -228,8 +253,8 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     this.form = {
       name: '',
       phone: '',
-      service: 'Deep Cleaning',
-      locality: 'Baner',
+      service: this.servicesList[0] || 'Deep Cleaning',
+      locality: this.localitiesList[0] || 'Baner',
       message: ''
     };
   }
