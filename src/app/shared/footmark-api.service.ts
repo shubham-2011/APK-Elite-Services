@@ -671,8 +671,11 @@ export class FootmarkApiService {
 
   private detectBrowser(): string {
     const ua = navigator.userAgent;
-    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('OPR') || ua.includes('Opera')) return 'Opera';
     if (ua.includes('Edg')) return 'Edge';
+    if (ua.includes('Brave')) return 'Brave';
+    if (ua.includes('SamsungBrowser')) return 'Samsung Internet';
+    if (ua.includes('Firefox')) return 'Firefox';
     if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
     if (ua.includes('Chrome')) return 'Chrome';
     return 'Browser';
@@ -683,9 +686,9 @@ export class FootmarkApiService {
     if (ua.includes('Windows')) return 'Windows';
     if (ua.includes('Macintosh') || ua.includes('Mac OS')) return 'macOS';
     if (ua.includes('Android')) return 'Android';
-    if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iOS')) return 'iOS';
+    if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iPod') || ua.includes('iOS')) return 'iOS';
     if (ua.includes('CrOS')) return 'ChromeOS';
-    if (ua.includes('Linux')) return 'Linux';
+    if (ua.includes('Linux') || ua.includes('X11') || ua.includes('Ubuntu')) return 'Linux';
     return 'Other';
   }
 

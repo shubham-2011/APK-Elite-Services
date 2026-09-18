@@ -640,16 +640,18 @@ export class CmsRedirectComponent implements OnInit {
       .map(([name, vSet]) => {
         let icon = '🌐';
         const n = name.toLowerCase();
-        if (n.includes('chrome')) icon = '🌐';
+        if (n.includes('chromeos') || n.includes('cros')) icon = '💿';
+        else if (n.includes('chrome')) icon = '🌐';
         else if (n.includes('safari')) icon = '🧭';
         else if (n.includes('firefox')) icon = '🦊';
         else if (n.includes('edge')) icon = '🌊';
-        else if (n.includes('opera')) icon = '⭕';
+        else if (n.includes('opera') || n.includes('opr')) icon = '⭕';
+        else if (n.includes('brave')) icon = '🦁';
+        else if (n.includes('samsung')) icon = '📱';
         else if (n.includes('ios') || n.includes('apple') || n.includes('mac')) icon = '🍎';
         else if (n.includes('android')) icon = '🤖';
         else if (n.includes('windows')) icon = '🪟';
-        else if (n.includes('linux')) icon = '🐧';
-        else if (n.includes('chromeos') || n.includes('cros')) icon = '💿';
+        else if (n.includes('linux') || n.includes('ubuntu') || n.includes('debian') || n.includes('fedora') || n.includes('arch') || n.includes('centos')) icon = '🐧';
         else if (n === 'mobile') icon = '📱';
         else if (n === 'desktop') icon = '💻';
         else if (n === 'tablet') icon = '📟';
