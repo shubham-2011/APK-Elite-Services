@@ -17,8 +17,12 @@ export function app(): express.Express {
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
 
-  // Example Express Rest API endpoints
-  // server.get('/api/**', (req, res) => { });
+  // Fallback Express Rest API endpoints for footmark & leads
+  server.use(express.json());
+  server.all('/api/**', (req, res) => {
+    res.json({ success: true, message: 'handled' });
+  });
+
   // Serve static files from /browser
   server.get('**', express.static(browserDistFolder, {
     maxAge: '1y',

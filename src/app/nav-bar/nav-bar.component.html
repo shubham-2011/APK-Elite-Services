@@ -1,16 +1,18 @@
+<a href="#main-content" class="skip-to-content">Skip to main content</a>
 <nav class="navbar">
   <a routerLink="/" class="logo" (click)="closeMenu()">
     <div class="logo-box">
-      <img src="assets/images/logo-res.png" alt="APK Elite Services logo" height="100%" >
+      <img src="assets/images/logo-res.png" alt="APK Elite Services logo" height="100%">
     </div>
     <span>APK Elite Services</span>
   </a>
 
   <ul class="nav-links" [class.active]="menuOpen">
-    <li><a routerLink="/" (click)="closeMenu()">HOME</a></li>
-    <li><a routerLink="/about" (click)="closeMenu()">ABOUT</a></li>
-    <li><a routerLink="/services" (click)="closeMenu()">SERVICES</a></li>
-    <li><a routerLink="/contact" (click)="closeMenu()">CONTACT</a></li>
+    <li><a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}" (click)="closeMenu()">HOME</a></li>
+    <li><a routerLink="/about" routerLinkActive="active-link" (click)="closeMenu()">ABOUT</a></li>
+    <li><a routerLink="/services" routerLinkActive="active-link" (click)="closeMenu()">SERVICES</a></li>
+    <li><a routerLink="/contact" routerLinkActive="active-link" (click)="closeMenu()">CONTACT</a></li>
+    <li><button type="button" class="nav-quote-btn" (click)="openQuoteModal()">Get Quote</button></li>
   </ul>
 
   <div class="hamburger" (click)="toggleMenu()" aria-label="Toggle navigation menu" role="button" tabindex="0" (keydown.enter)="toggleMenu()">

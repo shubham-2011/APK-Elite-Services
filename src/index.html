@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev; object-src 'none'; base-uri 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cloud.umami.is; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloud.umami.is https://gateway.umami.is https://api-gateway.umami.dev http://localhost:3000 http://127.0.0.1:3000; object-src 'none'; base-uri 'self'">
   <title>APK Elite Services | Deep Cleaning, Sofa Cleaning, Office Cleaning & Pest Control in Pune</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -75,10 +75,15 @@
           "latitude": 18.5204,
           "longitude": 73.8567
         },
-        "areaServed": {
-          "@type": "City",
-          "name": "Pune"
-        },
+        "areaServed": [
+          { "@type": "City", "name": "Pune" },
+          { "@type": "AdministrativeArea", "name": "Baner, Pune", "postalCode": "411045" },
+          { "@type": "AdministrativeArea", "name": "Wakad, Pune", "postalCode": "411057" },
+          { "@type": "AdministrativeArea", "name": "Hinjewadi, Pune", "postalCode": "411057" },
+          { "@type": "AdministrativeArea", "name": "Kharadi, Pune", "postalCode": "411014" },
+          { "@type": "AdministrativeArea", "name": "Viman Nagar, Pune", "postalCode": "411006" },
+          { "@type": "AdministrativeArea", "name": "Kothrud, Pune", "postalCode": "411038" }
+        ],
         "openingHoursSpecification": {
           "@type": "OpeningHoursSpecification",
           "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
@@ -110,6 +115,44 @@
         "url": "https://www.apkeliteservices.in/",
         "name": "APK Elite Services",
         "publisher": { "@id": "https://www.apkeliteservices.in/#business" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.apkeliteservices.in/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What cleaning and facility services does APK Elite Services provide in Pune?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "APK Elite Services provides full home deep cleaning, sofa shampooing, office cleaning, pest control, water tank cleaning, marble floor polishing, facade cleaning, and facility management across Pune and PCMC."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which areas in Pune do you provide cleaning services?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We serve all prime areas in Pune including Baner, Wakad, Hinjewadi, Kharadi, Viman Nagar, Kothrud, Aundh, Hadapsar, Bavdhan, Pimple Saudagar, and PCMC."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are the chemicals safe for children and pets?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, our 100% in-house trained team uses certified, non-toxic, eco-friendly cleaning agents safe for kids, seniors, and domestic pets."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How quickly can I book a service with APK Elite Services?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Same-day and next-day slots are available. You can request a free quote online or WhatsApp our team at +91 88301 67863 for immediate assistance."
+            }
+          }
+        ]
       }
     ]
   }

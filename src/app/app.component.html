@@ -3,33 +3,63 @@
     <app-nav-bar></app-nav-bar>
   </div>
 
-  <main>
+  <main id="main-content">
     <router-outlet></router-outlet>
   </main>
 
   <app-add-footer></app-add-footer>
 
+  <!-- Global Quote Popup Modal -->
+  <app-quote-modal></app-quote-modal>
+
+  <!-- Floating Action Buttons -->
   <div class="floating-icons">
-    <a href="https://wa.me/918830167863" target="_blank" class="icon whatsapp">
+    <a [href]="getDynamicWhatsAppUrl('FloatingIcon')"
+       (click)="trackCtaClick('whatsapp', 'floating-icon')"
+       target="_blank"
+       rel="noopener"
+       class="icon whatsapp"
+       aria-label="WhatsApp APK Elite Services"
+       data-umami-event="whatsapp-float-icon">
       <i class="fab fa-whatsapp"></i>
     </a>
 
-    <a href="mailto:info@apkeliteservices.in" class="icon email">
+    <a href="mailto:info@apkeliteservices.in"
+       (click)="trackCtaClick('email', 'floating-icon')"
+       class="icon email"
+       aria-label="Email APK Elite Services"
+       data-umami-event="email-float-icon">
       <i class="fas fa-envelope"></i>
-    </a>
-
-    <a href="https://wa.me/918830167863" target="_blank" class="whatsapp-box">
-      <i class="fab fa-whatsapp"></i>
-      <span>How can we assist you?</span>
     </a>
   </div>
 
+  <a [href]="getDynamicWhatsAppUrl('FloatBox')"
+     (click)="trackCtaClick('whatsapp', 'floating-box')"
+     target="_blank"
+     rel="noopener"
+     class="whatsapp-box"
+     aria-label="Chat with APK Elite Services on WhatsApp"
+     data-umami-event="whatsapp-float-box">
+    <i class="fab fa-whatsapp"></i>
+    <span>How can we assist you?</span>
+  </a>
+
   <!-- Mobile Sticky CTA Bar -->
   <div class="mobile-sticky-cta">
-    <a href="tel:+918830167863" class="cta-call">
+    <a href="tel:+918830167863"
+       (click)="trackCtaClick('call', 'mobile-sticky')"
+       class="cta-call"
+       aria-label="Call APK Elite Services"
+       data-umami-event="call-sticky-mobile">
       <i class="fas fa-phone-alt"></i> Call Now
     </a>
-    <a href="https://wa.me/918830167863" target="_blank" class="cta-whatsapp">
+    <a [href]="getDynamicWhatsAppUrl('StickyMobile')"
+       (click)="trackCtaClick('whatsapp', 'mobile-sticky')"
+       target="_blank"
+       rel="noopener"
+       class="cta-whatsapp"
+       aria-label="WhatsApp APK Elite Services"
+       data-umami-event="whatsapp-sticky-mobile">
       <i class="fab fa-whatsapp"></i> WhatsApp
     </a>
   </div>

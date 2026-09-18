@@ -1,7 +1,14 @@
 /
 /about
 /contact
+/privacy-policy
+/cms
+/diwali-deep-cleaning-pune
 /services
+/services/deep-cleaning-baner
+/services/deep-cleaning-wakad
+/services/deep-cleaning-kharadi
+/services/deep-cleaning-hinjewadi
 /services/deep-cleaning
 /services/facade-cleaning
 /services/floor-polishing

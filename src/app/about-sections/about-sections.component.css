@@ -25,22 +25,74 @@
   justify-content: center;
 }
 
-.hero-text h5 {
-  color: var(--primary-color);
+.badge-tag {
+  display: inline-block;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 2px;
-  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  width: fit-content;
 }
 
 .hero-text h2 {
-  color: var(--secondary-color);
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+  line-height: 1.25;
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .hero-text p {
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+
+.about-highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.about-highlights li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.92rem;
+  color: #334155;
+}
+
+.check-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.learn-more-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.35rem;
+  border-radius: 8px;
+  background: #0284c7;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  width: fit-content;
+  transition: background 0.2s ease;
+}
+
+.learn-more-btn:hover {
+  background: #0369a1;
 }
 
 .hero-image {
@@ -63,7 +115,7 @@
   height: 100%;
   max-width: 100%;
   object-fit: contain; /* Do not crop */
-  border-radius: 0; /* Remove border radius if requested "flat" look */
+  border-radius: 12px; /* Smooth rounded border */
   box-shadow: none; /* No shadow */
 }
 
@@ -74,6 +126,15 @@
     padding: 30px 20px;
   }
   
+  .badge-tag, .learn-more-btn {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .about-highlights li {
+    justify-content: center;
+  }
+
   .hero-image img {
     height: auto;
     max-height: 400px;

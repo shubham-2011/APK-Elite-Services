@@ -1,8 +1,11 @@
-import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, HostListener, OnInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { NavBarComponent } from './nav-bar/nav-bar.component';
 import { AddFooterComponent } from './add-footer/add-footer.component';
+import { QuoteModalComponent } from './quote-modal/quote-modal.component';
+import { FootmarkApiService } from './shared/footmark-api.service';
+import { AttributionService } from './shared/attribution.service';
 import { filter } from 'rxjs/operators';
 
 declare global {
@@ -15,68 +18,89 @@ declare global {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavBarComponent, AddFooterComponent],
+  imports: [RouterOutlet, NavBarComponent, AddFooterComponent, QuoteModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(
     private router: Router,
+    private footmarkApi: FootmarkApiService,
+    private attributionService: AttributionService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
+  getDynamicWhatsAppUrl(context: string = 'Web'): string {
+    const phone = '918830167863';
+    let refTag = `Web/${context}`;
+    if (isPlatformBrowser(this.platformId)) {
+      const attr = this.attributionService.getAttribution();
+      const parts: string[] = [];
+      if (attr.utm_source) parts.push(attr.utm_source);
+      if (attr.utm_campaign) parts.push(attr.utm_campaign);
+      if (attr.gclid) parts.push('GoogleAds');
+      if (attr.visit_count && attr.visit_count > 1) parts.push(`V${attr.visit_count}`);
+      if (parts.length > 0) {
+        refTag = `${parts.join('/')}/${context}`;
+      }
+    }
+    const text = `Hi, I'm interested in your cleaning services in Pune. [Ref: ${refTag}]`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  }
+
+  trackCtaClick(channel: 'whatsapp' | 'call' | 'email', location: string) {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (channel === 'whatsapp') {
+      this.footmarkApi.trackWhatsAppClick('general_inquiry', 'General Inquiry', location, this.router.url);
+    } else if (channel === 'call') {
+      this.footmarkApi.trackPhoneClick('general_inquiry', 'General Inquiry', this.router.url);
+    } else {
+      this.footmarkApi.trackEvent('external_link_click', {
+        channel,
+        location,
+        destination: 'mailto:info@apkeliteservices.in',
+        page: this.router.url
+      });
+    }
+  }
+
   ngOnInit() {
-    // Titles, descriptions, canonicals and social tags are owned by each
-    // routed page component via SeoService; static defaults live in index.html.
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
 
-    this.trackPageView(window.location.pathname + window.location.search);
-
+    // Track on client navigation ends
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {
-        this.trackPageView(event.urlAfterRedirects);
+        this.footmarkApi.track(event.urlAfterRedirects, document.title);
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'page_view', {
+            page_path: event.urlAfterRedirects,
+            page_title: document.title
+          });
+        }
       });
   }
 
-  private trackPageView(path: string) {
-    const payload = {
-      path,
-      title: document.title,
-      referrer: document.referrer || '',
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent
-    };
-
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', 'page_view', {
-        page_path: path,
-        page_title: document.title
-      });
+  @HostListener('window:scroll')
+  onWindowScroll() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.footmarkApi.handleScroll();
     }
-
-    if (window.__APK_TRACKING_ENDPOINT__) {
-      navigator.sendBeacon(window.__APK_TRACKING_ENDPOINT__, JSON.stringify(payload));
-      return;
-    }
-
-    const storedEvents = this.getStoredEvents();
-    storedEvents.push(payload);
-    localStorage.setItem('apk-traffic-events', JSON.stringify(storedEvents.slice(-20)));
   }
 
-  private getStoredEvents(): Array<Record<string, string>> {
-    const storedValue = localStorage.getItem('apk-traffic-events');
-    if (!storedValue) {
-      return [];
+  @HostListener('window:click', ['$event'])
+  onWindowClick(event: MouseEvent) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.footmarkApi.handleClick(event);
     }
+  }
 
-    try {
-      return JSON.parse(storedValue) as Array<Record<string, string>>;
-    } catch {
-      return [];
+  @HostListener('window:error', ['$event'])
+  onWindowError(event: ErrorEvent) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.footmarkApi.trackError(event.message || 'Unknown window error');
     }
   }
 }

@@ -11,27 +11,29 @@
   padding-top: 70px;
 }
 
+/* Floating Icon Stack (Exact Screenshot Match) */
 .floating-icons {
   position: fixed;
-  bottom: 30px;
+  bottom: 25px;
   right: 25px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   z-index: 1000;
 }
 
 .icon {
-  width: 60px;
-  height: 60px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bg-white);
+  color: #ffffff;
   font-size: 24px;
-  box-shadow: var(--shadow-strong);
-  transition: var(--transition-smooth);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  text-decoration: none;
 }
 
 .whatsapp {
@@ -39,28 +41,41 @@
 }
 
 .email {
-  background: var(--accent-color);
+  background: #2196f3;
 }
 
 .icon:hover {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
+/* Green WhatsApp Pill Box (Sitting neatly to the left of the blue Email circle) */
 .whatsapp-box {
   position: fixed;
-  bottom: 30px;
-  right: 100px;
+  bottom: 25px;
+  right: 95px;
   background: #25D366;
-  color: var(--bg-white);
-  padding: 12px 20px;
+  color: #ffffff;
+  padding: 10px 18px;
   border-radius: 50px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 600;
-  box-shadow: var(--shadow-strong);
-  transition: var(--transition-smooth);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-box i {
+  font-size: 18px;
+}
+
+.whatsapp-box:hover {
+  background: #1eb753;
+  transform: translateY(-2px);
 }
 
 .mobile-sticky-cta {
@@ -68,12 +83,7 @@
 }
 
 @media (max-width: 768px) {
-  .whatsapp-box {
-    display: none;
-  }
-  
-  /* Hide floating icons on mobile, use sticky CTA instead */
-  .floating-icons {
+  .floating-icons, .whatsapp-box {
     display: none;
   }
   
@@ -91,8 +101,8 @@
   .mobile-sticky-cta a {
     flex: 1;
     text-align: center;
-    padding: 15px 0;
-    font-size: 16px;
+    padding: 14px 0;
+    font-size: 15px;
     font-weight: 700;
     color: white;
     text-decoration: none;

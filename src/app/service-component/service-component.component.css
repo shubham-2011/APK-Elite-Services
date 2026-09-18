@@ -38,7 +38,9 @@
   flex: 1;
   max-width: 500px;
   overflow: hidden;
-  border-radius: 0;
+  border-radius: 18px;
+  aspect-ratio: 4 / 3;
+  align-self: center;
   opacity: 0;
   transform: translateX(-80px); /* Start further left */
 }
@@ -46,7 +48,8 @@
 .image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  display: block;
 }
 
 .content {
@@ -76,7 +79,23 @@
 
 .service-card.reverse.show .image,
 .service-card.reverse.show .content {
+  opacity: 1;
   transform: translateX(0);
+}
+
+.service-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .content h2 {
@@ -141,7 +160,10 @@
   
   .image {
     max-width: 100%;
+    width: 100%;
+    aspect-ratio: auto;
     height: 250px; /* Reduced height for mobile */
+    align-self: stretch;
   }
 
   .content {

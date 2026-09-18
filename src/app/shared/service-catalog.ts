@@ -7,6 +7,10 @@ export interface ServiceItem {
   metaTitle: string;
   metaDescription: string;
   keywords: string;
+  /** Display string shown on service card/page e.g. "Starting from ₹2,799" */
+  startingPrice: string;
+  /** Pre-filled WhatsApp message for this service */
+  whatsappMessage: string;
 }
 
 export const SERVICE_CATALOG: ServiceItem[] = [
@@ -18,17 +22,21 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/deep-clean.webp',
     metaTitle: 'Deep Cleaning Services in Pune | APK Elite Services',
     metaDescription: 'Professional deep cleaning services in Pune for homes, offices, and commercial spaces with trusted eco-friendly methods.',
-    keywords: 'deep cleaning Pune, home deep cleaning Pune, office deep cleaning Pune'
+    keywords: 'deep cleaning Pune, home deep cleaning Pune, office deep cleaning Pune',
+    startingPrice: 'Starting from ₹2,799',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Deep%20Cleaning%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fdeep-cleaning%5D'
   },
   {
     slug: 'facade-cleaning',
     title: 'Facade Cleaning Services',
     shortDescription: 'Restore building exteriors with safe and effective facade cleaning.',
-    description: 'Our facade cleaning services are designed to restore and maintain the external beauty of your building. We remove dirt, pollution, algae, and stains from surfaces including glass, metal, and stone. Using advanced techniques such as high-pressure jet cleaning and rope-access methods, our trained professionals ensure safe, efficient, and damage-free cleaning. This not only enhances the building’s appearance but also increases its lifespan and value.',
+    description: 'Our facade cleaning services are designed to restore and maintain the external beauty of your building. We remove dirt, pollution, algae, and stains from surfaces including glass, metal, and stone. Using advanced techniques such as high-pressure jet cleaning and rope-access methods, our trained professionals ensure safe, efficient, and damage-free cleaning. This not only enhances the building\'s appearance but also increases its lifespan and value.',
     imageUrl: '/assets/images/facade-clean.webp',
     metaTitle: 'Facade Cleaning Services in Pune | APK Elite Services',
     metaDescription: 'Professional facade cleaning for homes and commercial buildings in Pune, using safe and efficient methods.',
-    keywords: 'facade cleaning Pune, building exterior cleaning Pune'
+    keywords: 'facade cleaning Pune, building exterior cleaning Pune',
+    startingPrice: 'Get a free quote',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Facade%20Cleaning%20quote%20for%20my%20building%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Ffacade-cleaning%5D'
   },
   {
     slug: 'floor-polishing',
@@ -38,7 +46,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/floor-clean.webp',
     metaTitle: 'Floor Polishing Services Pune | APK Elite Services',
     metaDescription: 'Revive marble, granite, tile, and wooden floors with expert polishing services in Pune.',
-    keywords: 'floor polishing Pune, marble polishing Pune, granite polishing Pune'
+    keywords: 'floor polishing Pune, marble polishing Pune, granite polishing Pune',
+    startingPrice: 'Starting from ₹1,999',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Floor%20Polishing%20quote%20for%20my%20property%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Ffloor-polishing%5D'
   },
   {
     slug: 'water-tank-cleaning',
@@ -48,7 +58,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/tank-clean.webp',
     metaTitle: 'Water Tank Cleaning Services Pune | APK Elite Services',
     metaDescription: 'Hygienic water tank cleaning services in Pune for homes and commercial properties.',
-    keywords: 'water tank cleaning Pune, tank cleaning services Pune, overhead tank cleaning'
+    keywords: 'water tank cleaning Pune, tank cleaning services Pune, overhead tank cleaning',
+    startingPrice: 'Starting from ₹2,499',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Water%20Tank%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fwater-tank-cleaning%5D'
   },
   {
     slug: 'office-cleaning',
@@ -58,7 +70,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/office-clean.webp',
     metaTitle: 'Office Cleaning Services in Pune | APK Elite Services',
     metaDescription: 'Trusted office cleaning services in Pune for corporate spaces, coworking spaces, and commercial facilities.',
-    keywords: 'office cleaning Pune, commercial cleaning Pune, janitorial services Pune'
+    keywords: 'office cleaning Pune, commercial cleaning Pune, janitorial services Pune',
+    startingPrice: 'Starting from ₹3,999/month',
+    whatsappMessage: 'Hi%2C%20I%20need%20an%20Office%20Cleaning%20quote%20for%20my%20workplace%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Foffice-cleaning%5D'
   },
   {
     slug: 'post-construction-cleaning',
@@ -68,7 +82,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/post-construction.webp',
     metaTitle: 'Post Construction Cleaning Pune | APK Elite Services',
     metaDescription: 'Post construction cleaning services in Pune for homes, offices, and renovated projects.',
-    keywords: 'post construction cleaning Pune, renovation cleaning Pune'
+    keywords: 'post construction cleaning Pune, renovation cleaning Pune',
+    startingPrice: 'Starting from ₹4,999',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Post-Construction%20Cleaning%20quote%20for%20my%20property%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fpost-construction-cleaning%5D'
   },
   {
     slug: 'pest-control',
@@ -78,7 +94,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/pest-control.webp',
     metaTitle: 'Pest Control Services Pune | APK Elite Services',
     metaDescription: 'Professional pest control services in Pune for homes and businesses with safe treatments.',
-    keywords: 'pest control Pune, cockroach control Pune, termite control Pune'
+    keywords: 'pest control Pune, cockroach control Pune, termite control Pune',
+    startingPrice: 'Starting from ₹899',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Pest%20Control%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fpest-control%5D'
   },
   {
     slug: 'sanitization',
@@ -88,7 +106,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/home-sanitization.webp',
     metaTitle: 'Sanitization Services Pune | APK Elite Services',
     metaDescription: 'Reliable sanitization services in Pune for homes, clinics, and office spaces.',
-    keywords: 'sanitization Pune, disinfecting services Pune, virus sanitization Pune'
+    keywords: 'sanitization Pune, disinfecting services Pune, virus sanitization Pune',
+    startingPrice: 'Starting from ₹1,499',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Sanitization%20quote%20for%20my%20home%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fsanitization%5D'
   },
   {
     slug: 'carpet-cleaning',
@@ -98,7 +118,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/carppet-clean.webp',
     metaTitle: 'Carpet Cleaning Services Pune | APK Elite Services',
     metaDescription: 'Professional carpet cleaning in Pune for homes and offices using deep-cleaning extraction methods.',
-    keywords: 'carpet cleaning Pune, sofa shampooing Pune, upholstery cleaning Pune'
+    keywords: 'carpet cleaning Pune, sofa shampooing Pune, upholstery cleaning Pune',
+    startingPrice: 'Starting from ₹499',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Carpet%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fcarpet-cleaning%5D'
   },
   {
     slug: 'chair-shampooing',
@@ -108,7 +130,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/chair-sampooing.webp',
     metaTitle: 'Chair Shampooing Services Pune | APK Elite Services',
     metaDescription: 'Chair shampooing and upholstery cleaning services in Pune for homes and business spaces.',
-    keywords: 'chair cleaning Pune, chair shampooing Pune, upholstery cleaning Pune'
+    keywords: 'chair cleaning Pune, chair shampooing Pune, upholstery cleaning Pune',
+    startingPrice: 'Starting from ₹199/chair',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Chair%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fchair-shampooing%5D'
   },
   {
     slug: 'sofa-cleaning',
@@ -118,7 +142,9 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/Sofacleaning.webp',
     metaTitle: 'Sofa Cleaning Services Pune | APK Elite Services',
     metaDescription: 'Sofa shampooing and upholstery cleaning in Pune with safe, professional care for fabric and leather.',
-    keywords: 'sofa cleaning Pune, sofa shampooing Pune, upholstery cleaning Pune'
+    keywords: 'sofa cleaning Pune, sofa shampooing Pune, upholstery cleaning Pune',
+    startingPrice: 'Starting from ₹199/seat',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Sofa%20Cleaning%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fsofa-cleaning%5D'
   },
   {
     slug: 'gardening',
@@ -128,10 +154,14 @@ export const SERVICE_CATALOG: ServiceItem[] = [
     imageUrl: '/assets/images/garden-clean.webp',
     metaTitle: 'Gardening Services Pune | APK Elite Services',
     metaDescription: 'Professional gardening and landscaping services in Pune to keep your outdoor spaces beautiful.',
-    keywords: 'gardening Pune, landscaping Pune, garden maintenance Pune'
+    keywords: 'gardening Pune, landscaping Pune, garden maintenance Pune',
+    startingPrice: 'Starting from ₹1,499/visit',
+    whatsappMessage: 'Hi%2C%20I%20need%20a%20Gardening%20Services%20quote%20in%20Pune.%20Please%20share%20availability%20and%20pricing.+%5BRef%3A+Web%2Fgardening%5D'
   }
 ];
 
 export function getServiceBySlug(slug: string | null): ServiceItem | undefined {
-  return SERVICE_CATALOG.find((service) => service.slug === slug);
+  if (!slug) return undefined;
+  const target = slug.endsWith('-pune') ? slug.replace(/-pune$/, '') : slug;
+  return SERVICE_CATALOG.find((service) => service.slug === target || service.slug === slug);
 }

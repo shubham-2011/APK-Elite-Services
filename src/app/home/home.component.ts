@@ -6,11 +6,24 @@ import { ServiceComponentComponent } from '../service-component/service-componen
 import { AddWhyChooseComponent } from '../add-why-choose/add-why-choose.component';
 import { AddMissionComponent } from '../add-mission/add-mission.component';
 import { AboutSectionsComponent } from '../about-sections/about-sections.component';
+import { JobShowcaseComponent } from '../job-showcase/job-showcase.component';
+import { TestimonialsComponent } from '../shared/testimonials.component';
+import { BeforeAfterComponent } from '../shared/before-after.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, ServiceComponentComponent, AddWhyChooseComponent, AddMissionComponent, AboutSectionsComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ServiceComponentComponent,
+    AddWhyChooseComponent,
+    AddMissionComponent,
+    AboutSectionsComponent,
+    JobShowcaseComponent,
+    TestimonialsComponent,
+    BeforeAfterComponent
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
