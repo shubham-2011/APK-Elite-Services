@@ -714,14 +714,26 @@ export class FootmarkApiService {
   private getLocalEvents(): FootmarkEvent[] {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return this.generateInitialSeedEvents();
+      if (!raw) return [];
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        return this.generateInitialSeedEvents();
+      if (!Array.isArray(parsed)) return [];
+      
+      // Filter out any legacy dummy/seed items from previous builds
+      const cleaned = parsed.filter((e: FootmarkEvent) => {
+        if (!e) return false;
+        if (e._id && typeof e._id === 'string' && e._id.startsWith('ft_seed_')) return false;
+        if (e.visitorId && (e.visitorId.startsWith('v_wakad') || e.visitorId.startsWith('v_baner') || e.visitorId.startsWith('v_hinj'))) return false;
+        return true;
+      });
+
+      // If legacy items were purged, update localStorage
+      if (cleaned.length !== parsed.length) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
       }
-      return parsed;
+
+      return cleaned;
     } catch {
-      return this.generateInitialSeedEvents();
+      return [];
     }
   }
 
@@ -738,14 +750,14 @@ export class FootmarkApiService {
   }
 
   private generateDefaultStats(events: FootmarkEvent[]): FootmarkStats {
-    const list = events.length > 0 ? events : this.generateInitialSeedEvents();
+    const list = events;
     const totalFootmarks = list.length;
     const uniqueVisitors = new Set(list.map(e => e.visitorId)).size;
 
     const todayStr = new Date().toISOString().split('T')[0];
     const todayList = list.filter(e => (e.createdAt || '').startsWith(todayStr));
-    const todayFootmarks = todayList.length || Math.min(totalFootmarks, 14);
-    const todayUniqueVisitors = new Set(todayList.map(e => e.visitorId)).size || Math.min(uniqueVisitors, 9);
+    const todayFootmarks = todayList.length;
+    const todayUniqueVisitors = new Set(todayList.map(e => e.visitorId)).size;
 
     const pageMap: { [path: string]: { count: number; title: string } } = {};
     list.forEach(e => {
