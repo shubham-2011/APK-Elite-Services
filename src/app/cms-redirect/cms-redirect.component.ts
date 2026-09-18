@@ -37,7 +37,7 @@ const DEFAULT_PIN = '1234';
               <input
                 id="pinInput"
                 type="password"
-                maxlength="6"
+                maxlength="20"
                 [(ngModel)]="enteredPin"
                 name="enteredPin"
                 placeholder="••••"
@@ -74,7 +74,7 @@ const DEFAULT_PIN = '1234';
             </div>
             <div class="system-status">
               <span class="status-dot pulse"></span>
-              <span>All Systems Online & Synced</span>
+              <span>All Systems Online</span>
             </div>
           </div>
 
@@ -83,8 +83,11 @@ const DEFAULT_PIN = '1234';
               <span [class.spin]="refreshing">⟳</span>
               <span>{{ refreshing ? 'Syncing...' : 'Refresh' }}</span>
             </button>
-            <a routerLink="/" class="btn-action outline" target="_blank">View Live Site ↗</a>
-            <button (click)="logout()" class="btn-action danger">Lock / Sign Out</button>
+            <a routerLink="/" class="btn-action outline" target="_blank">Live Site ↗</a>
+            <button (click)="toggleDarkMode()" class="btn-action" title="Toggle dark mode" id="cms-dark-toggle">
+              {{ darkMode ? '☀️' : '🌙' }}
+            </button>
+            <button (click)="logout()" class="btn-action danger">Sign Out</button>
           </div>
         </header>
 
@@ -95,7 +98,7 @@ const DEFAULT_PIN = '1234';
             [class.active]="activeTab === 'leads'"
             class="tab-btn"
           >
-            📋 Leads & Inquiries
+            Leads &amp; Inquiries
             <span class="count-pill">{{ leads.length }}</span>
           </button>
           <button
@@ -103,7 +106,7 @@ const DEFAULT_PIN = '1234';
             [class.active]="activeTab === 'footmarks'"
             class="tab-btn"
           >
-            👣 Footmarks & Visitors
+            Visitors &amp; Analytics
             <span class="count-pill">{{ footmarkStats?.totalFootmarks || 0 }}</span>
           </button>
           <button
@@ -111,14 +114,14 @@ const DEFAULT_PIN = '1234';
             [class.active]="activeTab === 'form'"
             class="tab-btn"
           >
-            ⚙️ Form & Field Controls
+            Form Controls
           </button>
           <button
             (click)="activeTab = 'content'"
             [class.active]="activeTab === 'content'"
             class="tab-btn"
           >
-            🏷️ Website Content & Pricing
+            Content &amp; Pricing
           </button>
         </nav>
 
@@ -337,7 +340,7 @@ const DEFAULT_PIN = '1234';
           <div class="metrics-grid">
             <div class="metric-card footmarks">
               <div class="metric-num">{{ footmarkStats?.totalFootmarks || 0 }}</div>
-              <div class="metric-label">Total Footmarks (Pageviews)</div>
+              <div class="metric-label">Total Pageviews</div>
             </div>
             <div class="metric-card total">
               <div class="metric-num">{{ footmarkStats?.uniqueVisitors || 0 }}</div>
@@ -348,7 +351,7 @@ const DEFAULT_PIN = '1234';
               <div class="metric-label">Today's Visits ({{ footmarkStats?.todayUniqueVisitors || 0 }} unique)</div>
             </div>
             <div class="metric-card progress">
-              <div class="metric-num" style="font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <div class="metric-num metric-num--sm">
                 {{ footmarkStats?.topPages?.[0]?.title || 'Home Deep Cleaning' }}
               </div>
               <div class="metric-label">Top Visited Service</div>
@@ -360,17 +363,17 @@ const DEFAULT_PIN = '1234';
           <!-- ============================================================ -->
           <div class="analytics-graphs-container">
 
-            <!-- GRAPH 1: 7-DAY TRAFFIC & VISITOR TREND CHART -->
+            <!-- 7-DAY TRAFFIC & VISITOR TREND CHART -->
             <div class="graph-card trend-chart-card">
               <div class="graph-header">
                 <div>
-                  <div class="graph-tag">Real-Time Traffic Trajectory</div>
-                  <h3 class="graph-title">📈 7-Day Visitor & Pageview Trends</h3>
-                  <p class="graph-subtitle">Daily Pune traffic volume, page impressions, and unique customer sessions</p>
+                  <div class="graph-tag">7-Day Traffic</div>
+                  <h3 class="graph-title">Visitor &amp; Pageview Trends</h3>
+                  <p class="graph-subtitle">Daily traffic volume, page impressions, and unique sessions</p>
                 </div>
                 <div class="graph-legend">
                   <span class="legend-item"><span class="legend-dot views"></span> Pageviews</span>
-                  <span class="legend-item"><span class="legend-dot visitors"></span> Unique Visitors</span>
+                  <span class="legend-item"><span class="legend-dot visitors"></span> Visitors</span>
                 </div>
               </div>
 
@@ -378,11 +381,9 @@ const DEFAULT_PIN = '1234';
               <div class="trend-bars-wrapper">
                 <div *ngFor="let day of footmarkStats?.dailyTrends" class="trend-day-col">
                   <div class="bar-container">
-                    <!-- Pageview bar -->
                     <div class="bar-bar view-bar" [style.height.%]="getBarHeight(day.views, 60)" [title]="day.label + ': ' + day.views + ' Pageviews'">
                       <span class="bar-val-pop">{{ day.views }}</span>
                     </div>
-                    <!-- Unique visitor bar -->
                     <div class="bar-bar visitor-bar" [style.height.%]="getBarHeight(day.visitors, 60)" [title]="day.label + ': ' + day.visitors + ' Visitors'">
                       <span class="bar-val-pop sub">{{ day.visitors }}</span>
                     </div>
@@ -391,100 +392,62 @@ const DEFAULT_PIN = '1234';
                 </div>
               </div>
 
-              <div class="graph-footer-note">
-                <span>💡 <strong>Peak Conversion Window:</strong> 9:00 AM – 12:30 PM & 5:00 PM – 8:30 PM (Pune)</span>
-                <span class="growth-badge">▲ High Demand</span>
+              <div *ngIf="!footmarkStats?.dailyTrends?.length" class="empty-inline" style="padding: 2rem 0; text-align:center;">
+                No traffic data yet. Visit pages to start recording sessions.
               </div>
             </div>
 
-            <!-- GRAPH 2: 35-DIMENSION AUDIT SCORE BENCHMARK MATRIX -->
-            <div class="graph-card audit-scores-card">
-              <div class="graph-header">
-                <div>
-                  <div class="graph-tag optimal">Complete Website Audit 2026</div>
-                  <h3 class="graph-title">🎯 35-Dimension Quality Scores</h3>
-                  <p class="graph-subtitle">Audited across SEO, Web Speed, Accessibility, CRO & Security</p>
-                </div>
-                <div class="audit-overall-score">
-                  <span class="score-num">95.8</span>
-                  <span class="score-grade">A+ GRADE</span>
-                </div>
-              </div>
-
-              <!-- Audit Score Progress Bars -->
-              <div class="audit-bars-list">
-                <div *ngFor="let item of footmarkStats?.auditScores" class="audit-score-item">
-                  <div class="score-meta">
-                    <span class="score-cat">{{ item.category }}</span>
-                    <div class="score-right">
-                      <span class="status-pill optimal">{{ item.status }}</span>
-                      <strong class="score-val">{{ item.score }}/{{ item.max }}</strong>
-                    </div>
-                  </div>
-                  <div class="score-track">
-                    <div class="score-fill" [style.width.%]="item.score" [ngClass]="getScoreClass(item.score)"></div>
-                  </div>
-                  <p class="score-notes">{{ item.notes }}</p>
-                </div>
-              </div>
-            </div>
 
           </div>
 
           <!-- TOP PAGES & DEVICE BREAKDOWN -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+          <div class="data-panels-grid">
             <!-- Top Pages -->
-            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
-                👁️ Top Visited Services & Pages
-              </h3>
-              <div *ngFor="let page of footmarkStats?.topPages" style="margin-bottom: 0.85rem;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">
-                  <span style="color: #1e293b; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ page.title }}</span>
-                  <span style="color: #0284c7; font-weight: 700;">{{ page.count }} visits ({{ page.percentage }}%)</span>
+            <div class="data-panel">
+              <h3 class="panel-title">Top Visited Services &amp; Pages</h3>
+              <div *ngFor="let page of footmarkStats?.topPages" class="page-row">
+                <div class="page-row-meta">
+                  <span class="page-row-title">{{ page.title }}</span>
+                  <span class="page-row-count">{{ page.count }} visits ({{ page.percentage }}%)</span>
                 </div>
-                <div style="width: 100%; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
-                  <div style="height: 100%; background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%); border-radius: 999px;" [style.width.%]="page.percentage"></div>
+                <div class="mini-track">
+                  <div class="mini-fill" [style.width.%]="page.percentage"></div>
                 </div>
               </div>
-              <div *ngIf="!footmarkStats?.topPages?.length" style="color: #94a3b8; font-size: 0.85rem; font-style: italic;">
+              <div *ngIf="!footmarkStats?.topPages?.length" class="empty-inline">
                 No page visits recorded yet.
               </div>
             </div>
 
             <!-- Device Distribution -->
-            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
-                📱 Device Distribution & Acquisition
-              </h3>
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; text-align: center; margin-bottom: 1rem;">
-                <div style="background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 1.35rem;">📱</div>
-                  <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.mobile || 0 }}</div>
-                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Mobile</div>
+            <div class="data-panel">
+              <h3 class="panel-title">Device Distribution &amp; Acquisition</h3>
+              <div class="device-grid">
+                <div class="device-cell">
+                  <div class="device-icon">Mobile</div>
+                  <div class="device-count">{{ footmarkStats?.deviceCounts?.mobile || 0 }}</div>
+                  <div class="device-label">visitors</div>
                 </div>
-                <div style="background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 1.35rem;">💻</div>
-                  <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.desktop || 0 }}</div>
-                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Desktop</div>
+                <div class="device-cell">
+                  <div class="device-icon">Desktop</div>
+                  <div class="device-count">{{ footmarkStats?.deviceCounts?.desktop || 0 }}</div>
+                  <div class="device-label">visitors</div>
                 </div>
-                <div style="background: #f8fafc; padding: 0.85rem 0.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 1.35rem;">📟</div>
-                  <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.tablet || 0 }}</div>
-                  <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Tablet</div>
+                <div class="device-cell">
+                  <div class="device-icon">Tablet</div>
+                  <div class="device-count">{{ footmarkStats?.deviceCounts?.tablet || 0 }}</div>
+                  <div class="device-label">visitors</div>
                 </div>
               </div>
 
-              <div style="margin-top: 1.25rem;">
-                <div style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; text-transform: uppercase;">
-                  Acquisition Sources
-                </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
-                  <span *ngFor="let ref of footmarkStats?.topReferrers" style="background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+              <div class="acquisition-block">
+                <div class="acq-label">Acquisition Sources</div>
+                <div class="acq-tags">
+                  <span *ngFor="let ref of footmarkStats?.topReferrers" class="acq-tag">
                     {{ ref.referrer }}: {{ ref.count }}
                   </span>
-                  <span *ngIf="!footmarkStats?.topReferrers?.length" style="color: #94a3b8; font-size: 0.8rem;">
-                    Direct & organic search visitors
+                  <span *ngIf="!footmarkStats?.topReferrers?.length" class="acq-empty">
+                    Direct &amp; organic search visitors
                   </span>
                 </div>
               </div>
@@ -492,60 +455,60 @@ const DEFAULT_PIN = '1234';
           </div>
 
           <!-- Live Activity Table -->
-          <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div class="stream-panel">
+            <div class="stream-header">
               <div>
-                <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">⚡ Live Visitor Footmark Stream</h3>
-                <span style="font-size: 0.75rem; color: #64748b;">Verified visitor journeys across apkeliteservices.in</span>
+                <h3 class="stream-title">Live Visitor Stream</h3>
+                <span class="stream-sub">Verified visitor journeys across apkeliteservices.in</span>
               </div>
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <button (click)="simulateTestVisit()" class="btn-filter sample" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
-                  + Simulate Test Visit
+              <div class="stream-actions">
+                <button (click)="simulateTestVisit()" class="btn-filter sample btn-sm">
+                  + Simulate Visit
                 </button>
-                <button (click)="clearFootmarkHistory()" class="btn-filter" style="font-size: 0.75rem; padding: 0.4rem 0.75rem; color: #dc2626; border-color: #fecdd3;">
+                <button (click)="clearFootmarkHistory()" class="btn-filter btn-sm btn-danger-subtle">
                   Reset Data
                 </button>
               </div>
             </div>
 
-            <div style="overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+            <div class="table-scroll">
+              <table class="stream-table">
                 <thead>
-                  <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">
-                    <th style="padding: 0.75rem 1rem;">Page</th>
-                    <th style="padding: 0.75rem 1rem;">Device / Browser</th>
-                    <th style="padding: 0.75rem 1rem;">Source</th>
-                    <th style="padding: 0.75rem 1rem;">Location</th>
-                    <th style="padding: 0.75rem 1rem; text-align: right;">Time</th>
+                  <tr class="stream-thead-row">
+                    <th class="stream-th">Page</th>
+                    <th class="stream-th">Device / Browser</th>
+                    <th class="stream-th">Source</th>
+                    <th class="stream-th">Location</th>
+                    <th class="stream-th stream-th-right">Time</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let f of footmarkStats?.recentFootmarks" style="border-bottom: 1px solid #f1f5f9;">
-                    <td style="padding: 0.75rem 1rem;">
-                      <div style="font-weight: 600; color: #0f172a;">{{ f.pageTitle || 'APK Elite Services' }}</div>
-                      <div style="font-size: 0.75rem; color: #0284c7; font-family: monospace;">{{ f.path }}</div>
+                  <tr *ngFor="let f of footmarkStats?.recentFootmarks" class="stream-row">
+                    <td class="stream-td">
+                      <div class="stream-page-title">{{ f.pageTitle || 'APK Elite Services' }}</div>
+                      <div class="stream-page-path">{{ f.path }}</div>
                     </td>
-                    <td style="padding: 0.75rem 1rem; color: #334155;">
-                      <span style="text-transform: capitalize; font-weight: 600;">
-                        {{ f.device === 'mobile' ? '📱 Mobile' : (f.device === 'desktop' ? '💻 Desktop' : '📟 Tablet') }}
+                    <td class="stream-td stream-device-cell">
+                      <span class="stream-device">
+                        {{ f.device === 'mobile' ? 'Mobile' : (f.device === 'desktop' ? 'Desktop' : 'Tablet') }}
                       </span>
-                      <span style="color: #64748b;"> · {{ f.browser || 'Browser' }}</span>
+                      <span class="stream-browser"> · {{ f.browser || 'Browser' }}</span>
                     </td>
-                    <td style="padding: 0.75rem 1rem;">
-                      <span style="background: #eff6ff; color: #1d4ed8; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                    <td class="stream-td">
+                      <span class="referrer-tag">
                         {{ f.referrer || 'Direct' }}
                       </span>
                     </td>
-                    <td style="padding: 0.75rem 1rem; color: #64748b;">
-                      📍 {{ f.city || 'Pune' }}
+                    <td class="stream-td stream-location">
+                      {{ f.city || 'Pune' }}
                     </td>
-                    <td style="padding: 0.75rem 1rem; text-align: right; color: #64748b; font-size: 0.75rem; font-weight: 500;">
+                    <td class="stream-td stream-time">
                       {{ f.createdAt | date:'MMM d, h:mm a' }}
                     </td>
                   </tr>
                   <tr *ngIf="!footmarkStats?.recentFootmarks?.length">
-                    <td colspan="5" style="padding: 2rem; text-align: center; color: #94a3b8; font-style: italic;">
-                      No footmarks recorded yet. Visit any page or click &ldquo;+ Simulate Test Visit&rdquo;.
+                    <td colspan="5" class="stream-empty">
+                      No footmarks recorded yet. Visit any page or click &ldquo;+ Simulate Visit&rdquo;.
                     </td>
                   </tr>
                 </tbody>
@@ -611,7 +574,7 @@ const DEFAULT_PIN = '1234';
 
             <div class="save-bar">
               <button (click)="saveContentChanges()" [disabled]="savingContent" class="btn-save-all">
-                {{ savingContent ? 'Saving Changes...' : '💾 Save Form & Field Settings' }}
+                {{ savingContent ? 'Saving Changes...' : 'Save Form & Field Settings' }}
               </button>
             </div>
           </div>
@@ -669,20 +632,20 @@ const DEFAULT_PIN = '1234';
             <!-- RECENT CLEANING PROJECTS SHOWCASE SECTION (HOMEPAGE) -->
             <!-- ============================================================ -->
             <div class="settings-box" *ngIf="dynamicContent.showcase">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div class="showcase-header">
                 <div>
-                  <h3 style="margin: 0 0 0.25rem; font-size: 1.15rem; color: #0f172a;">
-                    🏠 Recent Cleaning Projects Showcase (Homepage)
+                  <h3 class="showcase-heading">
+                    Recent Cleaning Projects Showcase (Homepage)
                   </h3>
-                  <p class="settings-desc" style="margin: 0;">
+                  <p class="settings-desc">
                     Manage the "Recent Cleaning Projects in Pune" cards, photos, locations, and descriptions.
                   </p>
                 </div>
-                <button (click)="addProject()" class="btn-add" style="margin: 0;">+ Add Project Card</button>
+                <button (click)="addProject()" class="btn-add">+ Add Project Card</button>
               </div>
 
               <!-- Section Headings -->
-              <div class="form-fields-grid" style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <div class="form-fields-grid showcase-fields-bg">
                 <div class="field-group" style="grid-column: 1 / -1;">
                   <label>Section Heading Title</label>
                   <input type="text" [(ngModel)]="dynamicContent.showcase.heading" placeholder="Recent Cleaning Projects in Pune" class="setting-input" />
@@ -729,7 +692,7 @@ const DEFAULT_PIN = '1234';
 
             <div class="save-bar">
               <button (click)="saveContentChanges()" [disabled]="savingContent" class="btn-save-all">
-                {{ savingContent ? 'Saving Changes...' : '💾 Save Website Content, Projects & Pricing' }}
+                {{ savingContent ? 'Saving Changes...' : 'Save Website Content, Projects & Pricing' }}
               </button>
             </div>
 
@@ -741,12 +704,87 @@ const DEFAULT_PIN = '1234';
     </div>
   `,
   styles: [`
+
+    /* ============================================================
+       DESIGN TOKENS — LIGHT & DARK MODE
+    ============================================================ */
+    :host {
+      --s0: #fafaf9;
+      --s1: #f5f4f2;
+      --s2: #eeede9;
+      --bd: #d6d4cf;
+      --t1: #1a1917;
+      --t2: #6b6966;
+      --t3: #9b9895;
+      --ac: #c2410c;
+      --ac-light: #fff7ed;
+      --ac-border: #fed7aa;
+      --ok: #15803d;
+      --ok-bg: #f0fdf4;
+      --warn: #b45309;
+      --err: #be123c;
+      --blue: #1d4ed8;
+      --blue-bg: #eff6ff;
+      --blue-border: #bfdbfe;
+      --shadow-sm: 0 1px 3px rgba(26,25,23,0.07);
+      --shadow-md: 0 4px 12px rgba(26,25,23,0.09);
+      --radius: 12px;
+      color-scheme: light;
+    }
+    :host(.dark) {
+      --s0: #111110;
+      --s1: #1c1b19;
+      --s2: #27261f;
+      --bd: #38372f;
+      --t1: #f2f0eb;
+      --t2: #9b9890;
+      --t3: #6b6866;
+      --ac: #fb923c;
+      --ac-light: #1c1410;
+      --ac-border: #7c2d12;
+      --ok: #4ade80;
+      --ok-bg: #052e16;
+      --warn: #fbbf24;
+      --err: #f87171;
+      --blue: #93c5fd;
+      --blue-bg: #1e3a5f;
+      --blue-border: #1e40af;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+      color-scheme: dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :host(:not(.light)) {
+        --s0: #111110;
+        --s1: #1c1b19;
+        --s2: #27261f;
+        --bd: #38372f;
+        --t1: #f2f0eb;
+        --t2: #9b9890;
+        --t3: #6b6866;
+        --ac: #fb923c;
+        --ac-light: #1c1410;
+        --ac-border: #7c2d12;
+        --ok: #4ade80;
+        --ok-bg: #052e16;
+        --warn: #fbbf24;
+        --err: #f87171;
+        --blue: #93c5fd;
+        --blue-bg: #1e3a5f;
+        --blue-border: #1e40af;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+        color-scheme: dark;
+      }
+    }
+
     .cms-root {
       min-height: 90vh;
-      background: #f8fafc;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #1e293b;
+      background: var(--s0);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--t1);
       padding-bottom: 4rem;
+      transition: background 0.25s, color 0.25s;
     }
 
     /* AUTH SCREEN */
@@ -756,22 +794,23 @@ const DEFAULT_PIN = '1234';
       justify-content: center;
       min-height: 80vh;
       padding: 1.5rem;
+      background: var(--s0);
     }
     .auth-card {
-      background: #ffffff;
+      background: var(--s1);
       max-width: 440px;
       width: 100%;
       padding: 2.5rem;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      border-radius: 20px;
+      box-shadow: var(--shadow-md);
       text-align: center;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--bd);
     }
     .auth-icon {
       width: 64px;
       height: 64px;
-      background: #0284c7;
-      color: #ffffff;
+      background: var(--ac);
+      color: #fff;
       border-radius: 16px;
       display: flex;
       align-items: center;
@@ -780,14 +819,15 @@ const DEFAULT_PIN = '1234';
     }
     .auth-card h2 {
       font-size: 1.5rem;
-      font-weight: 700;
-      color: #0f172a;
+      font-weight: 800;
+      color: var(--t1);
       margin-bottom: 0.25rem;
+      letter-spacing: -0.02em;
     }
     .auth-sub {
-      color: #64748b;
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
+      color: var(--t2);
+      font-size: 0.9rem;
+      margin-bottom: 1.75rem;
     }
     .pin-form {
       text-align: left;
@@ -795,9 +835,11 @@ const DEFAULT_PIN = '1234';
     .form-group label {
       display: block;
       font-weight: 600;
-      font-size: 0.875rem;
-      color: #334155;
+      font-size: 0.85rem;
+      color: var(--t2);
       margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .pin-input {
       width: 100%;
@@ -805,47 +847,50 @@ const DEFAULT_PIN = '1234';
       text-align: center;
       letter-spacing: 0.5rem;
       padding: 0.75rem;
-      border: 2px solid #cbd5e1;
+      border: 2px solid var(--bd);
       border-radius: 10px;
       outline: none;
+      background: var(--s2);
+      color: var(--t1);
       transition: border-color 0.2s;
+      box-sizing: border-box;
     }
     .pin-input:focus {
-      border-color: #0284c7;
+      border-color: var(--ac);
     }
     .error-msg {
-      color: #e11d48;
+      color: var(--err);
       font-size: 0.85rem;
       margin-top: 0.5rem;
       text-align: center;
     }
     .btn-unlock {
       width: 100%;
-      background: #0284c7;
-      color: white;
-      font-weight: 600;
+      background: var(--ac);
+      color: #fff;
+      font-weight: 700;
       padding: 0.875rem;
       border-radius: 10px;
       border: none;
       cursor: pointer;
       margin-top: 1.25rem;
       font-size: 1rem;
-      transition: background 0.2s;
+      transition: opacity 0.2s;
+      letter-spacing: 0.01em;
     }
-    .btn-unlock:hover {
-      background: #0369a1;
-    }
+    .btn-unlock:hover { opacity: 0.88; }
     .auth-hint {
       margin-top: 1.25rem;
-      font-size: 0.85rem;
-      color: #64748b;
+      font-size: 0.82rem;
+      color: var(--t2);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .back-link {
-      color: #0284c7;
+      color: var(--ac);
       text-decoration: none;
+      font-weight: 600;
     }
 
     /* DASHBOARD */
@@ -858,18 +903,19 @@ const DEFAULT_PIN = '1234';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: white;
-      padding: 1.25rem 1.5rem;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      background: var(--s1);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
       margin-bottom: 1.25rem;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
+      box-shadow: var(--shadow-sm);
     }
     .header-left {
       display: flex;
       align-items: center;
-      gap: 1.25rem;
+      gap: 1rem;
     }
     .brand-title {
       display: flex;
@@ -877,64 +923,66 @@ const DEFAULT_PIN = '1234';
       gap: 0.5rem;
     }
     .logo-text {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 800;
-      color: #0f172a;
+      color: var(--t1);
+      letter-spacing: -0.02em;
     }
     .badge-role {
-      background: #e0f2fe;
-      color: #0369a1;
-      font-size: 0.75rem;
+      background: var(--ac-light);
+      color: var(--ac);
+      font-size: 0.7rem;
       font-weight: 700;
-      padding: 0.25rem 0.5rem;
-      border-radius: 6px;
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+      border: 1px solid var(--ac-border);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .system-status {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.825rem;
-      color: #10b981;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--ok);
       font-weight: 600;
     }
     .status-dot {
-      width: 8px;
-      height: 8px;
-      background: #10b981;
+      width: 7px;
+      height: 7px;
+      background: var(--ok);
       border-radius: 50%;
     }
     .header-right {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       align-items: center;
+      flex-wrap: wrap;
     }
     .btn-action {
-      padding: 0.5rem 0.875rem;
-      font-size: 0.85rem;
+      padding: 0.45rem 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
       border-radius: 8px;
       cursor: pointer;
-      border: 1px solid #cbd5e1;
-      background: white;
-      color: #334155;
+      border: 1px solid var(--bd);
+      background: var(--s2);
+      color: var(--t1);
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
       text-decoration: none;
+      transition: opacity 0.15s;
     }
-    .btn-action:hover {
-      background: #f1f5f9;
-    }
+    .btn-action:hover { opacity: 0.75; }
     .btn-action.outline {
-      border-color: #0284c7;
-      color: #0284c7;
+      border-color: var(--ac-border);
+      color: var(--ac);
+      background: var(--ac-light);
     }
     .btn-action.danger {
-      color: #e11d48;
-      border-color: #fecdd3;
-    }
-    .btn-action.danger:hover {
-      background: #fff1f2;
+      color: var(--err);
+      border-color: var(--bd);
     }
     .spin {
       display: inline-block;
@@ -948,156 +996,185 @@ const DEFAULT_PIN = '1234';
     /* TABS */
     .dash-tabs {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.35rem;
       margin-bottom: 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--bd);
+      padding-bottom: 0.4rem;
       overflow-x: auto;
+      scrollbar-width: none;
     }
+    .dash-tabs::-webkit-scrollbar { display: none; }
     .tab-btn {
-      padding: 0.75rem 1.25rem;
-      font-size: 0.95rem;
+      padding: 0.6rem 1.1rem;
+      font-size: 0.88rem;
       font-weight: 600;
       border: none;
       background: transparent;
-      color: #64748b;
+      color: var(--t2);
       cursor: pointer;
       border-radius: 8px;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
+      gap: 0.4rem;
+      transition: all 0.15s;
       white-space: nowrap;
     }
     .tab-btn:hover {
-      color: #0f172a;
-      background: #e2e8f0;
+      color: var(--t1);
+      background: var(--s2);
     }
     .tab-btn.active {
-      background: #0284c7;
-      color: white;
+      background: var(--ac);
+      color: #fff;
     }
     .count-pill {
-      background: rgba(0, 0, 0, 0.15);
-      font-size: 0.75rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.22);
+      font-size: 0.72rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 10px;
+    }
+    .tab-btn:not(.active) .count-pill {
+      background: var(--s2);
+      color: var(--t2);
     }
 
     /* TOAST */
     .toast-alert {
-      background: #10b981;
-      color: white;
-      padding: 0.75rem 1.25rem;
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid var(--ok);
+      padding: 0.7rem 1.25rem;
       border-radius: 8px;
       margin-bottom: 1rem;
       font-weight: 600;
       text-align: center;
       animation: fadeIn 0.3s ease;
     }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     /* METRICS */
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
     .metric-card {
-      background: white;
+      background: var(--s1);
       padding: 1.25rem;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s;
     }
-    .metric-card.total { border-left: 4px solid #3b82f6; }
-    .metric-card.footmarks { border-left: 4px solid #6366f1; }
-    .metric-card.new { border-left: 4px solid #f59e0b; }
-    .metric-card.progress { border-left: 4px solid #8b5cf6; }
-    .metric-card.converted { border-left: 4px solid #10b981; }
+    .metric-card:hover { transform: translateY(-2px); }
+    .metric-card.total    { border-left: 3px solid #3b82f6; }
+    .metric-card.footmarks { border-left: 3px solid #8b5cf6; }
+    .metric-card.new      { border-left: 3px solid var(--warn); }
+    .metric-card.progress { border-left: 3px solid #6366f1; }
+    .metric-card.converted { border-left: 3px solid var(--ok); }
 
     .metric-num {
       font-size: 2rem;
       font-weight: 800;
-      color: #0f172a;
+      color: var(--t1);
+      letter-spacing: -0.03em;
+    }
+    .metric-num--sm {
+      font-size: 1.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .metric-label {
-      color: #64748b;
-      font-size: 0.85rem;
+      color: var(--t2);
+      font-size: 0.8rem;
       font-weight: 600;
-      margin-top: 0.25rem;
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     /* FILTER BAR */
     .filter-bar {
       display: flex;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.75rem;
       margin-bottom: 1.25rem;
       flex-wrap: wrap;
     }
     .search-box {
       flex: 1;
-      min-width: 260px;
+      min-width: 180px;
     }
     .search-input {
       width: 100%;
-      padding: 0.65rem 1rem;
-      border: 1px solid #cbd5e1;
+      padding: 0.6rem 0.875rem;
+      border: 1px solid var(--bd);
       border-radius: 8px;
       outline: none;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
+      background: var(--s2);
+      color: var(--t1);
+      box-sizing: border-box;
     }
-    .search-input:focus {
-      border-color: #0284c7;
-    }
+    .search-input:focus { border-color: var(--ac); }
     .select-filters {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
     }
     .filter-select {
-      padding: 0.65rem 1rem;
-      border: 1px solid #cbd5e1;
+      padding: 0.6rem 0.875rem;
+      border: 1px solid var(--bd);
       border-radius: 8px;
-      background: white;
-      font-size: 0.875rem;
+      background: var(--s2);
+      color: var(--t1);
+      font-size: 0.85rem;
       font-weight: 600;
     }
     .btn-filter {
-      padding: 0.65rem 1rem;
-      font-size: 0.85rem;
+      padding: 0.6rem 0.875rem;
+      font-size: 0.82rem;
       font-weight: 600;
       border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      background: white;
+      border: 1px solid var(--bd);
+      background: var(--s2);
+      color: var(--t1);
       cursor: pointer;
+      transition: opacity 0.15s;
     }
+    .btn-filter:hover { opacity: 0.75; }
     .btn-filter.export {
-      background: #0284c7;
-      color: white;
-      border-color: #0284c7;
+      background: var(--ac);
+      color: #fff;
+      border-color: transparent;
     }
-    .btn-filter.sample {
-      background: #f8fafc;
-      color: #334155;
-    }
+    .btn-filter.sample { background: var(--s2); }
+    .btn-sm { font-size: 0.75rem; padding: 0.4rem 0.7rem; }
+    .btn-danger-subtle { color: var(--err); border-color: var(--bd); }
 
     /* LEADS GRID */
     .leads-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 1rem;
     }
     .lead-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 0.85rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.15s;
     }
+    .lead-card:hover { box-shadow: var(--shadow-md); }
     .lead-card-header {
       display: flex;
       justify-content: space-between;
@@ -1105,58 +1182,42 @@ const DEFAULT_PIN = '1234';
       gap: 0.5rem;
     }
     .cust-name {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--t1);
       margin: 0;
+      letter-spacing: -0.01em;
     }
     .source-tag {
       font-size: 0.75rem;
-      color: #64748b;
+      color: var(--t3);
       margin-top: 0.2rem;
     }
     .attr-badges-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.35rem;
-      margin-top: 0.35rem;
+      gap: 0.3rem;
+      margin-top: 0.3rem;
     }
     .attr-badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
-      font-size: 0.7rem;
+      font-size: 0.69rem;
       font-weight: 700;
-      padding: 0.18rem 0.45rem;
+      padding: 0.15rem 0.4rem;
       border-radius: 4px;
-      border: 1px solid transparent;
-      line-height: 1.2;
-    }
-    .attr-badge.source {
-      background: #f0fdf4;
-      color: #166534;
-      border-color: #bbf7d0;
-    }
-    .attr-badge.campaign {
-      background: #eff6ff;
-      color: #1e40af;
-      border-color: #bfdbfe;
+      border: 1px solid var(--bd);
+      background: var(--s2);
+      color: var(--t2);
+      line-height: 1.3;
     }
     .attr-badge.gclid {
-      background: #fefce8;
-      color: #854d0e;
-      border-color: #fef08a;
-    }
-    .attr-badge.visits {
-      background: #faf5ff;
-      color: #6b21a8;
-      border-color: #e9d5ff;
+      background: var(--ac-light);
+      color: var(--ac);
+      border-color: var(--ac-border);
     }
     .attr-badge.landing {
-      background: #f1f5f9;
-      color: #475569;
-      border-color: #cbd5e1;
-      max-width: 180px;
+      max-width: 160px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1164,52 +1225,52 @@ const DEFAULT_PIN = '1234';
     .status-select {
       font-size: 0.75rem;
       font-weight: 700;
-      padding: 0.35rem 0.6rem;
+      padding: 0.3rem 0.55rem;
       border-radius: 6px;
-      border: 1px solid transparent;
+      border: 1px solid var(--bd);
+      background: var(--s2);
+      color: var(--t1);
       outline: none;
       cursor: pointer;
     }
-    .status-new { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .status-new { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-border); }
     .status-contacted { background: #fffbeb; color: #b45309; border-color: #fde68a; }
     .status-quote_sent { background: #faf5ff; color: #7e22ce; border-color: #e9d5ff; }
-    .status-confirmed { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-    .status-completed { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
-    .status-lost { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+    .status-confirmed { background: var(--ok-bg); color: var(--ok); border-color: #a7f3d0; }
+    .status-completed { background: var(--ok-bg); color: var(--ok); border-color: #99f6e4; }
+    .status-lost { background: #fff1f2; color: var(--err); border-color: #fecdd3; }
 
     .lead-details-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.5rem;
-      font-size: 0.85rem;
-      background: #f8fafc;
+      font-size: 0.82rem;
+      background: var(--s2);
       padding: 0.75rem;
       border-radius: 8px;
+      border: 1px solid var(--bd);
     }
-    .detail-item {
-      display: flex;
-      flex-direction: column;
-    }
+    .detail-item { display: flex; flex-direction: column; }
     .detail-lbl {
-      font-size: 0.725rem;
-      color: #64748b;
+      font-size: 0.7rem;
+      color: var(--t3);
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
-    .detail-val {
-      font-weight: 600;
-      color: #1e293b;
-    }
+    .detail-val { font-weight: 600; color: var(--t1); }
     .phone-link, .email-link {
-      color: #0284c7;
+      color: var(--ac);
       text-decoration: none;
       font-weight: 600;
     }
     .cust-message {
-      font-size: 0.85rem;
-      color: #475569;
-      background: #f1f5f9;
+      font-size: 0.82rem;
+      color: var(--t2);
+      background: var(--s2);
       padding: 0.5rem 0.75rem;
       border-radius: 6px;
+      border: 1px solid var(--bd);
       font-style: italic;
     }
     .lead-actions {
@@ -1219,73 +1280,75 @@ const DEFAULT_PIN = '1234';
     .btn-wa {
       flex: 2;
       background: #25d366;
-      color: white;
+      color: #fff;
       text-align: center;
-      padding: 0.55rem;
+      padding: 0.5rem;
       border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.82rem;
+      font-weight: 700;
       text-decoration: none;
+      transition: opacity 0.15s;
     }
+    .btn-wa:hover { opacity: 0.85; }
     .btn-call {
       flex: 1;
-      background: #0284c7;
-      color: white;
+      background: var(--ac);
+      color: #fff;
       text-align: center;
-      padding: 0.55rem;
+      padding: 0.5rem;
       border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.82rem;
+      font-weight: 700;
       text-decoration: none;
+      transition: opacity 0.15s;
     }
+    .btn-call:hover { opacity: 0.85; }
     .btn-del {
-      background: #fee2e2;
-      color: #ef4444;
-      border: 1px solid #fca5a5;
-      padding: 0.55rem 0.75rem;
+      background: var(--s2);
+      color: var(--err);
+      border: 1px solid var(--bd);
+      padding: 0.5rem 0.7rem;
       border-radius: 8px;
       cursor: pointer;
+      transition: opacity 0.15s;
     }
+    .btn-del:hover { opacity: 0.75; }
 
     /* NOTES */
     .notes-section {
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid var(--bd);
       padding-top: 0.75rem;
     }
     .notes-list {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.35rem;
       margin-bottom: 0.5rem;
     }
     .single-note {
       font-size: 0.775rem;
-      color: #475569;
-      background: #f8fafc;
+      color: var(--t2);
+      background: var(--s2);
       padding: 0.4rem 0.6rem;
       border-radius: 6px;
-      border: 1px solid #f1f5f9;
+      border: 1px solid var(--bd);
     }
-    .note-time {
-      font-weight: 600;
-      color: #64748b;
-      margin-right: 0.4rem;
-    }
-    .add-note-inline {
-      display: flex;
-      gap: 0.4rem;
-    }
+    .note-time { font-weight: 600; color: var(--t3); margin-right: 0.4rem; }
+    .add-note-inline { display: flex; gap: 0.4rem; }
     .inline-note-input {
       flex: 1;
       font-size: 0.8rem;
       padding: 0.4rem 0.6rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--bd);
       border-radius: 6px;
       outline: none;
+      background: var(--s2);
+      color: var(--t1);
     }
+    .inline-note-input:focus { border-color: var(--ac); }
     .btn-add-note {
-      background: #334155;
-      color: white;
+      background: var(--t1);
+      color: var(--s0);
       border: none;
       padding: 0.4rem 0.75rem;
       border-radius: 6px;
@@ -1294,25 +1357,23 @@ const DEFAULT_PIN = '1234';
     }
 
     /* SETTINGS BOXES */
-    .settings-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
+    .settings-container { display: flex; flex-direction: column; gap: 1.5rem; }
     .settings-box {
-      background: white;
+      background: var(--s1);
       padding: 1.5rem;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
+      box-shadow: var(--shadow-sm);
     }
     .settings-box h3 {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--t1);
       margin-bottom: 0.25rem;
+      letter-spacing: -0.015em;
     }
     .settings-desc {
-      color: #64748b;
+      color: var(--t2);
       font-size: 0.875rem;
       margin-bottom: 1.25rem;
     }
@@ -1323,222 +1384,226 @@ const DEFAULT_PIN = '1234';
       margin-bottom: 1.25rem;
     }
     .field-pill {
-      background: #f1f5f9;
-      color: #334155;
-      padding: 0.4rem 0.8rem;
+      background: var(--s2);
+      color: var(--t1);
+      padding: 0.35rem 0.75rem;
       border-radius: 20px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      border: 1px solid #e2e8f0;
+      gap: 0.35rem;
+      border: 1px solid var(--bd);
     }
     .field-pill.service {
-      background: #e0f2fe;
-      color: #0369a1;
-      border-color: #bae6fd;
+      background: var(--ac-light);
+      color: var(--ac);
+      border-color: var(--ac-border);
     }
     .pill-remove {
       background: none;
       border: none;
-      font-size: 1.1rem;
-      color: #94a3b8;
+      font-size: 1rem;
+      color: var(--t3);
       cursor: pointer;
       line-height: 1;
       padding: 0;
     }
-    .pill-remove:hover {
-      color: #ef4444;
-    }
-    .add-row {
-      display: flex;
-      gap: 0.5rem;
-      max-width: 500px;
-    }
+    .pill-remove:hover { color: var(--err); }
+    .add-row { display: flex; gap: 0.5rem; max-width: 500px; }
     .setting-input {
       flex: 1;
       padding: 0.6rem 0.875rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--bd);
       border-radius: 8px;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    .setting-input:focus {
-      border-color: #0284c7;
-    }
-    .btn-add {
-      background: #0284c7;
-      color: white;
-      border: none;
-      padding: 0.6rem 1.25rem;
-      border-radius: 8px;
-      font-weight: 600;
       font-size: 0.875rem;
-      cursor: pointer;
+      outline: none;
+      background: var(--s2);
+      color: var(--t1);
+      width: 100%;
     }
+    .setting-input:focus { border-color: var(--ac); }
+    textarea.setting-input { resize: vertical; }
+    .btn-add {
+      background: var(--ac);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { opacity: 0.85; }
     .form-fields-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1rem;
     }
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+    .showcase-fields-bg {
+      margin-bottom: 1.5rem;
+      background: var(--s2);
+      padding: 1.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--bd);
     }
+    .field-group { display: flex; flex-direction: column; gap: 0.4rem; }
     .field-group label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      color: #475569;
+      color: var(--t2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    /* Showcase header */
+    .showcase-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .showcase-heading {
+      margin: 0 0 0.2rem;
+      font-size: 1.1rem;
+      color: var(--t1);
+      letter-spacing: -0.015em;
     }
 
     /* PRICING */
-    .pricing-table {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
+    .pricing-table { display: flex; flex-direction: column; gap: 0.5rem; }
     .price-row {
       display: flex;
       align-items: center;
       gap: 1rem;
       padding: 0.75rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--s2);
+      border: 1px solid var(--bd);
       border-radius: 8px;
       flex-wrap: wrap;
     }
     .price-svc {
       flex: 1;
-      min-width: 200px;
+      min-width: 180px;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
+      color: var(--t1);
     }
-    .price-rate {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-weight: 700;
-    }
+    .price-rate { display: flex; align-items: center; gap: 0.25rem; font-weight: 700; color: var(--t1); }
     .price-num-input {
       width: 90px;
       padding: 0.4rem 0.5rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--bd);
       border-radius: 6px;
       font-weight: 700;
+      background: var(--s1);
+      color: var(--t1);
     }
     .price-unit-input {
-      width: 140px;
+      width: 130px;
       padding: 0.4rem 0.5rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--bd);
       border-radius: 6px;
-      font-size: 0.825rem;
-      color: #64748b;
+      font-size: 0.82rem;
+      color: var(--t2);
+      background: var(--s1);
     }
-    .save-bar {
-      display: flex;
-      justify-content: flex-end;
-    }
+    .save-bar { display: flex; justify-content: flex-end; }
     .btn-save-all {
-      background: #10b981;
-      color: white;
+      background: var(--ok);
+      color: #fff;
       border: none;
-      padding: 0.875rem 1.75rem;
-      font-size: 1rem;
+      padding: 0.825rem 1.75rem;
+      font-size: 0.95rem;
       font-weight: 700;
       border-radius: 10px;
       cursor: pointer;
-      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+      transition: opacity 0.15s;
     }
-    .btn-save-all:hover {
-      background: #059669;
-    }
+    .btn-save-all:hover { opacity: 0.85; }
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
-      color: #64748b;
-      background: white;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      color: var(--t2);
+      background: var(--s1);
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
     }
     .btn-reset {
       margin-top: 0.75rem;
-      background: #0284c7;
-      color: white;
+      background: var(--ac);
+      color: #fff;
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       cursor: pointer;
     }
 
     /* PROJECTS SHOWCASE CMS */
-    .cms-projects-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
+    .cms-projects-list { display: flex; flex-direction: column; gap: 1.25rem; }
     .cms-project-item {
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: 12px;
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      box-shadow: var(--shadow-sm);
     }
     .proj-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--bd);
       padding-bottom: 0.75rem;
     }
     .proj-idx-badge {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 800;
-      color: #0284c7;
-      background: #e0f2fe;
-      padding: 0.25rem 0.65rem;
-      border-radius: 6px;
-      letter-spacing: 0.02em;
+      color: var(--ac);
+      background: var(--ac-light);
+      padding: 0.2rem 0.6rem;
+      border-radius: 5px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid var(--ac-border);
     }
     .btn-remove-proj {
-      background: #fee2e2;
-      color: #dc2626;
-      border: 1px solid #fca5a5;
-      padding: 0.35rem 0.75rem;
+      background: var(--s2);
+      color: var(--err);
+      border: 1px solid var(--bd);
+      padding: 0.3rem 0.7rem;
       border-radius: 6px;
       font-size: 0.75rem;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: opacity 0.15s;
     }
-    .btn-remove-proj:hover {
-      background: #dc2626;
-      color: white;
-    }
+    .btn-remove-proj:hover { opacity: 0.75; }
     .proj-inputs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
     }
 
     /* ANALYTICS & AUDIT GRAPHS */
     .analytics-graphs-container {
       display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
       gap: 1.25rem;
       margin-bottom: 1.5rem;
     }
     .graph-card {
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 14px;
       padding: 1.5rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -1553,64 +1618,53 @@ const DEFAULT_PIN = '1234';
     }
     .graph-tag {
       display: inline-block;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #0284c7;
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
-      padding: 0.2rem 0.6rem;
-      border-radius: 6px;
+      letter-spacing: 0.07em;
+      color: var(--ac);
+      background: var(--ac-light);
+      border: 1px solid var(--ac-border);
+      padding: 0.18rem 0.55rem;
+      border-radius: 5px;
       margin-bottom: 0.35rem;
     }
     .graph-tag.optimal {
-      color: #059669;
-      background: #ecfdf5;
+      color: var(--ok);
+      background: var(--ok-bg);
       border-color: #a7f3d0;
     }
     .graph-title {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 800;
-      color: #0f172a;
+      color: var(--t1);
       margin: 0;
+      letter-spacing: -0.02em;
     }
     .graph-subtitle {
-      font-size: 0.82rem;
-      color: #64748b;
-      margin: 0.25rem 0 0;
+      font-size: 0.8rem;
+      color: var(--t2);
+      margin: 0.2rem 0 0;
     }
     .graph-legend {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
-      font-size: 0.8rem;
+      gap: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      color: #475569;
+      color: var(--t2);
     }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-    .legend-dot.views {
-      background: #0284c7;
-    }
-    .legend-dot.visitors {
-      background: #7c3aed;
-    }
+    .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .legend-dot.views { background: var(--ac); }
+    .legend-dot.visitors { background: #7c3aed; }
     .trend-bars-wrapper {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       height: 190px;
       padding: 1.5rem 0 0.5rem;
-      border-bottom: 1px dashed #cbd5e1;
+      border-bottom: 1px dashed var(--bd);
       gap: 0.5rem;
     }
     .trend-day-col {
@@ -1637,142 +1691,280 @@ const DEFAULT_PIN = '1234';
       position: relative;
       transition: transform 0.2s, opacity 0.2s;
     }
-    .bar-bar:hover {
-      opacity: 0.85;
-      transform: scaleY(1.05);
-    }
-    .view-bar {
-      background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
-    }
-    .visitor-bar {
-      background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%);
-    }
+    .bar-bar:hover { opacity: 0.8; transform: scaleY(1.05); }
+    .view-bar { background: linear-gradient(180deg, var(--ac) 0%, #9a3412 100%); }
+    .visitor-bar { background: linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%); }
     .bar-val-pop {
       position: absolute;
       top: -20px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.68rem;
+      font-size: 0.67rem;
       font-weight: 700;
-      color: #0284c7;
+      color: var(--ac);
     }
-    .bar-val-pop.sub {
-      color: #7c3aed;
-    }
-    .day-label {
-      font-size: 0.75rem;
-      color: #64748b;
-      font-weight: 600;
-    }
+    .bar-val-pop.sub { color: #7c3aed; }
+    .day-label { font-size: 0.72rem; color: var(--t2); font-weight: 600; }
     .graph-footer-note {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 1rem;
-      font-size: 0.78rem;
-      color: #64748b;
+      font-size: 0.77rem;
+      color: var(--t2);
       flex-wrap: wrap;
       gap: 0.5rem;
     }
     .growth-badge {
-      background: #ecfdf5;
-      color: #047857;
+      background: var(--ok-bg);
+      color: var(--ok);
       border: 1px solid #a7f3d0;
-      padding: 0.2rem 0.5rem;
-      border-radius: 6px;
+      padding: 0.18rem 0.5rem;
+      border-radius: 5px;
       font-weight: 700;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
     }
-    .audit-overall-score {
-      text-align: right;
-    }
+    .audit-overall-score { text-align: right; }
     .audit-overall-score .score-num {
       display: block;
       font-size: 2rem;
       font-weight: 900;
-      color: #059669;
+      color: var(--ok);
       line-height: 1;
+      letter-spacing: -0.04em;
     }
     .audit-overall-score .score-grade {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
       letter-spacing: 0.08em;
-      color: #047857;
-      background: #d1fae5;
+      color: var(--ok);
+      background: var(--ok-bg);
+      border: 1px solid #a7f3d0;
       padding: 0.15rem 0.45rem;
       border-radius: 4px;
     }
-    .audit-bars-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-    }
-    .audit-score-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
+    .audit-bars-list { display: flex; flex-direction: column; gap: 0.85rem; }
+    .audit-score-item { display: flex; flex-direction: column; gap: 0.3rem; }
     .score-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
     }
-    .score-cat {
-      font-weight: 700;
-      color: #1e293b;
-    }
-    .score-right {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
+    .score-cat { font-weight: 700; color: var(--t1); }
+    .score-right { display: flex; align-items: center; gap: 0.5rem; }
     .status-pill {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
-      padding: 0.15rem 0.45rem;
+      padding: 0.12rem 0.4rem;
       border-radius: 4px;
     }
-    .status-pill.optimal {
-      background: #ecfdf5;
-      color: #047857;
-    }
-    .score-val {
-      font-weight: 800;
-      color: #0f172a;
-    }
+    .status-pill.optimal { background: var(--ok-bg); color: var(--ok); }
+    .score-val { font-weight: 800; color: var(--t1); }
     .score-track {
       width: 100%;
-      height: 8px;
-      background: #f1f5f9;
+      height: 7px;
+      background: var(--s2);
       border-radius: 999px;
       overflow: hidden;
     }
-    .score-fill {
-      height: 100%;
+    .score-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+    .score-fill.fill-excellent { background: linear-gradient(90deg, #10b981 0%, #059669 100%); }
+    .score-fill.fill-great { background: linear-gradient(90deg, var(--ac) 0%, #9a3412 100%); }
+    .score-fill.fill-good { background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%); }
+    .score-notes { font-size: 0.73rem; color: var(--t2); margin: 0; line-height: 1.4; }
+
+    /* ===================== EXTRACTED INLINE STYLES — DATA PANELS ===================== */
+    .data-panels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .data-panel {
+      background: var(--s1);
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
+      box-shadow: var(--shadow-sm);
+    }
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--t1);
+      letter-spacing: -0.01em;
+    }
+    .page-row { margin-bottom: 0.85rem; }
+    .page-row-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .page-row-title {
+      color: var(--t1);
+      max-width: 65%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .page-row-count { color: var(--ac); font-weight: 700; white-space: nowrap; }
+    .mini-track {
+      width: 100%;
+      height: 6px;
+      background: var(--s2);
       border-radius: 999px;
-      transition: width 0.5s ease;
+      overflow: hidden;
     }
-    .score-fill.fill-excellent {
-      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    .mini-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--ac) 0%, #fb923c 100%);
+      border-radius: 999px;
+      transition: width 0.4s ease;
     }
-    .score-fill.fill-great {
-      background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+    .empty-inline { color: var(--t3); font-size: 0.82rem; font-style: italic; }
+    /* Device grid */
+    .device-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+      text-align: center;
+      margin-bottom: 1rem;
     }
-    .score-fill.fill-good {
-      background: linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%);
+    .device-cell {
+      background: var(--s2);
+      padding: 0.85rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--bd);
     }
-    .score-notes {
+    .device-icon {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--t3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.3rem;
+    }
+    .device-count {
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--t1);
+    }
+    .device-label { font-size: 0.72rem; color: var(--t2); font-weight: 600; }
+    /* Acquisition */
+    .acquisition-block { margin-top: 1.25rem; }
+    .acq-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--t3);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .acq-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .acq-tag {
+      background: var(--blue-bg);
+      color: var(--blue);
+      padding: 0.22rem 0.6rem;
+      border-radius: 5px;
       font-size: 0.75rem;
-      color: #64748b;
-      margin: 0;
-      line-height: 1.4;
+      font-weight: 700;
+      border: 1px solid var(--blue-border);
     }
-    @media (max-width: 960px) {
-      .analytics-graphs-container {
-        grid-template-columns: 1fr;
-      }
+    .acq-empty { color: var(--t3); font-size: 0.8rem; }
+    /* Stream panel (visitor table) */
+    .stream-panel {
+      background: var(--s1);
+      border-radius: var(--radius);
+      border: 1px solid var(--bd);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .stream-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--bd);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .stream-title { font-size: 0.95rem; font-weight: 700; color: var(--t1); margin: 0; }
+    .stream-sub { font-size: 0.73rem; color: var(--t2); }
+    .stream-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .stream-table {
+      width: 100%;
+      min-width: 640px;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+    .stream-thead-row {
+      background: var(--s2);
+      border-bottom: 1px solid var(--bd);
+      font-size: 0.72rem;
+      color: var(--t2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stream-th { padding: 0.7rem 1rem; font-weight: 700; }
+    .stream-th-right { text-align: right; }
+    .stream-row { border-bottom: 1px solid var(--s2); }
+    .stream-row:hover { background: var(--s2); }
+    .stream-td { padding: 0.7rem 1rem; color: var(--t1); vertical-align: middle; }
+    .stream-page-title { font-weight: 600; color: var(--t1); }
+    .stream-page-path { font-size: 0.73rem; color: var(--ac); font-family: monospace; }
+    .stream-device { text-transform: capitalize; font-weight: 600; color: var(--t1); }
+    .stream-browser { color: var(--t2); }
+    .referrer-tag {
+      background: var(--blue-bg);
+      color: var(--blue);
+      padding: 0.12rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: 1px solid var(--blue-border);
+    }
+    .stream-location { color: var(--t2); }
+    .stream-time { text-align: right; color: var(--t2); font-size: 0.72rem; font-weight: 500; }
+    .stream-empty { padding: 2rem; text-align: center; color: var(--t3); font-style: italic; }
+
+    /* Table container (leads tab) */
+    .table-container { overflow-x: auto; }
+
+    /* ===================== RESPONSIVE BREAKPOINTS ===================== */
+    @media (max-width: 900px) {
+      .analytics-graphs-container { grid-template-columns: 1fr; }
+      .data-panels-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .dashboard-wrapper { padding: 0.75rem 0.5rem; }
+      .dash-header { padding: 0.875rem 0.875rem; }
+      .header-right { flex-wrap: wrap; }
+      .leads-grid { grid-template-columns: 1fr; }
+      .lead-details-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .filter-bar { flex-direction: column; }
+      .search-box { min-width: 100%; }
+      .select-filters { width: 100%; }
+      .auth-card { padding: 1.75rem 1.25rem; }
+      .device-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .form-fields-grid { grid-template-columns: 1fr; }
+      .proj-inputs-grid { grid-template-columns: 1fr; }
+      .graph-header { flex-direction: column; gap: 0.5rem; }
+      .add-row { max-width: 100%; }
+      .save-bar { justify-content: stretch; }
+      .btn-save-all { width: 100%; text-align: center; }
+    }
+    @media (max-width: 380px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+      .device-grid { grid-template-columns: 1fr; }
+      .lead-actions { flex-wrap: wrap; }
+      .btn-wa, .btn-call { flex: unset; width: 100%; }
     }
   `]
 })
@@ -1780,6 +1972,7 @@ export class CmsRedirectComponent implements OnInit {
   isAuthenticated = false;
   enteredPin = '';
   pinError = false;
+  darkMode = false;
 
   activeTab: 'leads' | 'footmarks' | 'form' | 'content' = 'leads';
 
@@ -1858,12 +2051,36 @@ export class CmsRedirectComponent implements OnInit {
     });
 
     if (isPlatformBrowser(this.platformId)) {
+      // Restore dark mode preference
+      const savedTheme = localStorage.getItem('apk_cms_theme');
+      if (savedTheme === 'dark') {
+        this.darkMode = true;
+        document.querySelector('app-cms-redirect')?.classList.add('dark');
+        document.querySelector('app-cms-redirect')?.classList.remove('light');
+      } else {
+        document.querySelector('app-cms-redirect')?.classList.add('light');
+      }
       // Check stored PIN session
       const auth = localStorage.getItem(PIN_STORAGE_KEY);
       if (auth === 'true') {
         this.isAuthenticated = true;
         this.loadAllData();
       }
+    }
+  }
+
+  toggleDarkMode(): void {
+    this.darkMode = !this.darkMode;
+    const host = document.querySelector('app-cms-redirect');
+    if (this.darkMode) {
+      host?.classList.add('dark');
+      host?.classList.remove('light');
+    } else {
+      host?.classList.remove('dark');
+      host?.classList.add('light');
+    }
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('apk_cms_theme', this.darkMode ? 'dark' : 'light');
     }
   }
 

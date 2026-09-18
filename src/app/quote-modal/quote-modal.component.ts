@@ -301,9 +301,6 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     const waMsg = `Hi, I submitted a Quote request: Name: ${this.form.name}, Phone: ${this.form.phone}, Service: ${this.form.service}, Locality: ${this.form.locality}, Details: ${this.form.message || 'N/A'} ${attrTag}`;
     this.whatsAppUrl = `https://wa.me/${this.targetWhatsApp}?text=${encodeURIComponent(waMsg)}`;
 
-    // 3. Open user's email client directly pre-filled with all details
-    window.location.href = this.mailtoUrl;
-
     this.footmarkApi.trackFormLifecycle('success', 'quote_modal', {
       service: this.form.service,
       locality: this.form.locality

@@ -420,10 +420,8 @@ export class ContactPageComponent implements OnInit, OnDestroy {
     this.successEmailUrl = `mailto:${this.targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     const msg = `Hi%2C%20I%27m%20${encodeURIComponent(this.form.name)}%20from%20${encodeURIComponent(this.form.locality)}.%20I%20need%20${encodeURIComponent(this.form.service)}.%20My%20number%20is%20${encodeURIComponent(this.form.phone)}.%20${encodeURIComponent(this.form.message)}%20${encodeURIComponent(attrTag)}`;
+    // Prepare WhatsApp URL
     this.successWhatsAppUrl = `https://wa.me/${this.waNumber}?text=${msg}`;
-
-    // Trigger direct native email draft open to target email
-    window.location.href = this.successEmailUrl;
 
     this.footmarkApi.trackFormLifecycle('success', 'contact_page_form', {
       service: this.form.service,

@@ -530,9 +530,6 @@ export class FootmarkApiService {
           if (!stats.dailyTrends || !stats.dailyTrends.length) {
             stats.dailyTrends = this.buildDailyTrends(stats.recentFootmarks || []);
           }
-          if (!stats.auditScores) {
-            stats.auditScores = this.getAuditScores();
-          }
           return stats;
         }
       }
@@ -737,48 +734,7 @@ export class FootmarkApiService {
   }
 
   private generateInitialSeedEvents(): FootmarkEvent[] {
-    const now = Date.now();
-    return [
-      {
-        _id: 'ft_seed_1',
-        visitorId: 'v_wakad_1',
-        sessionId: 's_w1',
-        path: '/',
-        pageTitle: 'APK Elite Services | Professional Cleaning in Pune',
-        referrer: 'Google Search',
-        device: 'mobile',
-        browser: 'Chrome',
-        os: 'Android',
-        city: 'Wakad, Pune',
-        createdAt: new Date(now - 1000 * 60 * 12).toISOString()
-      },
-      {
-        _id: 'ft_seed_2',
-        visitorId: 'v_baner_2',
-        sessionId: 's_b1',
-        path: '/services/deep-cleaning',
-        pageTitle: 'Deep Cleaning Services in Pune',
-        referrer: 'Direct',
-        device: 'mobile',
-        browser: 'Safari',
-        os: 'iOS',
-        city: 'Baner, Pune',
-        createdAt: new Date(now - 1000 * 60 * 35).toISOString()
-      },
-      {
-        _id: 'ft_seed_3',
-        visitorId: 'v_hinj_3',
-        sessionId: 's_h1',
-        path: '/services/sofa-cleaning',
-        pageTitle: 'Sofa Shampooing Services Pune',
-        referrer: 'WhatsApp',
-        device: 'desktop',
-        browser: 'Chrome',
-        os: 'Windows',
-        city: 'Hinjewadi, Pune',
-        createdAt: new Date(now - 1000 * 60 * 80).toISOString()
-      }
-    ];
+    return [];
   }
 
   private generateDefaultStats(events: FootmarkEvent[]): FootmarkStats {
@@ -840,8 +796,7 @@ export class FootmarkApiService {
       deviceCounts,
       topReferrers,
       recentFootmarks: list.slice(0, 60),
-      dailyTrends: this.buildDailyTrends(list),
-      auditScores: this.getAuditScores()
+      dailyTrends: this.buildDailyTrends(list)
     };
   }
 
@@ -856,8 +811,8 @@ export class FootmarkApiService {
       const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
       const dayEvents = events.filter(e => (e.createdAt || '').startsWith(dateStr));
-      const views = dayEvents.length || Math.floor(18 + Math.random() * 24);
-      const visitors = new Set(dayEvents.map(e => e.visitorId)).size || Math.floor(views * 0.72);
+      const views = dayEvents.length;
+      const visitors = new Set(dayEvents.map(e => e.visitorId)).size;
 
       days.push({ date: dateStr, label, views, visitors });
     }
@@ -865,43 +820,5 @@ export class FootmarkApiService {
     return days;
   }
 
-  getAuditScores(): Array<{ category: string; score: number; max: number; status: string; notes: string }> {
-    return [
-      {
-        category: 'Technical SEO',
-        score: 96,
-        max: 100,
-        status: 'Optimal',
-        notes: 'Dynamic OpenGraph, JSON-LD Schema (LocalBusiness, Service, Breadcrumbs), XML Sitemap & robots.txt active.'
-      },
-      {
-        category: 'Performance & Speed',
-        score: 98,
-        max: 100,
-        status: 'Optimal',
-        notes: '0 heavy 3rd-party scripts, WebP image formats, Angular SSG prerendered static assets, instant CDN delivery.'
-      },
-      {
-        category: 'Accessibility (WCAG 2.1 AA)',
-        score: 95,
-        max: 100,
-        status: 'Optimal',
-        notes: '7.2:1 contrast scrims, Skip to Content anchor, descriptive alt attributes, full keyboard navigation.'
-      },
-      {
-        category: 'Conversion Rate (CRO)',
-        score: 94,
-        max: 100,
-        status: 'Optimal',
-        notes: 'WhatsApp attribution parameters, Before/After visual showcase, 4.9★ Google reviews, inline phone validation.'
-      },
-      {
-        category: 'Security & Telemetry',
-        score: 98,
-        max: 100,
-        status: 'Optimal',
-        notes: 'Zero cookie dependence, sendBeacon non-blocking telemetry, strict CSP headers, privacy-conscious identifiers.'
-      }
-    ];
-  }
 }
+
