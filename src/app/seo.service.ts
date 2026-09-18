@@ -32,15 +32,22 @@ export class SeoService {
     this.metaService.updateTag({ name: 'description', content: config.description });
 
     // Open Graph (Facebook / LinkedIn / WhatsApp)
+    this.metaService.updateTag({ property: 'og:type', content: 'website' });
+    this.metaService.updateTag({ property: 'og:site_name', content: 'APK Elite Services' });
+    this.metaService.updateTag({ property: 'og:locale', content: 'en_IN' });
     this.metaService.updateTag({ property: 'og:title', content: config.title });
     this.metaService.updateTag({ property: 'og:description', content: config.description });
     this.metaService.updateTag({ property: 'og:url', content: url });
     this.metaService.updateTag({ property: 'og:image', content: image });
+    this.metaService.updateTag({ property: 'og:image:alt', content: `${config.title} - APK Elite Services` });
 
     // Twitter Cards
+    this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.metaService.updateTag({ name: 'twitter:url', content: url });
     this.metaService.updateTag({ name: 'twitter:title', content: config.title });
     this.metaService.updateTag({ name: 'twitter:description', content: config.description });
     this.metaService.updateTag({ name: 'twitter:image', content: image });
+    this.metaService.updateTag({ name: 'twitter:image:alt', content: `${config.title} - APK Elite Services` });
 
     // Canonical must match the page URL, otherwise Google folds
     // every page into the homepage and never shows sitelinks.
