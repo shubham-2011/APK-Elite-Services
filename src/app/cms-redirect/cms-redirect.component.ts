@@ -11,6 +11,7 @@ const PIN_STORAGE_KEY = 'apk_cms_pin_auth';
 const CUSTOM_PIN_KEY = 'apk_cms_custom_pin';
 const ADMIN_NAME_KEY = 'apk_cms_admin_name';
 const ADMIN_USERNAME_KEY = 'apk_cms_admin_username';
+const THEME_KEY = 'apk_cms_dark_mode';
 
 const DEFAULT_PIN = '1234';
 const DEFAULT_ADMIN_NAME = 'Shubham Misra';
@@ -78,14 +79,29 @@ export class CmsRedirectComponent implements OnInit {
     businessHours: 'Mon - Sun: 8:00 AM - 9:00 PM',
     promoBanner: {
       enabled: true,
-      text: 'Festival Offer: Flat 15% OFF on Deep Cleaning in Pune!',
+      text: '✨ Flat 15% OFF on Deep Home Cleaning in Wakad, Hinjewadi & Baner this week!',
       discountPercent: 15
     },
     formConfig: {
       modalTitle: 'Request a Free Quote',
-      modalSubtitle: 'Fill details to receive an instant estimate.',
-      localities: [],
-      services: []
+      modalSubtitle: 'Fill details to receive an instant estimate in Pune.',
+      localities: [
+        'Wakad', 'Hinjewadi', 'Baner', 'Pimple Saudagar', 'Aundh', 
+        'Kothrud', 'Viman Nagar', 'Hadapsar', 'Kharadi', 
+        'Bavdhan', 'Pashan', 'Ravet', 'Pimple Nilakh', 'Chinchwad'
+      ],
+      services: [
+        'Deep Home Cleaning',
+        'Kitchen Deep Cleaning',
+        'Bathroom Deep Cleaning',
+        'Sofa & Upholstery Cleaning',
+        'Carpet Shampooing',
+        'Mattress Sanitization',
+        'Balcony & Window Cleaning',
+        'Office & Commercial Cleaning',
+        'Move-In / Move-Out Cleaning',
+        'Floor Scrubbing & Polishing'
+      ]
     },
     pricing: [],
     showcase: {
@@ -113,8 +129,8 @@ export class CmsRedirectComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.generateTags({
-      title: 'Umami Analytics & Admin | APK Elite Services',
-      description: 'Website traffic analytics and lead management portal.',
+      title: 'APK Elite Services Analytics & Admin Portal',
+      description: 'Website traffic analytics and lead management portal for APK Elite Services.',
       path: '/cms'
     });
 
@@ -123,12 +139,25 @@ export class CmsRedirectComponent implements OnInit {
       this.adminUsername = localStorage.getItem(ADMIN_USERNAME_KEY) || DEFAULT_ADMIN_USERNAME;
       this.loginUsername = this.adminUsername;
 
+      const storedTheme = localStorage.getItem(THEME_KEY);
+      if (storedTheme !== null) {
+        this.darkMode = storedTheme === 'true';
+      }
+
       const auth = localStorage.getItem(PIN_STORAGE_KEY);
       if (auth === 'true') {
         this.isAuthenticated = true;
         this.loadAllData();
       }
     }
+  }
+
+  toggleDarkMode(): void {
+    this.darkMode = !this.darkMode;
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(THEME_KEY, String(this.darkMode));
+    }
+    this.showToast(`Switched to ${this.darkMode ? 'Dark' : 'Light'} Mode`);
   }
 
   toggleMobileSidebar(): void {

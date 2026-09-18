@@ -1,4 +1,4 @@
-<div class="umami-root">
+<div class="umami-root" [class.light-mode]="!darkMode">
 
   <!-- ============================================================ -->
   <!-- 1. PIN AUTHENTICATION SCREEN -->
@@ -11,8 +11,8 @@
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
       </div>
-      <h2>Umami Analytics</h2>
-      <p class="auth-sub">APK Elite Services · Admin Portal</p>
+      <h2>APK Elite Services</h2>
+      <p class="auth-sub">Enterprise Analytics &amp; CMS Portal</p>
 
       <form (submit)="onPinSubmit($event)" class="pin-form">
         <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
@@ -73,8 +73,8 @@
     <aside class="umami-sidebar" [class.mobile-open]="mobileSidebarOpen">
       <div class="sidebar-header">
         <div class="brand-badge">
-          <span class="brand-logo-icon">●</span>
-          <span class="brand-name">umami</span>
+          <span class="brand-logo-icon">✦</span>
+          <span class="brand-name">APK Elite</span>
         </div>
         <button class="sidebar-icon-btn mobile-close-btn" (click)="closeMobileSidebar()" title="Close Navigation">✕</button>
       </div>
@@ -288,6 +288,9 @@
 
           <button (click)="loadAllData()" [disabled]="refreshing" class="btn-refresh" title="Sync live telemetry">
             <span [class.spin]="refreshing">⟳</span>
+          </button>
+          <button (click)="toggleDarkMode()" class="btn-theme-toggle" [title]="darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+            <span>{{ darkMode ? '☀️' : '🌙' }}</span>
           </button>
           <a routerLink="/" target="_blank" class="btn-live-site">Live Site ↗</a>
         </div>

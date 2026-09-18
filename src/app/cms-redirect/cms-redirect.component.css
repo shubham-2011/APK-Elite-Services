@@ -473,11 +473,32 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.15s;
 }
 
 .btn-refresh:hover {
   background: #27272a;
   color: #fff;
+}
+
+.btn-theme-toggle {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #facc15;
+  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-theme-toggle:hover {
+  background: #27272a;
+  transform: scale(1.05);
 }
 
 .btn-live-site {
@@ -1587,5 +1608,300 @@
     font-size: 0.95rem;
   }
 }
+
+/* ==========================================================================
+   LIGHT MODE THEME (MATCHES APK ELITE SERVICES BRAND PERSONA)
+   ========================================================================== */
+.umami-root.light-mode {
+  background: #f4f7fb;
+  color: #1e293b;
+}
+
+.umami-root.light-mode .auth-wrapper {
+  background: #f1f5f9;
+}
+
+.umami-root.light-mode .auth-card {
+  background: #ffffff;
+  border-color: rgba(15, 42, 61, 0.1);
+  box-shadow: 0 20px 40px rgba(15, 42, 61, 0.08);
+}
+
+.umami-root.light-mode .auth-card h2 {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .pin-input {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .pin-input:focus {
+  border-color: #1e73be;
+}
+
+.umami-root.light-mode .umami-app-layout {
+  background: #f4f7fb;
+}
+
+.umami-root.light-mode .umami-sidebar {
+  background: #ffffff;
+  border-right-color: #e2e8f0;
+}
+
+.umami-root.light-mode .brand-name {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .brand-logo-icon {
+  color: #1e73be;
+}
+
+.umami-root.light-mode .sidebar-back-link {
+  color: #64748b;
+}
+
+.umami-root.light-mode .sidebar-back-link:hover {
+  color: #1e73be;
+}
+
+.umami-root.light-mode .nav-section-title {
+  color: #94a3b8;
+}
+
+.umami-root.light-mode .nav-link {
+  color: #475569;
+}
+
+.umami-root.light-mode .nav-link:hover {
+  background: #f1f5f9;
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .nav-link.active {
+  background: rgba(30, 115, 190, 0.12);
+  color: #1e73be;
+  font-weight: 600;
+}
+
+.umami-root.light-mode .sidebar-footer {
+  border-top-color: #e2e8f0;
+}
+
+.umami-root.light-mode .user-name-text {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .user-email-text {
+  color: #64748b;
+}
+
+.umami-root.light-mode .btn-sidebar-sub {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.umami-root.light-mode .btn-sidebar-sub:hover {
+  background: #e2e8f0;
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .umami-topbar {
+  border-bottom-color: #e2e8f0;
+}
+
+.umami-root.light-mode .dropdown-identity {
+  color: #334155;
+}
+
+.umami-root.light-mode .dropdown-identity:hover {
+  background: #e2e8f0;
+}
+
+.umami-root.light-mode .identity-name,
+.umami-root.light-mode .identity-site {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .mobile-menu-btn,
+.umami-root.light-mode .btn-refresh,
+.umami-root.light-mode .btn-theme-toggle {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.umami-root.light-mode .btn-theme-toggle {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .mobile-menu-btn:hover,
+.umami-root.light-mode .btn-refresh:hover,
+.umami-root.light-mode .btn-theme-toggle:hover {
+  background: #f8fafc;
+}
+
+.umami-root.light-mode .timeframe-group {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.umami-root.light-mode .tf-btn {
+  color: #64748b;
+}
+
+.umami-root.light-mode .tf-btn:hover {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .tf-btn.active {
+  background: #1e73be;
+  color: #ffffff;
+}
+
+.umami-root.light-mode .metric-box,
+.umami-root.light-mode .umami-chart-card,
+.umami-root.light-mode .umami-panel-card,
+.umami-root.light-mode .goal-card,
+.umami-root.light-mode .lead-item-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 10px rgba(15, 42, 61, 0.04);
+}
+
+.umami-root.light-mode .metric-header-lbl,
+.umami-root.light-mode .goal-title,
+.umami-root.light-mode .lead-meta {
+  color: #64748b;
+}
+
+.umami-root.light-mode .metric-big-val,
+.umami-root.light-mode .panel-main-title,
+.umami-root.light-mode .goal-number,
+.umami-root.light-mode .lead-cust-name,
+.umami-root.light-mode .section-title {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .panel-subtabs-row {
+  border-bottom-color: #e2e8f0;
+}
+
+.umami-root.light-mode .subtab-btn {
+  color: #64748b;
+}
+
+.umami-root.light-mode .subtab-btn:hover {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .subtab-btn.active {
+  color: #1e73be;
+}
+
+.umami-root.light-mode .panel-table-header {
+  border-bottom-color: #f1f5f9;
+  color: #94a3b8;
+}
+
+.umami-root.light-mode .panel-row {
+  border-bottom-color: #f8fafc;
+}
+
+.umami-root.light-mode .panel-row:hover {
+  background: #f8fafc;
+}
+
+.umami-root.light-mode .row-key {
+  color: #1e293b;
+}
+
+.umami-root.light-mode .row-val {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .row-bar-fill {
+  background: rgba(30, 115, 190, 0.12);
+}
+
+.umami-root.light-mode .btn-more-panel {
+  color: #1e73be;
+}
+
+.umami-root.light-mode .btn-more-panel:hover {
+  color: #155a96;
+}
+
+.umami-root.light-mode .stream-table th {
+  background: #f8fafc;
+  color: #64748b;
+  border-bottom-color: #e2e8f0;
+}
+
+.umami-root.light-mode .stream-data-row {
+  border-bottom-color: #f1f5f9;
+}
+
+.umami-root.light-mode .stream-data-row:hover {
+  background: #f8fafc;
+}
+
+.umami-root.light-mode .stream-title {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .source-tag {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.umami-root.light-mode .umami-input,
+.umami-root.light-mode .umami-select {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .umami-input:focus,
+.umami-root.light-mode .umami-select:focus {
+  border-color: #1e73be;
+}
+
+.umami-root.light-mode .modal-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 40px rgba(15, 42, 61, 0.15);
+}
+
+.umami-root.light-mode .modal-head h3 {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .btn-modal-close {
+  color: #64748b;
+}
+
+.umami-root.light-mode .btn-modal-close:hover {
+  color: #0f2a3d;
+}
+
+.umami-root.light-mode .tag-pill {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.umami-root.light-mode .tag-x {
+  color: #94a3b8;
+}
+
+.umami-root.light-mode .tag-x:hover {
+  color: #ef4444;
+}
+
 
 
