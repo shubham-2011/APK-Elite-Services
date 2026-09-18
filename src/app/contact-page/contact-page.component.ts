@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { SeoService } from '../seo.service';
 import { LeadApiService } from '../shared/lead-api.service';
 import { ContentApiService } from '../shared/content-api.service';
+import { FootmarkApiService } from '../shared/footmark-api.service';
 
 const WA_NUMBER = '918830167863';
 
@@ -334,6 +335,7 @@ export class ContactPageComponent implements OnInit, OnDestroy {
     private seo: SeoService,
     private leadApi: LeadApiService,
     private contentApi: ContentApiService,
+    private footmarkApi: FootmarkApiService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -358,12 +360,25 @@ export class ContactPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  onFieldFocus(fieldName: string): void {
+    this.footmarkApi.trackFormLifecycle('start', 'contact_page_form', {
+      field: fieldName,
+      service: this.form.service,
+      locality: this.form.locality
+    });
+  }
+
   ngOnDestroy(): void {
     this.contentSub?.unsubscribe();
   }
 
   onSubmit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+
+    this.footmarkApi.trackFormLifecycle('submit', 'contact_page_form', {
+      service: this.form.service,
+      locality: this.form.locality
+    });
 
     // Asynchronously capture lead in Next.js + MongoDB CMS
     this.leadApi.submitLead({
@@ -386,6 +401,11 @@ export class ContactPageComponent implements OnInit, OnDestroy {
 
     // Trigger direct native email draft open to target email
     window.location.href = this.successEmailUrl;
+
+    this.footmarkApi.trackFormLifecycle('success', 'contact_page_form', {
+      service: this.form.service,
+      locality: this.form.locality
+    });
 
     if ((window as any).umami) {
       (window as any).umami.track('contact-form-submit', { service: this.form.service, locality: this.form.locality });

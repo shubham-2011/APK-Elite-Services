@@ -647,9 +647,71 @@ const DEFAULT_PIN = '1234';
               </div>
             </div>
 
+            <!-- ============================================================ -->
+            <!-- RECENT CLEANING PROJECTS SHOWCASE SECTION (HOMEPAGE) -->
+            <!-- ============================================================ -->
+            <div class="settings-box" *ngIf="dynamicContent.showcase">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                  <h3 style="margin: 0 0 0.25rem; font-size: 1.15rem; color: #0f172a;">
+                    🏠 Recent Cleaning Projects Showcase (Homepage)
+                  </h3>
+                  <p class="settings-desc" style="margin: 0;">
+                    Manage the "Recent Cleaning Projects in Pune" cards, photos, locations, and descriptions.
+                  </p>
+                </div>
+                <button (click)="addProject()" class="btn-add" style="margin: 0;">+ Add Project Card</button>
+              </div>
+
+              <!-- Section Headings -->
+              <div class="form-fields-grid" style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <div class="field-group" style="grid-column: 1 / -1;">
+                  <label>Section Heading Title</label>
+                  <input type="text" [(ngModel)]="dynamicContent.showcase.heading" placeholder="Recent Cleaning Projects in Pune" class="setting-input" />
+                </div>
+                <div class="field-group" style="grid-column: 1 / -1;">
+                  <label>Section Subheading Description</label>
+                  <input type="text" [(ngModel)]="dynamicContent.showcase.subheading" placeholder="Explore recent residential and commercial cleaning work..." class="setting-input" />
+                </div>
+              </div>
+
+              <!-- Projects List -->
+              <div class="cms-projects-list">
+                <div *ngFor="let proj of dynamicContent.showcase.projects; let idx = index" class="cms-project-item">
+                  <div class="proj-header-row">
+                    <span class="proj-idx-badge">Project Card #{{ idx + 1 }}</span>
+                    <button (click)="removeProject(idx)" class="btn-remove-proj" title="Delete this project">✕ Remove Card</button>
+                  </div>
+
+                  <div class="proj-inputs-grid">
+                    <div class="field-group">
+                      <label>Project Title</label>
+                      <input type="text" [(ngModel)]="proj.title" placeholder="e.g. 3BHK Vacant Apartment Deep Clean" class="setting-input" />
+                    </div>
+                    <div class="field-group">
+                      <label>Pune Locality</label>
+                      <input type="text" [(ngModel)]="proj.location" placeholder="e.g. Baner, Pune" class="setting-input" />
+                    </div>
+                    <div class="field-group">
+                      <label>Service Category Badge</label>
+                      <input type="text" [(ngModel)]="proj.category" placeholder="e.g. Deep Cleaning" class="setting-input" />
+                    </div>
+                    <div class="field-group">
+                      <label>Image Asset / WebP Path</label>
+                      <input type="text" [(ngModel)]="proj.imageUrl" placeholder="/assets/images/deep-clean.webp" class="setting-input" />
+                    </div>
+                    <div class="field-group" style="grid-column: 1 / -1;">
+                      <label>Work Description Summary</label>
+                      <textarea [(ngModel)]="proj.description" rows="2" placeholder="Brief summary of cleaning work performed..." class="setting-input"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="save-bar">
               <button (click)="saveContentChanges()" [disabled]="savingContent" class="btn-save-all">
-                {{ savingContent ? 'Saving Changes...' : '💾 Save Website Content & Pricing' }}
+                {{ savingContent ? 'Saving Changes...' : '💾 Save Website Content, Projects & Pricing' }}
               </button>
             </div>
 
@@ -1347,6 +1409,59 @@ const DEFAULT_PIN = '1234';
       cursor: pointer;
     }
 
+    /* PROJECTS SHOWCASE CMS */
+    .cms-projects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .cms-project-item {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    .proj-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.75rem;
+    }
+    .proj-idx-badge {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #0284c7;
+      background: #e0f2fe;
+      padding: 0.25rem 0.65rem;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+    }
+    .btn-remove-proj {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-remove-proj:hover {
+      background: #dc2626;
+      color: white;
+    }
+    .proj-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
     /* ANALYTICS & AUDIT GRAPHS */
     .analytics-graphs-container {
       display: grid;
@@ -1629,6 +1744,33 @@ export class CmsRedirectComponent implements OnInit {
       services: [],
     },
     pricing: [],
+    showcase: {
+      heading: 'Recent Cleaning Projects in Pune',
+      subheading: 'Explore recent residential and commercial cleaning work completed by our trained in-house team across Pune & PCMC.',
+      projects: [
+        {
+          title: '3BHK Vacant Apartment Deep Clean',
+          location: 'Baner, Pune',
+          category: 'Deep Cleaning',
+          imageUrl: '/assets/images/deep-clean.webp',
+          description: 'Complete floor scrubbing, kitchen degreasing, bathroom descaling & balcony pressure washing.'
+        },
+        {
+          title: '7-Seater Fabric Sofa Shampooing',
+          location: 'Wakad, Pune',
+          category: 'Sofa Cleaning',
+          imageUrl: '/assets/images/Sofacleaning.webp',
+          description: 'Deep foam injection & extraction to remove tough stains, dust & odor from living room sofa.'
+        },
+        {
+          title: 'Corporate Office Carpet & Janitorial',
+          location: 'Kharadi (EON IT Park), Pune',
+          category: 'Office Cleaning',
+          imageUrl: '/assets/images/office-clean.webp',
+          description: 'Overnight office sanitization, carpet steam extraction & workstation sanitization.'
+        }
+      ]
+    }
   };
 
   newLocalityName = '';
@@ -1687,7 +1829,17 @@ export class CmsRedirectComponent implements OnInit {
     this.refreshing = true;
     try {
       this.leads = await this.leadApi.fetchAllLeads();
-      this.dynamicContent = await this.contentApi.fetchLiveContent();
+      const live = await this.contentApi.fetchLiveContent();
+      if (live) {
+        if (!live.showcase) {
+          live.showcase = {
+            heading: this.dynamicContent.showcase?.heading || 'Recent Cleaning Projects in Pune',
+            subheading: this.dynamicContent.showcase?.subheading || 'Explore recent residential and commercial cleaning work completed by our trained in-house team across Pune & PCMC.',
+            projects: this.dynamicContent.showcase?.projects ? [...this.dynamicContent.showcase.projects] : []
+          };
+        }
+        this.dynamicContent = live;
+      }
       await this.loadFootmarks();
     } catch (e) {
       console.warn('Error loading CMS data:', e);
@@ -1856,6 +2008,31 @@ export class CmsRedirectComponent implements OnInit {
 
   removeService(index: number) {
     this.dynamicContent.formConfig.services.splice(index, 1);
+  }
+
+  addProject() {
+    if (!this.dynamicContent.showcase) {
+      this.dynamicContent.showcase = {
+        heading: 'Recent Cleaning Projects in Pune',
+        subheading: 'Explore recent residential and commercial cleaning work completed by our trained in-house team across Pune & PCMC.',
+        projects: []
+      };
+    }
+    this.dynamicContent.showcase.projects.push({
+      title: 'New Cleaning Project',
+      location: 'Wakad, Pune',
+      category: 'Deep Cleaning',
+      imageUrl: '/assets/images/deep-clean.webp',
+      description: 'Comprehensive cleaning and sanitization completed by our in-house uniformed team.'
+    });
+    this.showToast('New project card added. Edit details and click Save.');
+  }
+
+  removeProject(index: number) {
+    if (this.dynamicContent.showcase?.projects) {
+      this.dynamicContent.showcase.projects.splice(index, 1);
+      this.showToast('Project card removed. Click Save to persist.');
+    }
   }
 
   async saveContentChanges() {

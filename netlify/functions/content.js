@@ -59,6 +59,33 @@ const DEFAULT_CONTENT = {
     { service: 'Office Cleaning', startingPrice: 1999, unit: 'starting from', active: true },
     { service: 'Pest Control', startingPrice: 1199, unit: 'starting from', active: true },
   ],
+  showcase: {
+    heading: 'Recent Cleaning Projects in Pune',
+    subheading: 'Explore recent residential and commercial cleaning work completed by our trained in-house team across Pune & PCMC.',
+    projects: [
+      {
+        title: '3BHK Vacant Apartment Deep Clean',
+        location: 'Baner, Pune',
+        category: 'Deep Cleaning',
+        imageUrl: '/assets/images/deep-clean.webp',
+        description: 'Complete floor scrubbing, kitchen degreasing, bathroom descaling & balcony pressure washing.'
+      },
+      {
+        title: '7-Seater Fabric Sofa Shampooing',
+        location: 'Wakad, Pune',
+        category: 'Sofa Cleaning',
+        imageUrl: '/assets/images/Sofacleaning.webp',
+        description: 'Deep foam injection & extraction to remove tough stains, dust & odor from living room sofa.'
+      },
+      {
+        title: 'Corporate Office Carpet & Janitorial',
+        location: 'Kharadi (EON IT Park), Pune',
+        category: 'Office Cleaning',
+        imageUrl: '/assets/images/office-clean.webp',
+        description: 'Overnight office sanitization, carpet steam extraction & workstation sanitization.'
+      }
+    ]
+  }
 };
 
 let inMemoryContent = { ...DEFAULT_CONTENT };

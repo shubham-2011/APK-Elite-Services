@@ -1,4 +1,4 @@
-import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, HostListener, OnInit } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { NavBarComponent } from './nav-bar/nav-bar.component';
@@ -21,7 +21,7 @@ declare global {
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(
     private router: Router,
     private footmarkApi: FootmarkApiService,
@@ -45,5 +45,26 @@ export class AppComponent {
           });
         }
       });
+  }
+
+  @HostListener('window:scroll')
+  onWindowScroll() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.footmarkApi.handleScroll();
+    }
+  }
+
+  @HostListener('window:click', ['$event'])
+  onWindowClick(event: MouseEvent) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.footmarkApi.handleClick(event);
+    }
+  }
+
+  @HostListener('window:error', ['$event'])
+  onWindowError(event: ErrorEvent) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.footmarkApi.trackError(event.message || 'Unknown window error');
+    }
   }
 }

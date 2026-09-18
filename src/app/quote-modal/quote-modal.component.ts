@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { QuoteModalService } from '../shared/quote-modal.service';
 import { LeadApiService } from '../shared/lead-api.service';
 import { ContentApiService } from '../shared/content-api.service';
+import { FootmarkApiService } from '../shared/footmark-api.service';
 
 const WA_NUMBER = '918830167863';
 const TARGET_EMAIL = 'info@apkeliteservices.in';
@@ -50,7 +51,7 @@ interface ModalForm {
               <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
               <span>Send Email to {{ targetEmail }}</span>
             </a>
-            <a [href]="whatsAppUrl" target="_blank" rel="noopener" class="btn-whatsapp" data-umami-event="modal-whatsapp-click">
+            <a [href]="whatsAppUrl" target="_blank" rel="noopener" class="btn-whatsapp" (click)="onWhatsAppSuccessClick()" data-umami-event="modal-whatsapp-click">
               <svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path fill="currentColor" d="M12 0C5.373 0 0 5.373 0 12c0 2.125.555 4.122 1.528 5.855L0 24l6.335-1.502A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.655-.52-5.17-1.426l-.37-.22-3.76.892.946-3.653-.24-.383A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
               <span>Instant Chat on WhatsApp</span>
             </a>
@@ -64,6 +65,7 @@ interface ModalForm {
             <div class="field" [class.error]="nameFld.invalid && (nameFld.dirty || nameFld.touched)">
               <label for="modal-name">Full Name <span class="req">*</span></label>
               <input id="modal-name" name="name" type="text" [(ngModel)]="form.name"
+                     (focus)="onFieldFocus('name')"
                      required minlength="2" #nameFld="ngModel"
                      placeholder="Your name" autocomplete="name" />
               <div *ngIf="nameFld.invalid && (nameFld.dirty || nameFld.touched)" class="field-error-msg">
@@ -74,6 +76,7 @@ interface ModalForm {
             <div class="field" [class.error]="phoneFld.invalid && (phoneFld.dirty || phoneFld.touched)">
               <label for="modal-phone">Mobile Number <span class="req">*</span></label>
               <input id="modal-phone" name="phone" type="tel" [(ngModel)]="form.phone"
+                     (focus)="onFieldFocus('phone')"
                      required pattern="[6-9][0-9]{9}" #phoneFld="ngModel"
                      placeholder="10-digit phone" autocomplete="tel" />
               <div *ngIf="phoneFld.invalid && (phoneFld.dirty || phoneFld.touched)" class="field-error-msg">
@@ -175,12 +178,19 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     private modalService: QuoteModalService,
     private leadApi: LeadApiService,
     private contentApi: ContentApiService,
+    private footmarkApi: FootmarkApiService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit(): void {
     this.sub = this.modalService.isOpen$.subscribe(open => {
       this.isOpen = open;
+      if (open && isPlatformBrowser(this.platformId)) {
+        this.footmarkApi.trackEvent('quote_modal_open', {
+          service: this.form.service,
+          locality: this.form.locality
+        });
+      }
       if (!open) {
         this.resetForm();
       }
@@ -208,6 +218,23 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     });
   }
 
+  onFieldFocus(fieldName: string): void {
+    this.footmarkApi.trackFormLifecycle('start', 'quote_modal', {
+      field: fieldName,
+      service: this.form.service,
+      locality: this.form.locality
+    });
+  }
+
+  onWhatsAppSuccessClick(): void {
+    this.footmarkApi.trackWhatsAppClick(
+      this.form.service,
+      this.form.service,
+      'quote_modal_success',
+      window.location.pathname
+    );
+  }
+
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
     this.contentSub?.unsubscribe();
@@ -225,6 +252,11 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+
+    this.footmarkApi.trackFormLifecycle('submit', 'quote_modal', {
+      service: this.form.service,
+      locality: this.form.locality
+    });
 
     // Asynchronously capture lead in Next.js + MongoDB CMS
     this.leadApi.submitLead({
@@ -248,6 +280,11 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
 
     // 3. Open user's email client directly pre-filled with all details
     window.location.href = this.mailtoUrl;
+
+    this.footmarkApi.trackFormLifecycle('success', 'quote_modal', {
+      service: this.form.service,
+      locality: this.form.locality
+    });
 
     if ((window as any).umami) {
       (window as any).umami.track('quote-modal-submit', { service: this.form.service, locality: this.form.locality });

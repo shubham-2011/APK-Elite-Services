@@ -143,9 +143,11 @@ export class LocalityPageComponent implements OnInit {
   constructor(private route: ActivatedRoute, private seo: SeoService) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((params) => {
-      const slug = params.get('slug') || '';
-      // Extract locality key e.g. "deep-cleaning-baner" -> "baner"
+    const extractAndLoad = () => {
+      let slug = this.route.snapshot.paramMap.get('slug') || '';
+      if (!slug && this.route.snapshot.url.length > 0) {
+        slug = this.route.snapshot.url[this.route.snapshot.url.length - 1].path;
+      }
       const key = slug.replace('deep-cleaning-', '').toLowerCase();
       const matched = LOCALITY_DATA[key];
 
@@ -168,6 +170,9 @@ export class LocalityPageComponent implements OnInit {
         description: matched.metaDescription,
         path: `/services/${matched.slug}`
       });
-    });
+    };
+
+    extractAndLoad();
+    this.route.url.subscribe(() => extractAndLoad());
   }
 }

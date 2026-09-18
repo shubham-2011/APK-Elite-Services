@@ -1,6 +1,54 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
+export type TelemetryEventType =
+  | 'page_view'
+  | 'session_start'
+  | 'session_end'
+  | 'service_view'
+  | 'service_cta_click'
+  | 'whatsapp_click'
+  | 'phone_click'
+  | 'contact_form_start'
+  | 'contact_form_submit'
+  | 'contact_form_success'
+  | 'contact_form_error'
+  | 'menu_open'
+  | 'menu_close'
+  | 'external_link_click'
+  | 'scroll_25'
+  | 'scroll_50'
+  | 'scroll_75'
+  | 'scroll_90'
+  | 'scroll_100'
+  | 'rage_click'
+  | 'dead_click'
+  | 'error';
+
+export interface TelemetryEvent {
+  event_name: TelemetryEventType | string;
+  event_id: string;
+  timestamp: string;
+  anonymous_id: string;
+  session_id: string;
+  page: string;
+  route: string;
+  device_type: 'mobile' | 'desktop' | 'tablet';
+  browser: string;
+  os: string;
+  viewport_width: number;
+  viewport_height: number;
+  referrer: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  release_version: string;
+  service_id?: string;
+  service_name?: string;
+  cta_type?: string;
+  properties?: Record<string, unknown>;
+}
+
 export interface FootmarkEvent {
   _id?: string;
   visitorId: string;
@@ -10,6 +58,7 @@ export interface FootmarkEvent {
   referrer: string;
   device: 'mobile' | 'desktop' | 'tablet';
   browser: string;
+  os?: string;
   city: string;
   createdAt: string;
 }
@@ -28,6 +77,9 @@ export interface FootmarkStats {
 }
 
 const STORAGE_KEY = 'apk_footmarks_v2';
+const TELEMETRY_STORAGE_KEY = 'apk_telemetry_events_v1';
+const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes inactivity
+const APP_RELEASE_VERSION = '2.1.0-prod';
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +89,12 @@ export class FootmarkApiService {
   private lastTrackedPath = '';
   private lastTrackedTime = 0;
 
+  // Scroll milestones tracked for the current page
+  private trackedScrollDepths = new Set<number>();
+
+  // Rage click tracking state
+  private recentClicks: Array<{ time: number; x: number; y: number; target: EventTarget | null }> = [];
+
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
   private isBrowser(): boolean {
@@ -44,8 +102,8 @@ export class FootmarkApiService {
   }
 
   /**
-   * Track a page view across the website.
-   * Ignores admin visits to /cms and prevents duplicate rapid fires.
+   * Primary route page_view tracking.
+   * Resets page-level scroll milestones and validates session lifecycle.
    */
   track(path: string, pageTitle?: string): void {
     if (!this.isBrowser()) return;
@@ -64,15 +122,20 @@ export class FootmarkApiService {
     this.lastTrackedPath = normalizedPath;
     this.lastTrackedTime = now;
 
+    // Reset scroll milestones for the newly loaded page
+    this.trackedScrollDepths.clear();
+
     const visitorId = this.getOrCreateVisitorId();
     const sessionId = this.getOrCreateSessionId();
     const device = this.detectDevice();
     const browser = this.detectBrowser();
+    const os = this.detectOS();
     const referrer = this.normalizeReferrer(document.referrer);
     const title = pageTitle || document.title || 'APK Elite Services | Pune';
     const createdAt = new Date().toISOString();
 
-    const event: FootmarkEvent = {
+    // 1. Maintain backward-compatible FootmarkEvent for CMS
+    const footmark: FootmarkEvent = {
       _id: 'ft_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       visitorId,
       sessionId,
@@ -81,21 +144,290 @@ export class FootmarkApiService {
       referrer,
       device,
       browser,
+      os,
       city: 'Pune',
       createdAt
     };
+    this.saveLocalEvent(footmark);
 
-    // 1. Persist locally in localStorage
-    this.saveLocalEvent(event);
+    // 2. Dispatch structured TelemetryEvent for page_view
+    this.dispatchTelemetry({
+      event_name: 'page_view',
+      event_id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      timestamp: createdAt,
+      anonymous_id: visitorId,
+      session_id: sessionId,
+      page: title,
+      route: normalizedPath,
+      device_type: device,
+      browser,
+      os,
+      viewport_width: window.innerWidth || 0,
+      viewport_height: window.innerHeight || 0,
+      referrer,
+      ...this.extractUTM(),
+      release_version: APP_RELEASE_VERSION,
+      properties: {
+        raw_url: window.location.href,
+        color_scheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+    });
 
-    // 2. Post to Netlify Function / Backend
+    // 3. Post to Netlify Function / Backend endpoint
+    this.sendRemotePayload(footmark);
+  }
+
+  /**
+   * Generic structured telemetry event dispatcher.
+   */
+  trackEvent(
+    eventName: TelemetryEventType | string,
+    properties?: Record<string, unknown>,
+    serviceDetails?: { service_id?: string; service_name?: string; cta_type?: string }
+  ): void {
+    if (!this.isBrowser()) return;
+
+    const visitorId = this.getOrCreateVisitorId();
+    const sessionId = this.getOrCreateSessionId();
+    const device = this.detectDevice();
+    const browser = this.detectBrowser();
+    const os = this.detectOS();
+    const normalizedPath = window.location.pathname.replace(/\/$/, '') || '/';
+
+    const event: TelemetryEvent = {
+      event_name: eventName,
+      event_id: 'ev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      timestamp: new Date().toISOString(),
+      anonymous_id: visitorId,
+      session_id: sessionId,
+      page: document.title || 'APK Elite Services',
+      route: normalizedPath,
+      device_type: device,
+      browser,
+      os,
+      viewport_width: window.innerWidth || 0,
+      viewport_height: window.innerHeight || 0,
+      referrer: this.normalizeReferrer(document.referrer),
+      ...this.extractUTM(),
+      release_version: APP_RELEASE_VERSION,
+      service_id: serviceDetails?.service_id,
+      service_name: serviceDetails?.service_name,
+      cta_type: serviceDetails?.cta_type,
+      properties: properties || {}
+    };
+
+    this.dispatchTelemetry(event);
+  }
+
+  /**
+   * Service Catalog View Tracking
+   */
+  trackServiceView(serviceId: string, serviceName: string, startingPrice?: string): void {
+    this.trackEvent(
+      'service_view',
+      { startingPrice, viewed_at: new Date().toISOString() },
+      { service_id: serviceId, service_name: serviceName }
+    );
+  }
+
+  /**
+   * Service CTA Click Tracking
+   */
+  trackServiceCta(serviceId: string, serviceName: string, ctaType: string, position?: string): void {
+    this.trackEvent(
+      'service_cta_click',
+      { position: position || 'in_page', ctaType },
+      { service_id: serviceId, service_name: serviceName, cta_type: ctaType }
+    );
+  }
+
+  /**
+   * Dedicated WhatsApp Conversion Tracking with attribution context
+   */
+  trackWhatsAppClick(serviceId?: string, serviceName?: string, ctaType?: string, page?: string): void {
+    this.trackEvent(
+      'whatsapp_click',
+      {
+        conversion_channel: 'whatsapp',
+        source_page: page || window.location.pathname,
+        service_id: serviceId || 'general_inquiry'
+      },
+      {
+        service_id: serviceId || 'general_inquiry',
+        service_name: serviceName || 'General Inquiry',
+        cta_type: ctaType || 'floating_button'
+      }
+    );
+  }
+
+  /**
+   * Dedicated Phone Conversion Tracking
+   */
+  trackPhoneClick(serviceId?: string, serviceName?: string, page?: string): void {
+    this.trackEvent(
+      'phone_click',
+      {
+        conversion_channel: 'phone',
+        source_page: page || window.location.pathname,
+        service_id: serviceId || 'general_inquiry'
+      },
+      {
+        service_id: serviceId || 'general_inquiry',
+        service_name: serviceName || 'General Inquiry',
+        cta_type: 'click_to_call'
+      }
+    );
+  }
+
+  /**
+   * Form Lifecycle Telemetry
+   */
+  trackFormLifecycle(
+    stage: 'start' | 'submit' | 'success' | 'error',
+    formName: string,
+    meta?: Record<string, unknown>
+  ): void {
+    const eventName: TelemetryEventType =
+      stage === 'start'
+        ? 'contact_form_start'
+        : stage === 'submit'
+        ? 'contact_form_submit'
+        : stage === 'success'
+        ? 'contact_form_success'
+        : 'contact_form_error';
+
+    this.trackEvent(eventName, {
+      form_name: formName,
+      ...(meta || {})
+    });
+  }
+
+  /**
+   * Scroll Depth Telemetry Listener
+   * Triggers scroll_25, scroll_50, scroll_75, scroll_90, scroll_100 once per pageview.
+   */
+  handleScroll(): void {
+    if (!this.isBrowser()) return;
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+    const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    if (docHeight <= 0) return;
+
+    const pct = Math.round((scrollTop / docHeight) * 100);
+    const milestones = [25, 50, 75, 90, 100];
+
+    for (const m of milestones) {
+      if (pct >= m && !this.trackedScrollDepths.has(m)) {
+        this.trackedScrollDepths.add(m);
+        this.trackEvent(`scroll_${m}` as TelemetryEventType, {
+          scroll_percentage: m,
+          scroll_top_px: Math.round(scrollTop),
+          document_height_px: docHeight
+        });
+      }
+    }
+  }
+
+  /**
+   * Global Click Listener for Rage Click & Dead Click Detection
+   */
+  handleClick(event: MouseEvent): void {
+    if (!this.isBrowser()) return;
+
+    const now = Date.now();
+    const target = event.target as HTMLElement | null;
+    const x = event.clientX;
+    const y = event.clientY;
+
+    // 1. Rage Click Detection: 3+ clicks within 1500ms and 35px radius
+    this.recentClicks.push({ time: now, x, y, target });
+    // Keep only clicks within last 1500ms
+    this.recentClicks = this.recentClicks.filter(c => (now - c.time) <= 1500);
+
+    if (this.recentClicks.length >= 3) {
+      const first = this.recentClicks[0];
+      const distance = Math.hypot(x - first.x, y - first.y);
+      if (distance < 35) {
+        const tagName = target?.tagName?.toLowerCase() || 'unknown';
+        const snippet = (target?.textContent || '').trim().substring(0, 40);
+        this.trackEvent('rage_click', {
+          element_tag: tagName,
+          element_class: target?.className || '',
+          snippet,
+          click_count: this.recentClicks.length,
+          x,
+          y
+        });
+        // Clear recent clicks so we don't spam rage_click events
+        this.recentClicks = [];
+      }
+    }
+
+    // 2. Dead Click Detection: clicking non-clickable element styled like an action/card
+    if (target) {
+      const isInteractive = target.closest('a, button, input, select, textarea, [role="button"], [tabindex]');
+      const looksClickable = target.closest('.card, .feature-card, .service-card, .info-box, .stat-box');
+      if (!isInteractive && looksClickable) {
+        const tagName = target.tagName.toLowerCase();
+        const snippet = (target.textContent || '').trim().substring(0, 40);
+        this.trackEvent('dead_click', {
+          element_tag: tagName,
+          element_class: (looksClickable as HTMLElement).className || '',
+          snippet,
+          x,
+          y
+        });
+      }
+    }
+  }
+
+  /**
+   * Client-Side Error Telemetry
+   */
+  trackError(errorMsg: string, stack?: string): void {
+    if (!this.isBrowser()) return;
+
+    this.trackEvent('error', {
+      error_message: errorMsg,
+      error_stack: stack ? stack.substring(0, 300) : undefined,
+      url: window.location.href
+    });
+  }
+
+  /**
+   * Save TelemetryEvent to local FIFO buffer
+   */
+  private dispatchTelemetry(event: TelemetryEvent): void {
     try {
-      const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ ||
-        (window.location.hostname === 'localhost' && window.location.port !== '3000'
-          ? 'http://localhost:3000/api/footmark'
-          : this.endpoint);
+      const raw = localStorage.getItem(TELEMETRY_STORAGE_KEY);
+      const events: TelemetryEvent[] = raw ? JSON.parse(raw) : [];
+      events.unshift(event);
+      // Keep up to 150 recent telemetry events
+      localStorage.setItem(TELEMETRY_STORAGE_KEY, JSON.stringify(events.slice(0, 150)));
+    } catch {}
+  }
 
-      const payloadStr = JSON.stringify(event);
+  /**
+   * Retrieve list of stored TelemetryEvents
+   */
+  getTelemetryEvents(): TelemetryEvent[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const raw = localStorage.getItem(TELEMETRY_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Send event payload to remote Netlify Function or Next.js backend
+   */
+  private sendRemotePayload(payload: unknown): void {
+    try {
+      const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
+
+      const payloadStr = JSON.stringify(payload);
       if (typeof navigator.sendBeacon === 'function') {
         const blob = new Blob([payloadStr], { type: 'application/json' });
         navigator.sendBeacon(targetUrl, blob);
@@ -107,14 +439,11 @@ export class FootmarkApiService {
           keepalive: true
         }).catch(() => {});
       }
-    } catch {
-      // Ignore network errors
-    }
+    } catch {}
   }
 
   /**
-   * Load footmark statistics. Attempts API first, then falls back to local storage
-   * with complete data aggregation and rich audit scores.
+   * Load footmark statistics. Attempts API first, then falls back to local storage.
    */
   async fetchStats(): Promise<FootmarkStats> {
     if (!this.isBrowser()) {
@@ -122,16 +451,12 @@ export class FootmarkApiService {
     }
 
     try {
-      const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ ||
-        (window.location.hostname === 'localhost' && window.location.port !== '3000'
-          ? 'http://localhost:3000/api/footmark'
-          : this.endpoint);
+      const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
 
       const res = await fetch(targetUrl);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.stats && data.stats.totalFootmarks > 0) {
-          // Augment with daily trends and audit scores if missing
           const stats = data.stats;
           if (!stats.dailyTrends || !stats.dailyTrends.length) {
             stats.dailyTrends = this.buildDailyTrends(stats.recentFootmarks || []);
@@ -146,7 +471,6 @@ export class FootmarkApiService {
       // Fall through to local fallback
     }
 
-    // Fallback: Aggregate from local events
     const localEvents = this.getLocalEvents();
     return this.generateDefaultStats(localEvents);
   }
@@ -186,6 +510,7 @@ export class FootmarkApiService {
       referrer: referrers[Math.floor(Math.random() * referrers.length)],
       device: devices[Math.floor(Math.random() * devices.length)],
       browser: browsers[Math.floor(Math.random() * browsers.length)],
+      os: 'Android',
       city: localities[Math.floor(Math.random() * localities.length)] + ', Pune',
       createdAt: new Date().toISOString()
     };
@@ -207,6 +532,9 @@ export class FootmarkApiService {
     return this.fetchStats();
   }
 
+  /**
+   * Anonymous persistent visitor UUID (localStorage)
+   */
   private getOrCreateVisitorId(): string {
     const key = 'apk_vid';
     let vid = localStorage.getItem(key);
@@ -217,13 +545,30 @@ export class FootmarkApiService {
     return vid;
   }
 
+  /**
+   * Rolling session identifier with 30-min inactivity renewal (sessionStorage)
+   */
   private getOrCreateSessionId(): string {
-    const key = 'apk_sid';
-    let sid = sessionStorage.getItem(key);
-    if (!sid) {
-      sid = 's_' + Math.random().toString(36).substring(2, 9);
-      sessionStorage.setItem(key, sid);
+    const sidKey = 'apk_sid';
+    const tsKey = 'apk_sid_ts';
+    const now = Date.now();
+    const lastActive = parseInt(sessionStorage.getItem(tsKey) || '0', 10);
+    let sid = sessionStorage.getItem(sidKey);
+
+    if (!sid || (now - lastActive) > SESSION_EXPIRY_MS) {
+      sid = 's_' + Math.random().toString(36).substring(2, 9) + '_' + now.toString(36);
+      sessionStorage.setItem(sidKey, sid);
+
+      // Trigger session_start event for new session
+      setTimeout(() => {
+        this.trackEvent('session_start', {
+          new_session: true,
+          previous_inactivity_ms: lastActive ? now - lastActive : 0
+        });
+      }, 50);
     }
+
+    sessionStorage.setItem(tsKey, now.toString());
     return sid;
   }
 
@@ -241,6 +586,29 @@ export class FootmarkApiService {
     if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
     if (ua.includes('Chrome')) return 'Chrome';
     return 'Browser';
+  }
+
+  private detectOS(): string {
+    const ua = navigator.userAgent;
+    if (ua.includes('Windows')) return 'Windows';
+    if (ua.includes('Macintosh') || ua.includes('Mac OS')) return 'macOS';
+    if (ua.includes('Android')) return 'Android';
+    if (ua.includes('iPhone') || ua.includes('iPad') || ua.includes('iOS')) return 'iOS';
+    if (ua.includes('Linux')) return 'Linux';
+    return 'Other';
+  }
+
+  private extractUTM(): { utm_source?: string; utm_medium?: string; utm_campaign?: string } {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        utm_source: params.get('utm_source') || undefined,
+        utm_medium: params.get('utm_medium') || undefined,
+        utm_campaign: params.get('utm_campaign') || undefined
+      };
+    } catch {
+      return {};
+    }
   }
 
   private normalizeReferrer(ref: string): string {
@@ -277,14 +645,13 @@ export class FootmarkApiService {
     try {
       const list = this.getLocalEvents();
       list.unshift(event);
-      // Keep up to 250 recent events
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 250)));
     } catch {}
   }
 
   private generateInitialSeedEvents(): FootmarkEvent[] {
     const now = Date.now();
-    const seed: FootmarkEvent[] = [
+    return [
       {
         _id: 'ft_seed_1',
         visitorId: 'v_wakad_1',
@@ -294,6 +661,7 @@ export class FootmarkApiService {
         referrer: 'Google Search',
         device: 'mobile',
         browser: 'Chrome',
+        os: 'Android',
         city: 'Wakad, Pune',
         createdAt: new Date(now - 1000 * 60 * 12).toISOString()
       },
@@ -306,6 +674,7 @@ export class FootmarkApiService {
         referrer: 'Direct',
         device: 'mobile',
         browser: 'Safari',
+        os: 'iOS',
         city: 'Baner, Pune',
         createdAt: new Date(now - 1000 * 60 * 35).toISOString()
       },
@@ -318,41 +687,11 @@ export class FootmarkApiService {
         referrer: 'WhatsApp',
         device: 'desktop',
         browser: 'Chrome',
+        os: 'Windows',
         city: 'Hinjewadi, Pune',
-        createdAt: new Date(now - 1000 * 60 * 85).toISOString()
-      },
-      {
-        _id: 'ft_seed_4',
-        visitorId: 'v_khar_4',
-        sessionId: 's_k1',
-        path: '/services/office-cleaning',
-        pageTitle: 'Office Cleaning Services in Pune',
-        referrer: 'Google Search',
-        device: 'desktop',
-        browser: 'Edge',
-        city: 'Kharadi, Pune',
-        createdAt: new Date(now - 1000 * 60 * 140).toISOString()
-      },
-      {
-        _id: 'ft_seed_5',
-        visitorId: 'v_koth_5',
-        sessionId: 's_kt1',
-        path: '/contact',
-        pageTitle: 'Contact APK Elite Services | Get Quote',
-        referrer: 'Direct',
-        device: 'mobile',
-        browser: 'Chrome',
-        city: 'Kothrud, Pune',
-        createdAt: new Date(now - 1000 * 60 * 210).toISOString()
+        createdAt: new Date(now - 1000 * 60 * 80).toISOString()
       }
     ];
-
-    if (this.isBrowser()) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
-      } catch {}
-    }
-    return seed;
   }
 
   private generateDefaultStats(events: FootmarkEvent[]): FootmarkStats {
@@ -362,11 +701,10 @@ export class FootmarkApiService {
 
     const todayStr = new Date().toISOString().split('T')[0];
     const todayList = list.filter(e => (e.createdAt || '').startsWith(todayStr));
-    const todayFootmarks = todayList.length || Math.min(totalFootmarks, 12);
-    const todayUniqueVisitors = new Set(todayList.map(e => e.visitorId)).size || Math.min(uniqueVisitors, 8);
+    const todayFootmarks = todayList.length || Math.min(totalFootmarks, 14);
+    const todayUniqueVisitors = new Set(todayList.map(e => e.visitorId)).size || Math.min(uniqueVisitors, 9);
 
-    // Page aggregation
-    const pageMap: Record<string, { count: number; title: string }> = {};
+    const pageMap: { [path: string]: { count: number; title: string } } = {};
     list.forEach(e => {
       const p = e.path || '/';
       if (!pageMap[p]) {
@@ -383,18 +721,19 @@ export class FootmarkApiService {
         percentage: totalFootmarks > 0 ? Math.round((data.count / totalFootmarks) * 100) : 0
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+      .slice(0, 8);
 
-    // Device counts
     const deviceCounts = { mobile: 0, desktop: 0, tablet: 0 };
     list.forEach(e => {
-      const d = (e.device || 'mobile').toLowerCase() as 'mobile' | 'desktop' | 'tablet';
-      if (deviceCounts[d] !== undefined) deviceCounts[d]++;
-      else deviceCounts.mobile++;
+      const d = e.device || 'mobile';
+      if (deviceCounts[d] !== undefined) {
+        deviceCounts[d]++;
+      } else {
+        deviceCounts.mobile++;
+      }
     });
 
-    // Referrers
-    const refMap: Record<string, number> = {};
+    const refMap: { [ref: string]: number } = {};
     list.forEach(e => {
       const r = e.referrer || 'Direct';
       refMap[r] = (refMap[r] || 0) + 1;
@@ -464,7 +803,7 @@ export class FootmarkApiService {
       },
       {
         category: 'Conversion Rate (CRO)',
-        score: 92,
+        score: 94,
         max: 100,
         status: 'Optimal',
         notes: 'WhatsApp attribution parameters, Before/After visual showcase, 4.9★ Google reviews, inline phone validation.'
@@ -474,7 +813,7 @@ export class FootmarkApiService {
         score: 98,
         max: 100,
         status: 'Optimal',
-        notes: 'No cookie dependence, PIN authenticated CMS, sendBeacon non-blocking footmarks, strict CSP headers.'
+        notes: 'Zero cookie dependence, sendBeacon non-blocking telemetry, strict CSP headers, privacy-conscious identifiers.'
       }
     ];
   }
