@@ -28,47 +28,7 @@ const CORS_HEADERS = {
 };
 
 // In-memory fallback if MongoDB is not connected
-let inMemoryFootmarks = [
-  {
-    _id: 'foot_net_1',
-    visitorId: 'vis_wakad_891',
-    sessionId: 'sess_1',
-    path: '/',
-    pageTitle: 'APK Elite Services | Professional Cleaning in Pune',
-    referrer: 'Google Search',
-    device: 'mobile',
-    browser: 'Chrome Mobile',
-    os: 'Android',
-    city: 'Wakad, Pune',
-    createdAt: new Date(Date.now() - 300000).toISOString(),
-  },
-  {
-    _id: 'foot_net_2',
-    visitorId: 'vis_wakad_891',
-    sessionId: 'sess_1',
-    path: '/services/deep-cleaning',
-    pageTitle: 'Home Deep Cleaning Services in Pune',
-    referrer: 'Direct',
-    device: 'mobile',
-    browser: 'Chrome Mobile',
-    os: 'Android',
-    city: 'Wakad, Pune',
-    createdAt: new Date(Date.now() - 180000).toISOString(),
-  },
-  {
-    _id: 'foot_net_3',
-    visitorId: 'vis_baner_442',
-    sessionId: 'sess_2',
-    path: '/services/sofa-cleaning',
-    pageTitle: 'Professional Sofa & Carpet Shampooing Pune',
-    referrer: 'WhatsApp',
-    device: 'mobile',
-    browser: 'Safari',
-    os: 'iOS',
-    city: 'Baner, Pune',
-    createdAt: new Date(Date.now() - 900000).toISOString(),
-  }
-];
+let inMemoryFootmarks = [];
 
 function getInMemoryStats() {
   const totalFootmarks = inMemoryFootmarks.length;
