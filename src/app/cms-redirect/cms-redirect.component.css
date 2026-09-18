@@ -1301,3 +1301,291 @@
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+.modal-card-lg {
+  max-width: 650px;
+  width: 95%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-more-body {
+  overflow-y: auto;
+  max-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-right: 0.35rem;
+}
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.goal-card {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.goal-title {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.goal-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.goal-subtitle {
+  font-size: 0.78rem;
+  color: #22c55e;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN SYSTEM FOR ALL DEVICES (MOBILE, TABLET, DESKTOP)
+   ========================================================================== */
+
+/* User details in sidebar footer */
+.user-details-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.user-name-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-email-text {
+  font-size: 0.72rem;
+  color: #a1a1aa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mobile buttons */
+.mobile-menu-btn {
+  display: none;
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 1.2rem;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mobile-close-btn {
+  display: none;
+}
+
+/* Mobile Drawer Backdrop */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 998;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* Tablet & Mobile Breakpoints */
+@media (max-width: 1024px) {
+  .metric-cards-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .dual-panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-close-btn {
+    display: block;
+    color: #ffffff;
+    font-size: 1.15rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Off-canvas mobile slide-out drawer */
+  .umami-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 999;
+    background: #121215;
+    box-shadow: none;
+    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+
+  .umami-sidebar.mobile-open {
+    left: 0;
+    box-shadow: 12px 0 35px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Viewport spacing for phones */
+  .umami-main-viewport {
+    padding: 1rem 0.75rem 2.5rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .umami-topbar {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .identity-site {
+    display: none;
+  }
+
+  .separator {
+    display: none;
+  }
+
+  .topbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Metric cards grid for mobile */
+  .metric-cards-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .metric-cards-5 .metric-box:last-child {
+    grid-column: span 2;
+  }
+
+  .metric-big-val {
+    font-size: 1.65rem;
+  }
+
+  /* Filter bar touch scroll */
+  .filter-options-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .timeframe-pill-group {
+    overflow-x: auto;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Chart horizontally scrollable if needed */
+  .umami-chart-card {
+    padding: 1rem 0.75rem;
+    overflow-x: auto;
+  }
+
+  .chart-canvas-area {
+    min-width: 480px;
+  }
+
+  /* Subtabs horizontal swipeable */
+  .panel-subtabs-row {
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    gap: 0.85rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .subtab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Tables horizontal scroll */
+  .panel-table-wrap, .stream-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .stream-table {
+    min-width: 580px;
+  }
+
+  /* Auth wrapper */
+  .auth-wrapper {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 360px;
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-cards-5 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .metric-cards-5 .metric-box:last-child {
+    grid-column: auto;
+  }
+
+  .umami-panel-card {
+    padding: 1rem 0.85rem;
+  }
+
+  .modal-card {
+    padding: 1.25rem 1rem;
+    width: 95vw;
+  }
+
+  .btn-unlock {
+    padding: 0.75rem;
+    font-size: 0.95rem;
+  }
+}
+
+

@@ -15,28 +15,42 @@
       <p class="auth-sub">APK Elite Services · Admin Portal</p>
 
       <form (submit)="onPinSubmit($event)" class="pin-form">
-        <div class="form-group">
-          <label for="pinInput">Enter Admin PIN</label>
+        <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
+          <label for="usernameInput" style="display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.35rem;">Username or Email</label>
+          <input
+            id="usernameInput"
+            type="text"
+            [(ngModel)]="loginUsername"
+            name="loginUsername"
+            placeholder="e.g. admin or username"
+            class="pin-input"
+            style="width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem; padding: 0.65rem 0.85rem;"
+          />
+        </div>
+
+        <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
+          <label for="pinInput" style="display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.35rem;">Password or PIN</label>
           <input
             id="pinInput"
             type="password"
-            maxlength="20"
+            maxlength="25"
             [(ngModel)]="enteredPin"
             name="enteredPin"
             placeholder="••••"
             class="pin-input"
+            style="width: 100%; box-sizing: border-box; text-align: center; font-size: 1.15rem; padding: 0.65rem;"
             autofocus
           />
         </div>
 
         <div *ngIf="pinError" class="error-msg">
-          Incorrect PIN. Please try again.
+          Invalid username or password/PIN.
         </div>
 
         <button type="submit" class="btn-unlock">Unlock Dashboard</button>
 
         <div class="auth-hint">
-          <span>Admin PIN: <strong>{{ getStoredPin() }}</strong></span>
+          <span>Login: <strong>{{ adminUsername }}</strong> · PIN: <strong>{{ getStoredPin() }}</strong></span>
           <a routerLink="/" class="back-link">← Return to Website</a>
         </div>
       </form>
@@ -48,14 +62,21 @@
   <!-- ============================================================ -->
   <div *ngIf="isAuthenticated" class="umami-app-layout">
 
+    <!-- Mobile Backdrop for Sidebar Drawer -->
+    <div
+      *ngIf="mobileSidebarOpen"
+      class="sidebar-backdrop"
+      (click)="closeMobileSidebar()"
+    ></div>
+
     <!-- ==================== LEFT SIDEBAR ==================== -->
-    <aside class="umami-sidebar">
+    <aside class="umami-sidebar" [class.mobile-open]="mobileSidebarOpen">
       <div class="sidebar-header">
         <div class="brand-badge">
           <span class="brand-logo-icon">●</span>
           <span class="brand-name">umami</span>
         </div>
-        <button class="sidebar-icon-btn" title="Toggle Sidebar">◫</button>
+        <button class="sidebar-icon-btn mobile-close-btn" (click)="closeMobileSidebar()" title="Close Navigation">✕</button>
       </div>
 
       <div class="back-wrap">
@@ -71,7 +92,7 @@
         <ul class="nav-list">
           <li class="nav-item">
             <button
-              (click)="activeSection = 'overview'"
+              (click)="activeSection = 'overview'; closeMobileSidebar()"
               [class.active]="activeSection === 'overview'"
               class="nav-link"
             >
@@ -81,7 +102,7 @@
           </li>
           <li class="nav-item">
             <button
-              (click)="activeSection = 'realtime'"
+              (click)="activeSection = 'realtime'; closeMobileSidebar()"
               [class.active]="activeSection === 'realtime'"
               class="nav-link"
             >
@@ -91,7 +112,7 @@
           </li>
           <li class="nav-item">
             <button
-              (click)="activeSection = 'sessions'"
+              (click)="activeSection = 'sessions'; closeMobileSidebar()"
               [class.active]="activeSection === 'sessions'"
               class="nav-link"
             >
@@ -105,19 +126,31 @@
         <div class="nav-section-title">Behavior</div>
         <ul class="nav-list">
           <li class="nav-item">
-            <button class="nav-link" (click)="activeSection = 'overview'">
+            <button
+              (click)="activeSection = 'goals'; closeMobileSidebar()"
+              [class.active]="activeSection === 'goals'"
+              class="nav-link"
+            >
               <span class="nav-icon">🎯</span>
               <span class="nav-label">Goals</span>
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link" (click)="activeSection = 'overview'">
+            <button
+              (click)="activeSection = 'funnels'; closeMobileSidebar()"
+              [class.active]="activeSection === 'funnels'"
+              class="nav-link"
+            >
               <span class="nav-icon">🔻</span>
               <span class="nav-label">Funnels</span>
             </button>
           </li>
           <li class="nav-item">
-            <button class="nav-link" (click)="activeSection = 'overview'">
+            <button
+              (click)="activeSection = 'retention'; closeMobileSidebar()"
+              [class.active]="activeSection === 'retention'"
+              class="nav-link"
+            >
               <span class="nav-icon">🔄</span>
               <span class="nav-label">Retention</span>
             </button>
@@ -129,7 +162,7 @@
         <ul class="nav-list">
           <li class="nav-item">
             <button
-              (click)="activeSection = 'leads'"
+              (click)="activeSection = 'leads'; closeMobileSidebar()"
               [class.active]="activeSection === 'leads'"
               class="nav-link"
             >
@@ -140,7 +173,7 @@
           </li>
           <li class="nav-item">
             <button
-              (click)="activeSection = 'form'"
+              (click)="activeSection = 'form'; closeMobileSidebar()"
               [class.active]="activeSection === 'form'"
               class="nav-link"
             >
@@ -150,7 +183,7 @@
           </li>
           <li class="nav-item">
             <button
-              (click)="activeSection = 'content'"
+              (click)="activeSection = 'content'; closeMobileSidebar()"
               [class.active]="activeSection === 'content'"
               class="nav-link"
             >
@@ -163,13 +196,16 @@
 
       <!-- SIDEBAR BOTTOM PROFILE -->
       <div class="sidebar-footer">
-        <div class="user-profile-row" title="Active Admin Account">
+        <div class="user-profile-row" (click)="openPinModal()" title="Edit Admin Profile & Security" style="cursor: pointer;">
           <span class="user-avatar-icon">👤</span>
-          <span class="user-email-text">shubhammisra800&#64;gmail.com</span>
+          <div class="user-details-col">
+            <span class="user-name-text">{{ adminName }}</span>
+            <span class="user-email-text">{{ adminUsername }}</span>
+          </div>
         </div>
         <div class="sidebar-actions-row">
-          <button (click)="openPinModal()" class="btn-sidebar-sub" title="Change Admin PIN">
-            <span>🔐 PIN</span>
+          <button (click)="openPinModal()" class="btn-sidebar-sub" title="Edit Profile & Security">
+            <span>⚙️ Profile</span>
           </button>
           <button (click)="logout()" class="btn-sidebar-sub danger" title="Sign Out">
             <span>Sign Out</span>
@@ -184,9 +220,10 @@
       <!-- TOP BAR -->
       <header class="umami-topbar">
         <div class="topbar-left">
-          <div class="dropdown-identity">
+          <button class="mobile-menu-btn" (click)="toggleMobileSidebar()" aria-label="Open Navigation">☰</button>
+          <div class="dropdown-identity" (click)="openPinModal()" style="cursor: pointer;" title="Edit Profile & Security">
             <span class="identity-icon">👤</span>
-            <span class="identity-name">shubhammisra800&#64;gm...</span>
+            <span class="identity-name">{{ adminName }}</span>
             <span class="caret">▾</span>
           </div>
           <span class="separator">|</span>
@@ -390,15 +427,15 @@
 
             <div class="panel-table-wrap">
               <div class="panel-table-header">
-                <span class="col-head-left">Path</span>
+                <span class="col-head-left">{{ pagesSubTab === 'path' ? 'Path' : (pagesSubTab === 'url' ? 'URL' : (pagesSubTab === 'entry' ? 'Entry page' : 'Exit page')) }}</span>
                 <span class="col-head-right">Visitors</span>
               </div>
 
               <div class="panel-table-body">
-                <div *ngFor="let p of filteredPagesList" class="panel-row">
+                <div *ngFor="let p of activePagesList" class="panel-row">
                   <div class="row-bar-fill" [style.width.%]="p.percentage"></div>
                   <div class="row-content">
-                    <span class="row-key">{{ p.path }}</span>
+                    <span class="row-key">{{ p.key }}</span>
                     <div class="row-val-group">
                       <span class="row-val">{{ p.visitors }}</span>
                       <span class="row-pct">{{ p.percentage }}%</span>
@@ -406,14 +443,14 @@
                   </div>
                 </div>
 
-                <div *ngIf="filteredPagesList.length === 0" class="panel-empty">
+                <div *ngIf="activePagesList.length === 0" class="panel-empty">
                   No page visits recorded for this timeframe.
                 </div>
               </div>
             </div>
 
             <div class="panel-bottom-action">
-              <button class="btn-more-panel" (click)="showToast('Showing all recent pages')">
+              <button class="btn-more-panel" (click)="openMoreModal('pages')">
                 <span>⛶ More</span>
               </button>
             </div>
@@ -441,12 +478,12 @@
 
             <div class="panel-table-wrap">
               <div class="panel-table-header">
-                <span class="col-head-left">Referrer</span>
+                <span class="col-head-left">{{ sourcesSubTab === 'referrers' ? 'Referrer' : 'Channel' }}</span>
                 <span class="col-head-right">Visitors</span>
               </div>
 
               <div class="panel-table-body">
-                <div *ngFor="let s of filteredSourcesList" class="panel-row">
+                <div *ngFor="let s of activeSourcesList" class="panel-row">
                   <div class="row-bar-fill" [style.width.%]="s.percentage"></div>
                   <div class="row-content">
                     <span class="row-key">
@@ -460,14 +497,14 @@
                   </div>
                 </div>
 
-                <div *ngIf="filteredSourcesList.length === 0" class="panel-empty">
+                <div *ngIf="activeSourcesList.length === 0" class="panel-empty">
                   Direct visits only (no external referrers).
                 </div>
               </div>
             </div>
 
             <div class="panel-bottom-action">
-              <button class="btn-more-panel" (click)="showToast('Showing all traffic acquisition')">
+              <button class="btn-more-panel" (click)="openMoreModal('sources')">
                 <span>⛶ More</span>
               </button>
             </div>
@@ -505,12 +542,12 @@
 
             <div class="panel-table-wrap">
               <div class="panel-table-header">
-                <span class="col-head-left">Browser</span>
+                <span class="col-head-left">{{ envSubTab === 'browsers' ? 'Browser' : (envSubTab === 'os' ? 'Operating System' : 'Device') }}</span>
                 <span class="col-head-right">Visitors</span>
               </div>
 
               <div class="panel-table-body">
-                <div *ngFor="let b of filteredBrowsersList" class="panel-row">
+                <div *ngFor="let b of activeEnvList" class="panel-row">
                   <div class="row-bar-fill" [style.width.%]="b.percentage"></div>
                   <div class="row-content">
                     <span class="row-key">
@@ -524,14 +561,14 @@
                   </div>
                 </div>
 
-                <div *ngIf="filteredBrowsersList.length === 0" class="panel-empty">
-                  No browser data captured.
+                <div *ngIf="activeEnvList.length === 0" class="panel-empty">
+                  No browser or device data captured.
                 </div>
               </div>
             </div>
 
             <div class="panel-bottom-action">
-              <button class="btn-more-panel" (click)="showToast('Showing full client environments')">
+              <button class="btn-more-panel" (click)="openMoreModal('env')">
                 <span>⛶ More</span>
               </button>
             </div>
@@ -566,16 +603,16 @@
 
             <div class="panel-table-wrap">
               <div class="panel-table-header">
-                <span class="col-head-left">Country</span>
+                <span class="col-head-left">{{ locSubTab === 'countries' ? 'Country' : (locSubTab === 'regions' ? 'Region' : 'City') }}</span>
                 <span class="col-head-right">Visitors</span>
               </div>
 
               <div class="panel-table-body">
-                <div *ngFor="let l of filteredLocationList" class="panel-row">
+                <div *ngFor="let l of activeLocationList" class="panel-row">
                   <div class="row-bar-fill" [style.width.%]="l.percentage"></div>
                   <div class="row-content">
                     <span class="row-key">
-                      <span class="flag-icon">{{ l.flag }}</span>
+                      <span class="flag-icon">{{ l.icon }}</span>
                       <span>{{ l.name }}</span>
                     </span>
                     <div class="row-val-group">
@@ -585,14 +622,14 @@
                   </div>
                 </div>
 
-                <div *ngIf="filteredLocationList.length === 0" class="panel-empty">
+                <div *ngIf="activeLocationList.length === 0" class="panel-empty">
                   No geographic visits recorded.
                 </div>
               </div>
             </div>
 
             <div class="panel-bottom-action">
-              <button class="btn-more-panel" (click)="showToast('Showing global locations')">
+              <button class="btn-more-panel" (click)="openMoreModal('loc')">
                 <span>⛶ More</span>
               </button>
             </div>
@@ -724,11 +761,11 @@
       <!-- ============================================================ -->
       <!-- VIEW C: REALTIME & EVENTS                                    -->
       <!-- ============================================================ -->
-      <div *ngIf="activeSection === 'realtime' || activeSection === 'sessions'" class="umami-crm-content">
+      <div *ngIf="activeSection === 'realtime'" class="umami-crm-content">
         <div class="crm-top-bar">
           <div>
             <h2 class="section-title">Live Verified Visitor Stream</h2>
-            <p class="section-sub">Telemetry logs captured across apkeliteservices.in</p>
+            <p class="section-sub">Real-time telemetry event logs captured across apkeliteservices.in</p>
           </div>
           <div class="crm-actions-bar">
             <button (click)="simulateTestVisit()" class="btn-primary-blue">+ Simulate Visit</button>
@@ -772,6 +809,178 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW: SESSIONS                                               -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'sessions'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Active Visitor Sessions</h2>
+            <p class="section-sub">Distinct client browsing sessions aggregated with device and entry routes</p>
+          </div>
+          <div class="crm-actions-bar">
+            <span class="badge-accent">{{ activeSessionsList.length }} Total Sessions</span>
+          </div>
+        </div>
+
+        <div class="umami-panel-card" style="padding: 0; overflow: hidden;">
+          <table class="stream-table">
+            <thead>
+              <tr class="stream-th-row">
+                <th>Session ID</th>
+                <th>Client / Device</th>
+                <th>Location</th>
+                <th>Views</th>
+                <th>Landing Route</th>
+                <th style="text-align: right;">Last Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of activeSessionsList" class="stream-data-row">
+                <td>
+                  <span class="font-mono text-sm" style="color: #60a5fa;">#{{ s.sessionId | slice:0:12 }}</span>
+                </td>
+                <td>
+                  <span>{{ s.device === 'mobile' ? '📱 Mobile' : '💻 Desktop' }}</span>
+                  <span class="dim"> · {{ s.browser }}</span>
+                </td>
+                <td>
+                  <span>📍 {{ s.city }}</span>
+                </td>
+                <td>
+                  <span class="badge-accent" style="font-size: 0.75rem;">{{ s.views }} pages</span>
+                </td>
+                <td>
+                  <span class="stream-path">{{ s.landingPage }}</span>
+                </td>
+                <td style="text-align: right;" class="dim">
+                  {{ s.lastSeen | date:'shortTime' }}
+                </td>
+              </tr>
+              <tr *ngIf="activeSessionsList.length === 0">
+                <td colspan="6" class="panel-empty">No active sessions recorded for this timeframe.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW: GOALS & CONVERSIONS                                    -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'goals'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Conversion Goals &amp; Business Inquiries</h2>
+            <p class="section-sub">Key high-intent actions completed by visitors across APK Elite Services</p>
+          </div>
+        </div>
+
+        <div class="goals-grid">
+          <div class="goal-card">
+            <span class="goal-title">Leads Submitted</span>
+            <span class="goal-number">{{ conversionGoals.totalLeads }}</span>
+            <span class="goal-subtitle">Online CRM Contact Forms</span>
+          </div>
+          <div class="goal-card">
+            <span class="goal-title">Quote Calculation Rate</span>
+            <span class="goal-number">{{ conversionGoals.quoteRate }}%</span>
+            <span class="goal-subtitle">Cost calculator interactions</span>
+          </div>
+          <div class="goal-card">
+            <span class="goal-title">WhatsApp Inquiries</span>
+            <span class="goal-number">{{ conversionGoals.whatsAppClicks }}</span>
+            <span class="goal-subtitle">High-intent chat clicks</span>
+          </div>
+          <div class="goal-card">
+            <span class="goal-title">Direct Phone Calls</span>
+            <span class="goal-number">{{ conversionGoals.phoneClicks }}</span>
+            <span class="goal-subtitle">Direct tap-to-call conversions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW: FUNNELS                                                -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'funnels'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Conversion Funnels</h2>
+            <p class="section-sub">User progression from discovery to final booking inquiry</p>
+          </div>
+        </div>
+
+        <div class="umami-panel-card" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="funnel-step-row">
+            <div class="funnel-meta" style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span class="funnel-name">1. Landing Page Discovery</span>
+              <span class="funnel-val">{{ metricVisitors }} visitors (100%)</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="width: 100%; height: 100%; background: #3b82f6; border-radius: 4px;"></div>
+            </div>
+          </div>
+          <div class="funnel-step-row">
+            <div class="funnel-meta" style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span class="funnel-name">2. Service Catalog Inspection</span>
+              <span class="funnel-val">{{ Math.round(metricVisitors * 0.75) }} visitors (75%)</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="width: 75%; height: 100%; background: #3b82f6; border-radius: 4px;"></div>
+            </div>
+          </div>
+          <div class="funnel-step-row">
+            <div class="funnel-meta" style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span class="funnel-name">3. Cost Calculation &amp; Pricing</span>
+              <span class="funnel-val">{{ Math.round(metricVisitors * 0.45) }} visitors (45%)</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="width: 45%; height: 100%; background: #3b82f6; border-radius: 4px;"></div>
+            </div>
+          </div>
+          <div class="funnel-step-row">
+            <div class="funnel-meta" style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span class="funnel-name">4. Lead Inquired / Booked</span>
+              <span class="funnel-val">{{ leads.length }} conversions ({{ conversionGoals.quoteRate }}%)</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div [style.width.%]="conversionGoals.quoteRate" style="height: 100%; background: #22c55e; border-radius: 4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW: RETENTION                                              -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'retention'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Audience Retention &amp; Loyalty</h2>
+            <p class="section-sub">Breakdown of first-time vs returning visitors</p>
+          </div>
+        </div>
+
+        <div class="goals-grid">
+          <div class="goal-card">
+            <span class="goal-title">Unique Visitors</span>
+            <span class="goal-number">{{ metricVisitors }}</span>
+            <span class="goal-subtitle">Individual client browsers</span>
+          </div>
+          <div class="goal-card">
+            <span class="goal-title">Total Sessions</span>
+            <span class="goal-number">{{ metricVisits }}</span>
+            <span class="goal-subtitle">Engaged visits</span>
+          </div>
+          <div class="goal-card">
+            <span class="goal-title">Repeat Visit Ratio</span>
+            <span class="goal-number">{{ Math.max(0, Math.round(((metricVisits - metricVisitors) / (metricVisits || 1)) * 100)) }}%</span>
+            <span class="goal-subtitle">Returning client frequency</span>
+          </div>
         </div>
       </div>
 
@@ -836,52 +1045,75 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- CHANGE ADMIN PIN MODAL -->
+  <!-- ADMIN PROFILE & SECURITY MODAL -->
   <!-- ============================================================ -->
   <div *ngIf="showPinModal" class="modal-backdrop" (click)="closePinModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-head">
-        <h3>🔐 Change Admin PIN</h3>
+        <h3>⚙️ Admin Profile &amp; Security</h3>
         <button type="button" (click)="closePinModal()" class="btn-modal-close">✕</button>
       </div>
 
       <form (submit)="onSaveNewPin($event)" class="modal-form">
         <div class="form-group">
-          <label>Current PIN</label>
+          <label>Display Name</label>
+          <input
+            type="text"
+            [(ngModel)]="profileNameInput"
+            name="profileNameInput"
+            placeholder="e.g. Shubham Misra"
+            class="umami-input"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Username / Login Email</label>
+          <input
+            type="text"
+            [(ngModel)]="profileUsernameInput"
+            name="profileUsernameInput"
+            placeholder="e.g. shubhammisra800@gmail.com"
+            class="umami-input"
+            required
+          />
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.35rem 0;" />
+
+        <div class="form-group">
+          <label>Current Password / PIN <span style="font-size: 0.72rem; color: #71717a;">(Required only to change password)</span></label>
           <input
             type="password"
             maxlength="20"
             [(ngModel)]="currentPinInput"
             name="currentPinInput"
-            placeholder="Enter current PIN"
+            placeholder="Enter current password/PIN"
             class="umami-input"
-            required
           />
         </div>
 
         <div class="form-group">
-          <label>New PIN (Min 4 digits)</label>
+          <label>New Password / PIN <span style="font-size: 0.72rem; color: #71717a;">(Optional)</span></label>
           <input
             type="password"
             maxlength="20"
             [(ngModel)]="newPinInput"
             name="newPinInput"
-            placeholder="Enter new 4+ digit PIN"
+            placeholder="Leave blank to keep existing password"
             class="umami-input"
-            required
           />
         </div>
 
         <div class="form-group">
-          <label>Confirm New PIN</label>
+          <label>Confirm New Password / PIN</label>
           <input
             type="password"
             maxlength="20"
             [(ngModel)]="confirmPinInput"
             name="confirmPinInput"
-            placeholder="Re-enter new PIN"
+            placeholder="Re-enter new password"
             class="umami-input"
-            required
           />
         </div>
 
@@ -891,7 +1123,7 @@
 
         <div class="modal-actions">
           <button type="button" (click)="closePinModal()" class="btn-subtle">Cancel</button>
-          <button type="submit" class="btn-primary-blue">Update PIN</button>
+          <button type="submit" class="btn-primary-blue">Save Profile &amp; Security</button>
         </div>
       </form>
     </div>
@@ -912,6 +1144,91 @@
       </div>
       <div class="modal-actions">
         <button type="button" (click)="showDbHelpModal = false" class="btn-primary-blue">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MORE DETAILS BREAKDOWN MODAL -->
+  <div *ngIf="activeMoreModal" class="modal-backdrop" (click)="closeMoreModal()">
+    <div class="modal-card modal-card-lg" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>{{ moreModalTitle }}</h3>
+        <button type="button" (click)="closeMoreModal()" class="btn-modal-close">✕</button>
+      </div>
+
+      <div class="modal-more-body">
+        <!-- If Pages -->
+        <ng-container *ngIf="activeMoreModal === 'pages'">
+          <div *ngFor="let p of activePagesList" class="panel-row">
+            <div class="row-bar-fill" [style.width.%]="p.percentage"></div>
+            <div class="row-content">
+              <span class="row-key">{{ p.key }}</span>
+              <div class="row-val-group">
+                <span class="row-val">{{ p.visitors }}</span>
+                <span class="row-pct">{{ p.percentage }}%</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="activePagesList.length === 0" class="panel-empty">No pages captured.</div>
+        </ng-container>
+
+        <!-- If Sources -->
+        <ng-container *ngIf="activeMoreModal === 'sources'">
+          <div *ngFor="let s of activeSourcesList" class="panel-row">
+            <div class="row-bar-fill" [style.width.%]="s.percentage"></div>
+            <div class="row-content">
+              <span class="row-key">
+                <span class="source-icon">{{ s.icon }}</span>
+                <span>{{ s.name }}</span>
+              </span>
+              <div class="row-val-group">
+                <span class="row-val">{{ s.visitors }}</span>
+                <span class="row-pct">{{ s.percentage }}%</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="activeSourcesList.length === 0" class="panel-empty">No traffic acquisition captured.</div>
+        </ng-container>
+
+        <!-- If Environment -->
+        <ng-container *ngIf="activeMoreModal === 'env'">
+          <div *ngFor="let b of activeEnvList" class="panel-row">
+            <div class="row-bar-fill" [style.width.%]="b.percentage"></div>
+            <div class="row-content">
+              <span class="row-key">
+                <span class="env-icon">{{ b.icon }}</span>
+                <span>{{ b.name }}</span>
+              </span>
+              <div class="row-val-group">
+                <span class="row-val">{{ b.visitors }}</span>
+                <span class="row-pct">{{ b.percentage }}%</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="activeEnvList.length === 0" class="panel-empty">No client environment captured.</div>
+        </ng-container>
+
+        <!-- If Location -->
+        <ng-container *ngIf="activeMoreModal === 'loc'">
+          <div *ngFor="let l of activeLocationList" class="panel-row">
+            <div class="row-bar-fill" [style.width.%]="l.percentage"></div>
+            <div class="row-content">
+              <span class="row-key">
+                <span class="flag-icon">{{ l.icon }}</span>
+                <span>{{ l.name }}</span>
+              </span>
+              <div class="row-val-group">
+                <span class="row-val">{{ l.visitors }}</span>
+                <span class="row-pct">{{ l.percentage }}%</span>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="activeLocationList.length === 0" class="panel-empty">No geographic locations captured.</div>
+        </ng-container>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" (click)="closeMoreModal()" class="btn-primary-blue">Close</button>
       </div>
     </div>
   </div>
