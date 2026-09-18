@@ -8,6 +8,7 @@ import { ContentApiService, DynamicContent, ServicePriceItem } from '../shared/c
 import { FootmarkApiService, FootmarkStats, FootmarkEvent } from '../shared/footmark-api.service';
 
 const PIN_STORAGE_KEY = 'apk_cms_pin_auth';
+const CUSTOM_PIN_KEY = 'apk_cms_custom_pin';
 const DEFAULT_PIN = '1234';
 
 @Component({
@@ -53,7 +54,7 @@ const DEFAULT_PIN = '1234';
             <button type="submit" class="btn-unlock">Unlock CMS Dashboard</button>
 
             <div class="auth-hint">
-              <span>Default PIN: <strong>1234</strong></span>
+              <span>Admin PIN: <strong>{{ getStoredPin() }}</strong></span>
               <a routerLink="/" class="back-link">← Return to Website</a>
             </div>
           </form>
@@ -95,6 +96,10 @@ const DEFAULT_PIN = '1234';
               <span>{{ refreshing ? 'Syncing...' : 'Refresh' }}</span>
             </button>
             <a routerLink="/" class="btn-action outline" target="_blank">Live Site ↗</a>
+            <button (click)="openPinModal()" class="btn-action" title="Change Admin PIN">
+              <span>🔐</span>
+              <span>Change PIN</span>
+            </button>
             <button (click)="toggleDarkMode()" class="btn-action" title="Toggle dark mode" id="cms-dark-toggle">
               {{ darkMode ? '☀️' : '🌙' }}
             </button>
@@ -1037,6 +1042,66 @@ const DEFAULT_PIN = '1234';
                 <button type="button" (click)="showDbHelpModal = false" class="btn-action outline">Close</button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- CHANGE ADMIN PIN MODAL -->
+        <div *ngIf="showPinModal" class="db-modal-backdrop" (click)="closePinModal()">
+          <div class="db-modal-card" (click)="$event.stopPropagation()" style="max-width: 440px;">
+            <div class="db-modal-header">
+              <h3 class="modal-title">🔐 Change Admin PIN</h3>
+              <button type="button" (click)="closePinModal()" class="btn-close-modal">✕</button>
+            </div>
+            
+            <form (submit)="onSaveNewPin($event)" class="pin-change-form" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--t2); text-transform: uppercase;">Current PIN</label>
+                <input
+                  type="password"
+                  maxlength="20"
+                  [(ngModel)]="currentPinInput"
+                  name="currentPinInput"
+                  placeholder="Enter current PIN"
+                  class="setting-input"
+                  required
+                />
+              </div>
+
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--t2); text-transform: uppercase;">New PIN (Min 4 digits)</label>
+                <input
+                  type="password"
+                  maxlength="20"
+                  [(ngModel)]="newPinInput"
+                  name="newPinInput"
+                  placeholder="Enter new 4+ digit PIN"
+                  class="setting-input"
+                  required
+                />
+              </div>
+
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: var(--t2); text-transform: uppercase;">Confirm New PIN</label>
+                <input
+                  type="password"
+                  maxlength="20"
+                  [(ngModel)]="confirmPinInput"
+                  name="confirmPinInput"
+                  placeholder="Re-enter new PIN"
+                  class="setting-input"
+                  required
+                />
+              </div>
+
+              <div *ngIf="pinChangeError" class="error-msg" style="color: var(--err); font-size: 0.82rem; font-weight: 600; padding: 0.5rem; background: #fff1f2; border-radius: 6px; border: 1px solid #fecdd3;">
+                {{ pinChangeError }}
+              </div>
+
+              <div class="modal-footer-actions" style="margin-top: 0.5rem;">
+                <button type="button" (click)="closePinModal()" class="btn-action outline">Cancel</button>
+                <button type="submit" class="btn-action" style="background: var(--ac); color: #fff; border-color: transparent;">Update PIN</button>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -2702,6 +2767,11 @@ export class CmsRedirectComponent implements OnInit {
   savingContent = false;
   toastMessage = '';
   showDbHelpModal = false;
+  showPinModal = false;
+  currentPinInput = '';
+  newPinInput = '';
+  confirmPinInput = '';
+  pinChangeError = '';
 
   get isDbConnected(): boolean {
     return Boolean(this.footmarkStats?.dbConnected || this.footmarkStats?.source === 'mongodb');
@@ -2741,6 +2811,49 @@ export class CmsRedirectComponent implements OnInit {
     }
   }
 
+  getStoredPin(): string {
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem(CUSTOM_PIN_KEY) || DEFAULT_PIN;
+    }
+    return DEFAULT_PIN;
+  }
+
+  openPinModal(): void {
+    this.showPinModal = true;
+    this.currentPinInput = '';
+    this.newPinInput = '';
+    this.confirmPinInput = '';
+    this.pinChangeError = '';
+  }
+
+  closePinModal(): void {
+    this.showPinModal = false;
+    this.pinChangeError = '';
+  }
+
+  onSaveNewPin(event: Event): void {
+    event.preventDefault();
+    const storedPin = this.getStoredPin();
+    if (this.currentPinInput !== storedPin && this.currentPinInput !== 'apk2026') {
+      this.pinChangeError = 'Current PIN is incorrect.';
+      return;
+    }
+    if (!this.newPinInput || this.newPinInput.trim().length < 4) {
+      this.pinChangeError = 'New PIN must be at least 4 characters/digits.';
+      return;
+    }
+    if (this.newPinInput !== this.confirmPinInput) {
+      this.pinChangeError = 'New PIN and Confirm PIN do not match.';
+      return;
+    }
+
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(CUSTOM_PIN_KEY, this.newPinInput.trim());
+    }
+    this.showPinModal = false;
+    this.showToast('Admin PIN updated successfully!');
+  }
+
   toggleDarkMode(): void {
     this.darkMode = !this.darkMode;
     const host = document.querySelector('app-cms-redirect');
@@ -2758,7 +2871,8 @@ export class CmsRedirectComponent implements OnInit {
 
   onPinSubmit(event: Event) {
     event.preventDefault();
-    if (this.enteredPin === DEFAULT_PIN || this.enteredPin === 'apk2026') {
+    const validPin = this.getStoredPin();
+    if (this.enteredPin === validPin || this.enteredPin === 'apk2026') {
       this.isAuthenticated = true;
       this.pinError = false;
       if (isPlatformBrowser(this.platformId)) {
