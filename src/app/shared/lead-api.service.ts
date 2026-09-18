@@ -64,10 +64,17 @@ export class LeadApiService {
   private netlifyEndpoint = '/.netlify/functions/leads';
   private devEndpoint = 'http://localhost:3000/api/leads';
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
-
   private isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
+  }
+
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    if (this.isBrowser()) {
+      window.addEventListener('online', () => {
+        this.flushPendingLeads();
+      });
+      setTimeout(() => this.flushPendingLeads(), 3000);
+    }
   }
 
   // Submit new lead from forms (Quote Modal or Contact Page)
@@ -129,11 +136,61 @@ export class LeadApiService {
         });
       }
 
-      return res.ok;
+      if (!res.ok) {
+        this.queuePendingLead(payload);
+      }
+      return true;
     } catch (err) {
       console.warn('Lead synced to browser local cache; server endpoint currently unreachable:', err);
+      this.queuePendingLead(payload);
       return true; // Still true so user gets success confirmation
     }
+  }
+
+  private queuePendingLead(payload: LeadPayload) {
+    if (!this.isBrowser()) return;
+    try {
+      const raw = localStorage.getItem('apk_pending_leads');
+      const queue: LeadPayload[] = raw ? JSON.parse(raw) : [];
+      queue.push(payload);
+      localStorage.setItem('apk_pending_leads', JSON.stringify(queue.slice(0, 50)));
+    } catch {}
+  }
+
+  private async flushPendingLeads() {
+    if (!this.isBrowser()) return;
+    try {
+      const raw = localStorage.getItem('apk_pending_leads');
+      if (!raw) return;
+      const queue: LeadPayload[] = JSON.parse(raw);
+      if (!queue.length) return;
+
+      const remaining: LeadPayload[] = [];
+      for (const item of queue) {
+        try {
+          let res = await fetch(this.apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+          });
+          if (!res.ok || (res.headers.get('content-type') || '').includes('text/html')) {
+            res = await fetch(this.netlifyEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            });
+          }
+          if (!res.ok) remaining.push(item);
+        } catch {
+          remaining.push(item);
+        }
+      }
+      if (remaining.length > 0) {
+        localStorage.setItem('apk_pending_leads', JSON.stringify(remaining));
+      } else {
+        localStorage.removeItem('apk_pending_leads');
+      }
+    } catch {}
   }
 
   // Fetch all leads for CMS Dashboard

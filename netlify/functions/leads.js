@@ -39,6 +39,93 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 };
 
+/**
+ * Real-Time Lead Notification Dispatcher: Telegram, Webhook, and Fail-Safe Email
+ */
+async function dispatchLeadAlert(lead) {
+  const promises = [];
+
+  // 1. Telegram Bot Notification (Instant phone push alert to business owner)
+  const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+  const tgChatId = process.env.TELEGRAM_CHAT_ID;
+  if (tgToken && tgChatId) {
+    const text = [
+      '🔔 *NEW LEAD RECEIVED — APK ELITE SERVICES*',
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      `👤 *Name:* ${lead.name}`,
+      `📞 *Phone:* +91 ${lead.phone}`,
+      lead.email ? `📧 *Email:* ${lead.email}` : null,
+      `🧹 *Service:* ${lead.service}${lead.propertyType ? ' (' + lead.propertyType + ')' : ''}`,
+      lead.locality ? `📍 *Locality:* ${lead.locality}` : null,
+      lead.utm_source ? `📢 *Source:* ${lead.utm_source}${lead.utm_medium ? ' / ' + lead.utm_medium : ''}` : null,
+      lead.utm_campaign ? `🎯 *Campaign:* ${lead.utm_campaign}` : null,
+      lead.gclid ? '⭐ *Google Ads Verified:* Yes' : null,
+      lead.visit_count && lead.visit_count > 1 ? `🔁 *Repeat Visitor:* Visit #${lead.visit_count}` : null,
+      lead.landing_page ? `🚪 *Entry:* ${lead.landing_page}` : null,
+      lead.message ? `💬 *Message:* ${lead.message}` : null,
+      '━━━━━━━━━━━━━━━━━━━━━━━━━',
+      `⏰ *Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+    ].filter(Boolean).join('\n');
+
+    promises.push(
+      fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: tgChatId,
+          text: text,
+          parse_mode: 'Markdown'
+        })
+      }).catch(err => console.warn('Telegram lead notification failed:', err.message))
+    );
+  }
+
+  // 2. Generic CRM / Discord / Slack Webhook
+  const webhookUrl = process.env.LEAD_WEBHOOK_URL;
+  if (webhookUrl) {
+    promises.push(
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'new_lead',
+          company: 'APK Elite Services',
+          timestamp: new Date().toISOString(),
+          lead: lead
+        })
+      }).catch(err => console.warn('CRM lead webhook failed:', err.message))
+    );
+  }
+
+  // 3. Web3Forms Direct Fail-Safe Email Alert to info@apkeliteservices.in
+  const web3Key = process.env.WEB3FORMS_ACCESS_KEY || '101e2c51-0926-4dd3-b6e5-a04034ecca39';
+  if (web3Key) {
+    const emailBody = {
+      access_key: web3Key,
+      subject: `New Lead: ${lead.name} (${lead.service} - ${lead.locality || 'Pune'})`,
+      from_name: 'APK Elite Ingestion Engine',
+      name: lead.name,
+      phone: lead.phone,
+      email: lead.email || 'info@apkeliteservices.in',
+      service: lead.service,
+      locality: lead.locality || 'Pune',
+      property: lead.propertyType || 'N/A',
+      campaign: lead.utm_campaign || lead.utm_source || 'Organic',
+      message: lead.message || 'Direct lead form submission.',
+      source: lead.source || 'Website'
+    };
+    promises.push(
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailBody)
+      }).catch(err => console.warn('Web3Forms lead email failed:', err.message))
+    );
+  }
+
+  await Promise.allSettled(promises);
+}
+
 exports.handler = async (event, context) => {
   // Preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -123,34 +210,31 @@ exports.handler = async (event, context) => {
         updatedAt: new Date().toISOString(),
       };
 
+      let savedLead;
       if (db) {
         const collection = db.collection(COLLECTION_NAME);
         const result = await collection.insertOne(newLead);
-        return {
-          statusCode: 201,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({
-            success: true,
-            source: 'mongodb',
-            lead: { ...newLead, _id: result.insertedId.toString() },
-          }),
-        };
+        savedLead = { ...newLead, _id: result.insertedId.toString() };
       } else {
-        const fallbackLead = {
+        savedLead = {
           ...newLead,
           _id: 'lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
         };
-        inMemoryLeads.unshift(fallbackLead);
-        return {
-          statusCode: 201,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({
-            success: true,
-            source: 'in-memory-fallback',
-            lead: fallbackLead,
-          }),
-        };
+        inMemoryLeads.unshift(savedLead);
       }
+
+      // Dispatch real-time alert (Telegram, Webhook, and Fail-Safe Email)
+      await dispatchLeadAlert(savedLead);
+
+      return {
+        statusCode: 201,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({
+          success: true,
+          source: db ? 'mongodb' : 'in-memory-fallback',
+          lead: savedLead,
+        }),
+      };
     }
 
     // -------------------------------------------------------------
