@@ -98,6 +98,14 @@ const DEFAULT_PIN = '1234';
             <span class="count-pill">{{ leads.length }}</span>
           </button>
           <button
+            (click)="activeTab = 'footmarks'"
+            [class.active]="activeTab === 'footmarks'"
+            class="tab-btn"
+          >
+            👣 Footmarks & Visitors
+            <span class="count-pill">{{ footmarkStats?.totalFootmarks || 0 }}</span>
+          </button>
+          <button
             (click)="activeTab = 'form'"
             [class.active]="activeTab === 'form'"
             class="tab-btn"
@@ -129,6 +137,10 @@ const DEFAULT_PIN = '1234';
               <div class="metric-num">{{ leads.length }}</div>
               <div class="metric-label">Total Leads Received</div>
             </div>
+            <div class="metric-card footmarks" (click)="activeTab = 'footmarks'" style="cursor: pointer;">
+              <div class="metric-num">{{ footmarkStats?.totalFootmarks || 0 }}</div>
+              <div class="metric-label">Total Footmarks ({{ footmarkStats?.todayFootmarks || 0 }} today) ↗</div>
+            </div>
             <div class="metric-card new">
               <div class="metric-num">{{ getCountByStatus('NEW') }}</div>
               <div class="metric-label">New / Uncontacted</div>
@@ -142,6 +154,7 @@ const DEFAULT_PIN = '1234';
               <div class="metric-label">Confirmed / Completed</div>
             </div>
           </div>
+
 
           <!-- CONTROLS ROW -->
           <div class="filter-bar">
@@ -298,7 +311,147 @@ const DEFAULT_PIN = '1234';
         </div>
 
         <!-- ============================================================ -->
-        <!-- TAB 2: FORM & FIELD CONTROLS -->
+        <!-- TAB 2: FOOTMARKS & VISITOR ANALYTICS -->
+        <!-- ============================================================ -->
+        <div *ngIf="activeTab === 'footmarks'" class="tab-content">
+          <!-- METRICS CARDS -->
+          <div class="metrics-grid">
+            <div class="metric-card footmarks">
+              <div class="metric-num">{{ footmarkStats?.totalFootmarks || 0 }}</div>
+              <div class="metric-label">Total Footmarks (Pageviews)</div>
+            </div>
+            <div class="metric-card total">
+              <div class="metric-num">{{ footmarkStats?.uniqueVisitors || 0 }}</div>
+              <div class="metric-label">Unique Visitors</div>
+            </div>
+            <div class="metric-card converted">
+              <div class="metric-num">{{ footmarkStats?.todayFootmarks || 0 }}</div>
+              <div class="metric-label">Today's Visits ({{ footmarkStats?.todayUniqueVisitors || 0 }} unique)</div>
+            </div>
+            <div class="metric-card progress">
+              <div class="metric-num" style="font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ footmarkStats?.topPages?.[0]?.title || 'Home' }}
+              </div>
+              <div class="metric-label">Top Visited Service</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <!-- Top Pages -->
+            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
+                👁️ Top Visited Services & Pages
+              </h3>
+              <div *ngFor="let page of footmarkStats?.topPages" style="margin-bottom: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+                  <span style="color: #1e293b;">{{ page.title }}</span>
+                  <span style="color: #6366f1;">{{ page.count }} visits ({{ page.percentage }}%)</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
+                  <div style="height: 100%; background: #6366f1; border-radius: 999px;" [style.width.%]="page.percentage"></div>
+                </div>
+              </div>
+              <div *ngIf="!footmarkStats?.topPages?.length" style="color: #94a3b8; font-size: 0.85rem; font-style: italic;">
+                No page visits recorded yet.
+              </div>
+            </div>
+
+            <!-- Device Distribution -->
+            <div style="background: white; padding: 1.25rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: #0f172a;">
+                📱 Device Distribution & Acquisition
+              </h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; text-align: center; margin-bottom: 1rem;">
+                <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 1.25rem;">📱</div>
+                  <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.mobile || 0 }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Mobile</div>
+                </div>
+                <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 1.25rem;">💻</div>
+                  <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.desktop || 0 }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Desktop</div>
+                </div>
+                <div style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                  <div style="font-size: 1.25rem;">📟</div>
+                  <div style="font-weight: 700; font-size: 1.1rem; color: #0f172a;">{{ footmarkStats?.deviceCounts?.tablet || 0 }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b;">Tablet</div>
+                </div>
+              </div>
+
+              <div style="margin-top: 1rem;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 0.5rem; text-transform: uppercase;">
+                  Acquisition Sources
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                  <span *ngFor="let ref of footmarkStats?.topReferrers" style="background: #e0e7ff; color: #3730a3; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">
+                    {{ ref.referrer }}: {{ ref.count }}
+                  </span>
+                  <span *ngIf="!footmarkStats?.topReferrers?.length" style="color: #94a3b8; font-size: 0.8rem;">
+                    Direct & organic search visitors
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Activity Table -->
+          <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+            <div style="padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0;">⚡ Live Visitor Footmark Stream</h3>
+                <span style="font-size: 0.75rem; color: #64748b;">Recent visitor journeys recorded on apkeliteservices.in</span>
+              </div>
+              <button (click)="simulateTestVisit()" class="btn-filter sample" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
+                + Simulate Test Visit
+              </button>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">
+                    <th style="padding: 0.75rem 1rem;">Page</th>
+                    <th style="padding: 0.75rem 1rem;">Device / Browser</th>
+                    <th style="padding: 0.75rem 1rem;">Source</th>
+                    <th style="padding: 0.75rem 1rem;">Location</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let f of footmarkStats?.recentFootmarks" style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 0.75rem 1rem;">
+                      <div style="font-weight: 600; color: #0f172a;">{{ f.pageTitle || 'APK Elite Services' }}</div>
+                      <div style="font-size: 0.75rem; color: #6366f1; font-family: monospace;">{{ f.path }}</div>
+                    </td>
+                    <td style="padding: 0.75rem 1rem; color: #334155;">
+                      <span style="text-transform: capitalize; font-weight: 600;">{{ f.device }}</span> · {{ f.browser }}
+                    </td>
+                    <td style="padding: 0.75rem 1rem;">
+                      <span style="background: #eff6ff; color: #1d4ed8; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                        {{ f.referrer || 'Direct' }}
+                      </span>
+                    </td>
+                    <td style="padding: 0.75rem 1rem; color: #64748b;">
+                      📍 {{ f.city || 'Pune' }}
+                    </td>
+                    <td style="padding: 0.75rem 1rem; text-align: right; color: #64748b; font-size: 0.75rem;">
+                      {{ f.createdAt | date:'shortTime' }}
+                    </td>
+                  </tr>
+                  <tr *ngIf="!footmarkStats?.recentFootmarks?.length">
+                    <td colspan="5" style="padding: 2rem; text-align: center; color: #94a3b8; font-style: italic;">
+                      No footmarks recorded yet. Visit any page or click &ldquo;+ Simulate Test Visit&rdquo;.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB 3: FORM & FIELD CONTROLS -->
         <!-- ============================================================ -->
         <div *ngIf="activeTab === 'form'" class="tab-content">
           <div class="settings-container">
@@ -691,6 +844,7 @@ const DEFAULT_PIN = '1234';
       border: 1px solid #e2e8f0;
     }
     .metric-card.total { border-left: 4px solid #3b82f6; }
+    .metric-card.footmarks { border-left: 4px solid #6366f1; }
     .metric-card.new { border-left: 4px solid #f59e0b; }
     .metric-card.progress { border-left: 4px solid #8b5cf6; }
     .metric-card.converted { border-left: 4px solid #10b981; }
@@ -858,7 +1012,7 @@ const DEFAULT_PIN = '1234';
       padding: 0.55rem;
       border-radius: 8px;
       font-size: 0.85rem;
-      font-weight: 700;
+      font-weight: 600;
       text-decoration: none;
     }
     .btn-call {
@@ -869,13 +1023,13 @@ const DEFAULT_PIN = '1234';
       padding: 0.55rem;
       border-radius: 8px;
       font-size: 0.85rem;
-      font-weight: 700;
+      font-weight: 600;
       text-decoration: none;
     }
     .btn-del {
       background: #fee2e2;
-      border: 1px solid #fca5a5;
       color: #ef4444;
+      border: 1px solid #fca5a5;
       padding: 0.55rem 0.75rem;
       border-radius: 8px;
       cursor: pointer;
@@ -883,54 +1037,51 @@ const DEFAULT_PIN = '1234';
 
     /* NOTES */
     .notes-section {
-      border-top: 1px dashed #e2e8f0;
-      padding-top: 0.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 0.75rem;
     }
     .notes-list {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
-      max-height: 80px;
-      overflow-y: auto;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
     }
     .single-note {
-      font-size: 0.75rem;
-      color: #334155;
+      font-size: 0.775rem;
+      color: #475569;
       background: #f8fafc;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid #f1f5f9;
     }
     .note-time {
-      font-weight: 700;
+      font-weight: 600;
       color: #64748b;
-      margin-right: 0.25rem;
+      margin-right: 0.4rem;
     }
     .add-note-inline {
       display: flex;
-      gap: 0.25rem;
+      gap: 0.4rem;
     }
     .inline-note-input {
       flex: 1;
-      font-size: 0.775rem;
-      padding: 0.35rem 0.5rem;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
       border: 1px solid #cbd5e1;
-      border-radius: 4px;
+      border-radius: 6px;
       outline: none;
     }
     .btn-add-note {
-      font-size: 0.75rem;
-      padding: 0.35rem 0.6rem;
       background: #334155;
       color: white;
       border: none;
-      border-radius: 4px;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
       cursor: pointer;
     }
 
-    /* SETTINGS / FORM CONTROLS */
+    /* SETTINGS BOXES */
     .settings-container {
       display: flex;
       flex-direction: column;
@@ -938,9 +1089,9 @@ const DEFAULT_PIN = '1234';
     }
     .settings-box {
       background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
       padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
     }
     .settings-box h3 {
       font-size: 1.15rem;
@@ -950,26 +1101,26 @@ const DEFAULT_PIN = '1234';
     }
     .settings-desc {
       color: #64748b;
-      font-size: 0.85rem;
-      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
     }
     .pill-list {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.25rem;
     }
     .field-pill {
       background: #f1f5f9;
-      color: #1e293b;
-      padding: 0.4rem 0.75rem;
+      color: #334155;
+      padding: 0.4rem 0.8rem;
       border-radius: 20px;
       font-size: 0.85rem;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #e2e8f0;
     }
     .field-pill.service {
       background: #e0f2fe;
@@ -979,23 +1130,23 @@ const DEFAULT_PIN = '1234';
     .pill-remove {
       background: none;
       border: none;
+      font-size: 1.1rem;
       color: #94a3b8;
       cursor: pointer;
-      font-size: 1.1rem;
       line-height: 1;
       padding: 0;
     }
     .pill-remove:hover {
-      color: #e11d48;
+      color: #ef4444;
     }
     .add-row {
       display: flex;
       gap: 0.5rem;
-      max-width: 480px;
+      max-width: 500px;
     }
     .setting-input {
       flex: 1;
-      padding: 0.65rem 0.85rem;
+      padding: 0.6rem 0.875rem;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
       font-size: 0.9rem;
@@ -1008,10 +1159,10 @@ const DEFAULT_PIN = '1234';
       background: #0284c7;
       color: white;
       border: none;
+      padding: 0.6rem 1.25rem;
       border-radius: 8px;
-      padding: 0.65rem 1rem;
-      font-size: 0.875rem;
       font-weight: 600;
+      font-size: 0.875rem;
       cursor: pointer;
     }
     .form-fields-grid {
@@ -1022,10 +1173,10 @@ const DEFAULT_PIN = '1234';
     .field-group {
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.4rem;
     }
     .field-group label {
-      font-size: 0.825rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: #475569;
     }
@@ -1034,19 +1185,21 @@ const DEFAULT_PIN = '1234';
     .pricing-table {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.6rem;
     }
     .price-row {
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
       flex-wrap: wrap;
     }
     .price-svc {
-      flex: 2;
-      min-width: 180px;
+      flex: 1;
+      min-width: 200px;
       font-weight: 600;
       font-size: 0.9rem;
     }
@@ -1114,9 +1267,10 @@ export class CmsRedirectComponent implements OnInit {
   enteredPin = '';
   pinError = false;
 
-  activeTab: 'leads' | 'form' | 'content' = 'leads';
+  activeTab: 'leads' | 'footmarks' | 'form' | 'content' = 'leads';
 
   leads: LeadItem[] = [];
+  footmarkStats: any = null;
   refreshing = false;
   searchQuery = '';
   statusFilter = 'ALL';
@@ -1198,12 +1352,81 @@ export class CmsRedirectComponent implements OnInit {
     try {
       this.leads = await this.leadApi.fetchAllLeads();
       this.dynamicContent = await this.contentApi.fetchLiveContent();
+      await this.loadFootmarks();
     } catch (e) {
       console.warn('Error loading CMS data:', e);
     } finally {
       this.refreshing = false;
     }
   }
+
+  async loadFootmarks() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const endpoint = window.__APK_TRACKING_ENDPOINT__ ||
+        (window.location.hostname === 'localhost' && window.location.port !== '3000'
+          ? 'http://localhost:3000/api/footmark'
+          : '/api/footmark');
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      if (data.success && data.stats) {
+        this.footmarkStats = data.stats;
+      }
+    } catch {
+      const stored = localStorage.getItem('apk-traffic-events');
+      if (stored) {
+        try {
+          const events = JSON.parse(stored);
+          this.footmarkStats = {
+            totalFootmarks: events.length,
+            uniqueVisitors: new Set(events.map((e: any) => e.visitorId)).size,
+            todayFootmarks: events.length,
+            todayUniqueVisitors: new Set(events.map((e: any) => e.visitorId)).size,
+            topPages: [{ path: '/', title: 'Homepage', count: events.length, percentage: 100 }],
+            deviceCounts: { mobile: events.length, desktop: 0, tablet: 0 },
+            recentFootmarks: events,
+          };
+        } catch {}
+      }
+    }
+  }
+
+  async simulateTestVisit() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const paths = [
+        { path: '/', title: 'APK Elite Services | Professional Cleaning in Pune' },
+        { path: '/services/deep-cleaning', title: 'Home Deep Cleaning Services in Pune' },
+        { path: '/services/sofa-cleaning-pune', title: 'Professional Sofa & Carpet Shampooing Pune' },
+        { path: '/services/office-cleaning-pune', title: 'Corporate Office Cleaning Pune' },
+        { path: '/contact', title: 'Contact Us | Free Quote' },
+      ];
+      const pick = paths[Math.floor(Math.random() * paths.length)];
+      const endpoint = window.__APK_TRACKING_ENDPOINT__ ||
+        (window.location.hostname === 'localhost' && window.location.port !== '3000'
+          ? 'http://localhost:3000/api/footmark'
+          : '/api/footmark');
+
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          visitorId: 'v_' + Math.random().toString(36).substring(2, 8),
+          sessionId: 's_' + Math.random().toString(36).substring(2, 8),
+          path: pick.path,
+          pageTitle: pick.title,
+          referrer: 'Google Search',
+          device: 'mobile',
+          browser: 'Chrome',
+          city: 'Wakad, Pune',
+        }),
+      });
+      await this.loadFootmarks();
+    } catch (e) {
+      console.warn('Could not simulate test visit:', e);
+    }
+  }
+
 
   get filteredLeads(): LeadItem[] {
     return this.leads.filter(lead => {
