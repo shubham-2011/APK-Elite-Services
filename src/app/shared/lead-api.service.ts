@@ -61,6 +61,7 @@ const STORAGE_KEY = 'apk_elite_leads_cache';
 })
 export class LeadApiService {
   private apiEndpoint = '/api/leads';
+  private netlifyEndpoint = '/.netlify/functions/leads';
   private devEndpoint = 'http://localhost:3000/api/leads';
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
@@ -102,13 +103,22 @@ export class LeadApiService {
     // 1. Immediately cache in localStorage for instant offline access
     this.saveLocalLead(leadRecord);
 
-    // 2. Post to live API
+    // 2. Post to live API (tries /api/leads, falls back to Netlify function directly)
     try {
       let res = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
+      let isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      if (!res.ok || isHtml) {
+        res = await fetch(this.netlifyEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
 
       if (!res.ok && window.location.hostname === 'localhost') {
         // Fallback for local Next.js dev server
@@ -133,7 +143,12 @@ export class LeadApiService {
     let remoteLeads: LeadItem[] = [];
     try {
       let res = await fetch(this.apiEndpoint);
-      if (!res.ok && window.location.hostname === 'localhost') {
+      let isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      if (!res.ok || isHtml) {
+        res = await fetch(this.netlifyEndpoint);
+        isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      }
+      if ((!res.ok || isHtml) && window.location.hostname === 'localhost') {
         res = await fetch(this.devEndpoint);
       }
       if (res.ok) {
@@ -187,11 +202,18 @@ export class LeadApiService {
 
     // Attempt remote update
     try {
-      await fetch(this.apiEndpoint, {
+      let res = await fetch(this.apiEndpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status })
       });
+      if (!res.ok || (res.headers.get('content-type') || '').includes('text/html')) {
+        await fetch(this.netlifyEndpoint, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status })
+        });
+      }
     } catch (e) {
       // Ignored
     }
@@ -218,11 +240,18 @@ export class LeadApiService {
     }
 
     try {
-      await fetch(this.apiEndpoint, {
+      let res = await fetch(this.apiEndpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, note })
       });
+      if (!res.ok || (res.headers.get('content-type') || '').includes('text/html')) {
+        await fetch(this.netlifyEndpoint, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, note })
+        });
+      }
     } catch (e) {
       // Ignored
     }
@@ -237,11 +266,18 @@ export class LeadApiService {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
 
     try {
-      await fetch(this.apiEndpoint, {
+      let res = await fetch(this.apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
+      if (!res.ok || (res.headers.get('content-type') || '').includes('text/html')) {
+        await fetch(this.netlifyEndpoint, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+      }
     } catch (e) {
       // Ignored
     }

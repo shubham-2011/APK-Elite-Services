@@ -108,6 +108,7 @@ const APP_RELEASE_VERSION = '2.1.0-prod';
 })
 export class FootmarkApiService {
   private endpoint = '/api/footmark';
+  private netlifyEndpoint = '/.netlify/functions/footmark';
   private lastTrackedPath = '';
   private lastTrackedTime = 0;
 
@@ -515,8 +516,14 @@ export class FootmarkApiService {
     try {
       const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
 
-      const res = await fetch(targetUrl);
-      if (res.ok) {
+      let res = await fetch(targetUrl);
+      let isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      if (!res.ok || isHtml) {
+        res = await fetch(this.netlifyEndpoint);
+        isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      }
+
+      if (res.ok && !isHtml) {
         const data = await res.json();
         if (data.success && data.stats && data.stats.totalFootmarks > 0) {
           const stats = data.stats;

@@ -7,31 +7,37 @@
   from = "/api/leads/*"
   to = "/.netlify/functions/leads"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/leads"
   to = "/.netlify/functions/leads"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/content/*"
   to = "/.netlify/functions/content"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/content"
   to = "/.netlify/functions/content"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/footmark/*"
   to = "/.netlify/functions/footmark"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/api/footmark"
   to = "/.netlify/functions/footmark"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/*"

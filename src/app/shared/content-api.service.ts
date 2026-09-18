@@ -133,6 +133,7 @@ const DEFAULT_CONTENT: DynamicContent = {
 })
 export class ContentApiService {
   private apiEndpoint = '/api/content';
+  private netlifyEndpoint = '/.netlify/functions/content';
   private devEndpoint = 'http://localhost:3000/api/content';
 
   private contentSubject = new BehaviorSubject<DynamicContent>(DEFAULT_CONTENT);
@@ -161,7 +162,12 @@ export class ContentApiService {
 
     try {
       let res = await fetch(this.apiEndpoint);
-      if (!res.ok && window.location.hostname === 'localhost') {
+      let isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      if (!res.ok || isHtml) {
+        res = await fetch(this.netlifyEndpoint);
+        isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      }
+      if ((!res.ok || isHtml) && window.location.hostname === 'localhost') {
         res = await fetch(this.devEndpoint);
       }
 
@@ -197,6 +203,15 @@ export class ContentApiService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: updatedContent }),
       });
+
+      let isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      if (!res.ok || isHtml) {
+        res = await fetch(this.netlifyEndpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: updatedContent }),
+        });
+      }
 
       if (!res.ok && window.location.hostname === 'localhost') {
         res = await fetch(this.devEndpoint, {

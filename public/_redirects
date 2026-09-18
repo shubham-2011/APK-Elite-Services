@@ -1,1 +1,7 @@
-/*    /index.html   200
+/api/leads/*       /.netlify/functions/leads     200!
+/api/leads         /.netlify/functions/leads     200!
+/api/content/*     /.netlify/functions/content   200!
+/api/content       /.netlify/functions/content   200!
+/api/footmark/*    /.netlify/functions/footmark  200!
+/api/footmark      /.netlify/functions/footmark  200!
+/*                 /index.html                   200
