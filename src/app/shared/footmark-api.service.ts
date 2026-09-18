@@ -1,5 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { AttributionService } from './attribution.service';
 
 export type TelemetryEventType =
   | 'page_view'
@@ -13,6 +14,8 @@ export type TelemetryEventType =
   | 'contact_form_submit'
   | 'contact_form_success'
   | 'contact_form_error'
+  | 'form_abandonment'
+  | 'quote_modal_open'
   | 'menu_open'
   | 'menu_close'
   | 'external_link_click'
@@ -38,10 +41,21 @@ export interface TelemetryEvent {
   os: string;
   viewport_width: number;
   viewport_height: number;
+  screen_resolution?: string;
+  device_pixel_ratio?: number;
+  has_touch?: boolean;
+  connection_type?: string;
   referrer: string;
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  gclid?: string;
+  landing_page?: string;
+  initial_referrer?: string;
+  visit_count?: number;
+  is_returning?: boolean;
   release_version: string;
   service_id?: string;
   service_name?: string;
@@ -60,6 +74,14 @@ export interface FootmarkEvent {
   browser: string;
   os?: string;
   city: string;
+  visitCount?: number;
+  isReturning?: boolean;
+  landingPage?: string;
+  initialReferrer?: string;
+  utmSource?: string;
+  utmCampaign?: string;
+  gclid?: string;
+  screenResolution?: string;
   createdAt: string;
 }
 
@@ -95,7 +117,10 @@ export class FootmarkApiService {
   // Rage click tracking state
   private recentClicks: Array<{ time: number; x: number; y: number; target: EventTarget | null }> = [];
 
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private attribution: AttributionService
+  ) {}
 
   private isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
@@ -134,7 +159,13 @@ export class FootmarkApiService {
     const title = pageTitle || document.title || 'APK Elite Services | Pune';
     const createdAt = new Date().toISOString();
 
-    // 1. Maintain backward-compatible FootmarkEvent for CMS
+    const attr = this.attribution.getAttribution();
+    const screenRes = typeof window !== 'undefined' && window.screen ? `${window.screen.width}x${window.screen.height}` : undefined;
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : undefined;
+    const hasTouch = typeof navigator !== 'undefined' ? (navigator.maxTouchPoints > 0) : undefined;
+    const connType = typeof navigator !== 'undefined' ? (navigator as any).connection?.effectiveType : undefined;
+
+    // 1. Maintain backward-compatible FootmarkEvent for CMS with enriched attribution
     const footmark: FootmarkEvent = {
       _id: 'ft_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       visitorId,
@@ -146,6 +177,14 @@ export class FootmarkApiService {
       browser,
       os,
       city: 'Pune',
+      visitCount: attr.visit_count,
+      isReturning: attr.visit_count > 1,
+      landingPage: attr.landing_page,
+      initialReferrer: attr.initial_referrer,
+      utmSource: attr.utm_source,
+      utmCampaign: attr.utm_campaign,
+      gclid: attr.gclid,
+      screenResolution: screenRes,
       createdAt
     };
     this.saveLocalEvent(footmark);
@@ -164,6 +203,10 @@ export class FootmarkApiService {
       os,
       viewport_width: window.innerWidth || 0,
       viewport_height: window.innerHeight || 0,
+      screen_resolution: screenRes,
+      device_pixel_ratio: dpr,
+      has_touch: hasTouch,
+      connection_type: connType,
       referrer,
       ...this.extractUTM(),
       release_version: APP_RELEASE_VERSION,
@@ -193,6 +236,10 @@ export class FootmarkApiService {
     const browser = this.detectBrowser();
     const os = this.detectOS();
     const normalizedPath = window.location.pathname.replace(/\/$/, '') || '/';
+    const screenRes = typeof window !== 'undefined' && window.screen ? `${window.screen.width}x${window.screen.height}` : undefined;
+    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio : undefined;
+    const hasTouch = typeof navigator !== 'undefined' ? (navigator.maxTouchPoints > 0) : undefined;
+    const connType = typeof navigator !== 'undefined' ? (navigator as any).connection?.effectiveType : undefined;
 
     const event: TelemetryEvent = {
       event_name: eventName,
@@ -207,6 +254,10 @@ export class FootmarkApiService {
       os,
       viewport_width: window.innerWidth || 0,
       viewport_height: window.innerHeight || 0,
+      screen_resolution: screenRes,
+      device_pixel_ratio: dpr,
+      has_touch: hasTouch,
+      connection_type: connType,
       referrer: this.normalizeReferrer(document.referrer),
       ...this.extractUTM(),
       release_version: APP_RELEASE_VERSION,
@@ -404,6 +455,17 @@ export class FootmarkApiService {
       events.unshift(event);
       // Keep up to 150 recent telemetry events
       localStorage.setItem(TELEMETRY_STORAGE_KEY, JSON.stringify(events.slice(0, 150)));
+
+      // Mirror key telemetry & conversion events to Umami Cloud (if script loaded)
+      if (typeof (window as any).umami?.track === 'function') {
+        (window as any).umami.track(event.event_name, {
+          route: event.route,
+          service: event.service_id || event.service_name,
+          cta: event.cta_type,
+          visit_count: event.visit_count,
+          source: event.utm_source || event.initial_referrer
+        });
+      }
     } catch {}
   }
 
@@ -598,13 +660,31 @@ export class FootmarkApiService {
     return 'Other';
   }
 
-  private extractUTM(): { utm_source?: string; utm_medium?: string; utm_campaign?: string } {
+  private extractUTM(): {
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+    utm_term?: string;
+    utm_content?: string;
+    gclid?: string;
+    landing_page?: string;
+    initial_referrer?: string;
+    visit_count?: number;
+    is_returning?: boolean;
+  } {
     try {
-      const params = new URLSearchParams(window.location.search);
+      const attr = this.attribution.getAttribution();
       return {
-        utm_source: params.get('utm_source') || undefined,
-        utm_medium: params.get('utm_medium') || undefined,
-        utm_campaign: params.get('utm_campaign') || undefined
+        utm_source: attr.utm_source,
+        utm_medium: attr.utm_medium,
+        utm_campaign: attr.utm_campaign,
+        utm_term: attr.utm_term,
+        utm_content: attr.utm_content,
+        gclid: attr.gclid,
+        landing_page: attr.landing_page,
+        initial_referrer: attr.initial_referrer,
+        visit_count: attr.visit_count,
+        is_returning: attr.visit_count > 1
       };
     } catch {
       return {};

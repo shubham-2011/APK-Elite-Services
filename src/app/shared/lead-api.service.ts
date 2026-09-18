@@ -19,6 +19,16 @@ export interface LeadItem {
   source: string;
   status: 'NEW' | 'CONTACTED' | 'QUOTE_SENT' | 'CONFIRMED' | 'COMPLETED' | 'LOST';
   notes: LeadNote[];
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  gclid?: string;
+  landing_page?: string;
+  initial_referrer?: string;
+  visitor_id?: string;
+  visit_count?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +42,16 @@ export interface LeadPayload {
   propertyType?: string;
   message?: string;
   source: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  gclid?: string;
+  landing_page?: string;
+  initial_referrer?: string;
+  visitor_id?: string;
+  visit_count?: number;
 }
 
 const STORAGE_KEY = 'apk_elite_leads_cache';
@@ -65,6 +85,16 @@ export class LeadApiService {
       source: payload.source || 'Website',
       status: 'NEW',
       notes: [],
+      utm_source: payload.utm_source,
+      utm_medium: payload.utm_medium,
+      utm_campaign: payload.utm_campaign,
+      utm_term: payload.utm_term,
+      utm_content: payload.utm_content,
+      gclid: payload.gclid,
+      landing_page: payload.landing_page,
+      initial_referrer: payload.initial_referrer,
+      visitor_id: payload.visitor_id,
+      visit_count: payload.visit_count,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

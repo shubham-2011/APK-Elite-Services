@@ -6,6 +6,7 @@ import { QuoteModalService } from '../shared/quote-modal.service';
 import { LeadApiService } from '../shared/lead-api.service';
 import { ContentApiService } from '../shared/content-api.service';
 import { FootmarkApiService } from '../shared/footmark-api.service';
+import { AttributionService } from '../shared/attribution.service';
 
 const WA_NUMBER = '918830167863';
 const TARGET_EMAIL = 'info@apkeliteservices.in';
@@ -179,6 +180,7 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     private leadApi: LeadApiService,
     private contentApi: ContentApiService,
     private footmarkApi: FootmarkApiService,
+    private attribution: AttributionService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -241,6 +243,15 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
   }
 
   close(): void {
+    if (!this.submitted && (this.form.name || this.form.phone)) {
+      this.footmarkApi.trackEvent('form_abandonment', {
+        form_name: 'quote_modal',
+        service: this.form.service,
+        locality: this.form.locality,
+        has_name: Boolean(this.form.name),
+        has_phone: Boolean(this.form.phone)
+      });
+    }
     this.modalService.close();
   }
 
@@ -258,24 +269,36 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
       locality: this.form.locality
     });
 
-    // Asynchronously capture lead in Next.js + MongoDB CMS
+    const attr = this.attribution.getAttribution();
+    const attrTag = this.attribution.getCompactAttributionTag(this.form.locality);
+
+    // Asynchronously capture lead in Next.js + MongoDB CMS with marketing attribution
     this.leadApi.submitLead({
       name: this.form.name,
       phone: this.form.phone,
       service: this.form.service,
       locality: this.form.locality,
       message: this.form.message,
-      source: 'quote_modal'
+      source: 'quote_modal',
+      utm_source: attr.utm_source,
+      utm_medium: attr.utm_medium,
+      utm_campaign: attr.utm_campaign,
+      utm_term: attr.utm_term,
+      utm_content: attr.utm_content,
+      gclid: attr.gclid,
+      landing_page: attr.landing_page,
+      initial_referrer: attr.initial_referrer,
+      visit_count: attr.visit_count
     });
 
     // 1. Prepare formatted mailto URL (Direct email to dynamic CMS email)
-    const subject = `Service Quote Request: ${this.form.service} (${this.form.locality})`;
-    const body = `Hi APK Elite Services Team,\n\nI would like to request a quote with the following details:\n\nName: ${this.form.name}\nPhone / Mobile: ${this.form.phone}\nService Required: ${this.form.service}\nLocality: ${this.form.locality}\nProperty Details: ${this.form.message || 'None'}\n\nPlease respond with pricing and availability.`;
+    const subject = `Service Quote Request: ${this.form.service} (${this.form.locality}) ${attrTag}`;
+    const body = `Hi APK Elite Services Team,\n\nI would like to request a quote with the following details:\n\nName: ${this.form.name}\nPhone / Mobile: ${this.form.phone}\nService Required: ${this.form.service}\nLocality: ${this.form.locality}\nProperty Details: ${this.form.message || 'None'}\n\nAttribution: ${attrTag}\n\nPlease respond with pricing and availability.`;
 
     this.mailtoUrl = `mailto:${this.targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    // 2. Prepare WhatsApp backup URL using dynamic CMS WhatsApp number
-    const waMsg = `Hi, I submitted a Quote request: Name: ${this.form.name}, Phone: ${this.form.phone}, Service: ${this.form.service}, Locality: ${this.form.locality}, Details: ${this.form.message || 'N/A'} [Ref: Web/QuoteModal/${this.form.locality}]`;
+    // 2. Prepare WhatsApp backup URL using dynamic CMS WhatsApp number and attribution tag
+    const waMsg = `Hi, I submitted a Quote request: Name: ${this.form.name}, Phone: ${this.form.phone}, Service: ${this.form.service}, Locality: ${this.form.locality}, Details: ${this.form.message || 'N/A'} ${attrTag}`;
     this.whatsAppUrl = `https://wa.me/${this.targetWhatsApp}?text=${encodeURIComponent(waMsg)}`;
 
     // 3. Open user's email client directly pre-filled with all details
@@ -287,7 +310,11 @@ export class QuoteModalComponent implements OnInit, OnDestroy {
     });
 
     if ((window as any).umami) {
-      (window as any).umami.track('quote-modal-submit', { service: this.form.service, locality: this.form.locality });
+      (window as any).umami.track('quote-modal-submit', {
+        service: this.form.service,
+        locality: this.form.locality,
+        attribution: attrTag
+      });
     }
 
     this.submitted = true;

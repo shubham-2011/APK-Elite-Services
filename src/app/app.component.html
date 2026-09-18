@@ -14,7 +14,8 @@
 
   <!-- Floating Action Buttons -->
   <div class="floating-icons">
-    <a href="https://wa.me/918830167863?text=Hi%2C%20I%27m%20interested%20in%20your%20cleaning%20services%20in%20Pune.+%5BRef%3A+Web%2FFloatingIcon%5D"
+    <a [href]="getDynamicWhatsAppUrl('FloatingIcon')"
+       (click)="trackCtaClick('whatsapp', 'floating-icon')"
        target="_blank"
        rel="noopener"
        class="icon whatsapp"
@@ -24,6 +25,7 @@
     </a>
 
     <a href="mailto:info@apkeliteservices.in"
+       (click)="trackCtaClick('email', 'floating-icon')"
        class="icon email"
        aria-label="Email APK Elite Services"
        data-umami-event="email-float-icon">
@@ -31,7 +33,8 @@
     </a>
   </div>
 
-  <a href="https://wa.me/918830167863?text=Hi%2C%20I%27m%20interested%20in%20your%20cleaning%20services%20in%20Pune.+%5BRef%3A+Web%2FFloatBox%5D"
+  <a [href]="getDynamicWhatsAppUrl('FloatBox')"
+     (click)="trackCtaClick('whatsapp', 'floating-box')"
      target="_blank"
      rel="noopener"
      class="whatsapp-box"
@@ -44,12 +47,14 @@
   <!-- Mobile Sticky CTA Bar -->
   <div class="mobile-sticky-cta">
     <a href="tel:+918830167863"
+       (click)="trackCtaClick('call', 'mobile-sticky')"
        class="cta-call"
        aria-label="Call APK Elite Services"
        data-umami-event="call-sticky-mobile">
       <i class="fas fa-phone-alt"></i> Call Now
     </a>
-    <a href="https://wa.me/918830167863?text=Hi%2C%20I%27m%20interested%20in%20your%20cleaning%20services%20in%20Pune.+%5BRef%3A+Web%2FStickyMobile%5D"
+    <a [href]="getDynamicWhatsAppUrl('StickyMobile')"
+       (click)="trackCtaClick('whatsapp', 'mobile-sticky')"
        target="_blank"
        rel="noopener"
        class="cta-whatsapp"

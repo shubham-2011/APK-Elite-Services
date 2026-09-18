@@ -204,6 +204,24 @@ const DEFAULT_PIN = '1234';
                   <div class="customer-info">
                     <h3 class="cust-name">{{ lead.name }}</h3>
                     <div class="source-tag">{{ lead.source }} · {{ lead.createdAt | date:'short' }}</div>
+                    <!-- Attribution & Marketing Intelligence Badges -->
+                    <div class="attr-badges-row" *ngIf="lead.utm_source || lead.utm_campaign || lead.gclid || (lead.visit_count && lead.visit_count > 1) || lead.landing_page">
+                      <span class="attr-badge source" *ngIf="lead.utm_source">
+                        📢 {{ lead.utm_source }}{{ lead.utm_medium ? ' / ' + lead.utm_medium : '' }}
+                      </span>
+                      <span class="attr-badge campaign" *ngIf="lead.utm_campaign">
+                        🎯 {{ lead.utm_campaign }}
+                      </span>
+                      <span class="attr-badge gclid" *ngIf="lead.gclid" title="Google Ads Click ID Verified">
+                        ⭐ Google Ads
+                      </span>
+                      <span class="attr-badge visits" *ngIf="lead.visit_count && lead.visit_count > 1">
+                        🔁 Visit #{{ lead.visit_count }}
+                      </span>
+                      <span class="attr-badge landing" *ngIf="lead.landing_page" [title]="'Entry: ' + lead.landing_page">
+                        🚪 {{ lead.landing_page }}
+                      </span>
+                    </div>
                   </div>
 
                   <div class="status-badge-wrap">
@@ -1097,6 +1115,52 @@ const DEFAULT_PIN = '1234';
       color: #64748b;
       margin-top: 0.2rem;
     }
+    .attr-badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.35rem;
+    }
+    .attr-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.18rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      line-height: 1.2;
+    }
+    .attr-badge.source {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+    .attr-badge.campaign {
+      background: #eff6ff;
+      color: #1e40af;
+      border-color: #bfdbfe;
+    }
+    .attr-badge.gclid {
+      background: #fefce8;
+      color: #854d0e;
+      border-color: #fef08a;
+    }
+    .attr-badge.visits {
+      background: #faf5ff;
+      color: #6b21a8;
+      border-color: #e9d5ff;
+    }
+    .attr-badge.landing {
+      background: #f1f5f9;
+      color: #475569;
+      border-color: #cbd5e1;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .status-select {
       font-size: 0.75rem;
       font-weight: 700;
@@ -1951,17 +2015,28 @@ export class CmsRedirectComponent implements OnInit {
       alert('No leads available to export.');
       return;
     }
-    const headers = ['Name', 'Phone', 'Email', 'Service', 'Locality', 'Property', 'Source', 'Status', 'Date', 'Message'];
+    const headers = [
+      'Name', 'Phone', 'Email', 'Service', 'Locality', 'Property', 'Source', 'Status',
+      'Campaign Source', 'Campaign Medium', 'Campaign Name', 'Google Ads (GCLID)', 'Landing Page', 'Referrer', 'Visit Count',
+      'Date', 'Message'
+    ];
     const rows = this.leads.map(l => [
-      `"${l.name.replace(/"/g, '""')}"`,
-      `"${l.phone}"`,
+      `"${(l.name || '').replace(/"/g, '""')}"`,
+      `"${l.phone || ''}"`,
       `"${l.email || ''}"`,
-      `"${l.service}"`,
+      `"${l.service || ''}"`,
       `"${l.locality || ''}"`,
       `"${l.propertyType || ''}"`,
-      `"${l.source}"`,
-      `"${l.status}"`,
-      `"${l.createdAt}"`,
+      `"${l.source || ''}"`,
+      `"${l.status || ''}"`,
+      `"${l.utm_source || ''}"`,
+      `"${l.utm_medium || ''}"`,
+      `"${l.utm_campaign || ''}"`,
+      `"${l.gclid || ''}"`,
+      `"${l.landing_page || ''}"`,
+      `"${(l.initial_referrer || '').replace(/"/g, '""')}"`,
+      `"${l.visit_count || 1}"`,
+      `"${l.createdAt || ''}"`,
       `"${(l.message || '').replace(/"/g, '""')}"`
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
@@ -1983,11 +2058,19 @@ export class CmsRedirectComponent implements OnInit {
       locality: 'Baner',
       propertyType: '2 BHK',
       message: 'Need deep cleaning before moving in this weekend.',
-      source: 'CMS Test'
+      source: 'Google Ads (Verified)',
+      utm_source: 'google',
+      utm_medium: 'cpc',
+      utm_campaign: 'pune_diwali_deep_cleaning',
+      utm_term: 'best deep cleaning baner',
+      gclid: 'CjwKCAjwTestGclidExample123456789',
+      landing_page: '/services/deep-cleaning-baner',
+      initial_referrer: 'https://www.google.com/',
+      visit_count: 2
     };
     await this.leadApi.submitLead(sample);
     await this.loadAllData();
-    this.showToast('Test lead added successfully!');
+    this.showToast('Test lead with attribution added successfully!');
   }
 
   addLocality() {

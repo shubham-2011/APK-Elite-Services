@@ -7,6 +7,7 @@ import { SeoService } from '../seo.service';
 import { LeadApiService } from '../shared/lead-api.service';
 import { ContentApiService } from '../shared/content-api.service';
 import { FootmarkApiService } from '../shared/footmark-api.service';
+import { AttributionService } from '../shared/attribution.service';
 
 const WA_NUMBER = '918830167863';
 
@@ -336,6 +337,7 @@ export class ContactPageComponent implements OnInit, OnDestroy {
     private leadApi: LeadApiService,
     private contentApi: ContentApiService,
     private footmarkApi: FootmarkApiService,
+    private attribution: AttributionService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -369,6 +371,15 @@ export class ContactPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (!this.submitted && (this.form.name || this.form.phone || this.form.message)) {
+      this.footmarkApi.trackEvent('form_abandonment', {
+        form_name: 'contact_page_form',
+        service: this.form.service,
+        locality: this.form.locality,
+        has_name: Boolean(this.form.name),
+        has_phone: Boolean(this.form.phone)
+      });
+    }
     this.contentSub?.unsubscribe();
   }
 
@@ -380,7 +391,10 @@ export class ContactPageComponent implements OnInit, OnDestroy {
       locality: this.form.locality
     });
 
-    // Asynchronously capture lead in Next.js + MongoDB CMS
+    const attr = this.attribution.getAttribution();
+    const attrTag = this.attribution.getCompactAttributionTag(this.form.locality);
+
+    // Asynchronously capture lead in Next.js + MongoDB CMS with full marketing attribution
     this.leadApi.submitLead({
       name: this.form.name,
       phone: this.form.phone,
@@ -388,15 +402,24 @@ export class ContactPageComponent implements OnInit, OnDestroy {
       service: this.form.service,
       locality: this.form.locality,
       message: this.form.message,
-      source: 'contact_page'
+      source: 'contact_page',
+      utm_source: attr.utm_source,
+      utm_medium: attr.utm_medium,
+      utm_campaign: attr.utm_campaign,
+      utm_term: attr.utm_term,
+      utm_content: attr.utm_content,
+      gclid: attr.gclid,
+      landing_page: attr.landing_page,
+      initial_referrer: attr.initial_referrer,
+      visit_count: attr.visit_count
     });
 
-    const subject = `Website Contact Form: ${this.form.service} (${this.form.locality})`;
-    const body = `Hi APK Elite Services Team,\n\nI submitted an enquiry via your website:\n\nName: ${this.form.name}\nPhone: ${this.form.phone}\nService Required: ${this.form.service}\nLocality: ${this.form.locality}\nMessage: ${this.form.message || 'None'}\n\nPlease contact me promptly.`;
+    const subject = `Website Contact Form: ${this.form.service} (${this.form.locality}) ${attrTag}`;
+    const body = `Hi APK Elite Services Team,\n\nI submitted an enquiry via your website:\n\nName: ${this.form.name}\nPhone: ${this.form.phone}\nService Required: ${this.form.service}\nLocality: ${this.form.locality}\nMessage: ${this.form.message || 'None'}\n\nAttribution: ${attrTag}\n\nPlease contact me promptly.`;
 
     this.successEmailUrl = `mailto:${this.targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
-    const msg = `Hi%2C%20I%27m%20${encodeURIComponent(this.form.name)}%20from%20${encodeURIComponent(this.form.locality)}.%20I%20need%20${encodeURIComponent(this.form.service)}.%20My%20number%20is%20${encodeURIComponent(this.form.phone)}.%20${encodeURIComponent(this.form.message)}`;
+    const msg = `Hi%2C%20I%27m%20${encodeURIComponent(this.form.name)}%20from%20${encodeURIComponent(this.form.locality)}.%20I%20need%20${encodeURIComponent(this.form.service)}.%20My%20number%20is%20${encodeURIComponent(this.form.phone)}.%20${encodeURIComponent(this.form.message)}%20${encodeURIComponent(attrTag)}`;
     this.successWhatsAppUrl = `https://wa.me/${this.waNumber}?text=${msg}`;
 
     // Trigger direct native email draft open to target email
@@ -408,7 +431,11 @@ export class ContactPageComponent implements OnInit, OnDestroy {
     });
 
     if ((window as any).umami) {
-      (window as any).umami.track('contact-form-submit', { service: this.form.service, locality: this.form.locality });
+      (window as any).umami.track('contact-form-submit', {
+        service: this.form.service,
+        locality: this.form.locality,
+        attribution: attrTag
+      });
     }
 
     this.submitted = true;
