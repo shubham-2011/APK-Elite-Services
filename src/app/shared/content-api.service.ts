@@ -2,11 +2,20 @@ import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
 
+export interface ServicePriceItem {
+  service: string;
+  startingPrice: number;
+  unit: string;
+  active: boolean;
+}
+
 export interface DynamicContent {
   companyName: string;
   phone: string;
   whatsapp: string;
   email: string;
+  address?: string;
+  businessHours?: string;
   promoBanner: {
     enabled: boolean;
     text: string;
@@ -17,14 +26,20 @@ export interface DynamicContent {
     modalSubtitle: string;
     localities: string[];
     services: string[];
+    propertyTypes?: string[];
   };
+  pricing?: ServicePriceItem[];
 }
+
+const STORAGE_KEY = 'apk_elite_site_content';
 
 const DEFAULT_CONTENT: DynamicContent = {
   companyName: 'APK Elite Services',
   phone: '+91 88301 67863',
   whatsapp: '918830167863',
   email: 'info@apkeliteservices.in',
+  address: 'Shop No 4, Datta Mandir Rd, Wakad, Pune, Maharashtra 411057',
+  businessHours: 'Mon - Sun: 8:00 AM - 9:00 PM',
   promoBanner: {
     enabled: true,
     text: 'Festival Offer: Get Flat 15% OFF on Home Deep Cleaning in Pune!',
@@ -60,37 +75,101 @@ const DEFAULT_CONTENT: DynamicContent = {
       'Carpet Cleaning',
       'Sanitization',
     ],
+    propertyTypes: ['1 RK', '1 BHK', '2 BHK', '3 BHK', '4 BHK / Villa', 'Office / Commercial', 'Other'],
   },
+  pricing: [
+    { service: 'Deep Cleaning (1 BHK)', startingPrice: 2499, unit: 'per flat', active: true },
+    { service: 'Deep Cleaning (2 BHK)', startingPrice: 3499, unit: 'per flat', active: true },
+    { service: 'Deep Cleaning (3 BHK)', startingPrice: 4499, unit: 'per flat', active: true },
+    { service: 'Sofa Shampooing', startingPrice: 799, unit: 'per 3-seater', active: true },
+    { service: 'Carpet Shampooing', startingPrice: 999, unit: 'per room', active: true },
+    { service: 'Office Cleaning', startingPrice: 1999, unit: 'starting from', active: true },
+    { service: 'Pest Control', startingPrice: 1199, unit: 'starting from', active: true },
+  ],
 };
-
-const DEFAULT_CONTENT_API = 'http://localhost:3000/api/content';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ContentApiService {
+  private apiEndpoint = '/api/content';
+  private devEndpoint = 'http://localhost:3000/api/content';
+
   private contentSubject = new BehaviorSubject<DynamicContent>(DEFAULT_CONTENT);
   content$ = this.contentSubject.asObservable();
 
   constructor(@Inject(PLATFORM_ID) private platformId: Object) {
     if (isPlatformBrowser(this.platformId)) {
+      // 1. Load cached content from localStorage immediately
+      try {
+        const cached = localStorage.getItem(STORAGE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          this.contentSubject.next({ ...DEFAULT_CONTENT, ...parsed });
+        }
+      } catch (e) {}
+
+      // 2. Fetch latest live content from API
       this.fetchLiveContent();
     }
   }
 
-  async fetchLiveContent(): Promise<void> {
+  async fetchLiveContent(): Promise<DynamicContent> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return DEFAULT_CONTENT;
+    }
+
     try {
-      const endpoint = (window as any).__APK_CMS_CONTENT_API__ || DEFAULT_CONTENT_API;
-      const res = await fetch(endpoint);
+      let res = await fetch(this.apiEndpoint);
+      if (!res.ok && window.location.hostname === 'localhost') {
+        res = await fetch(this.devEndpoint);
+      }
+
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.content) {
-          this.contentSubject.next(data.content);
+          const merged = { ...DEFAULT_CONTENT, ...data.content };
+          this.contentSubject.next(merged);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          return merged;
         }
       }
     } catch (e) {
-      // Offline fallback: keep default content seamlessly
-      console.info('CMS content API unreachable; using built-in defaults.');
+      console.info('CMS content API offline; using local cached content.');
+    }
+
+    return this.contentSubject.getValue();
+  }
+
+  async saveContent(updatedContent: DynamicContent): Promise<boolean> {
+    if (!isPlatformBrowser(this.platformId)) return false;
+
+    // Save to local subject and localStorage immediately
+    this.contentSubject.next(updatedContent);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedContent));
+    } catch (e) {}
+
+    // Persist to server API
+    try {
+      let res = await fetch(this.apiEndpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: updatedContent }),
+      });
+
+      if (!res.ok && window.location.hostname === 'localhost') {
+        res = await fetch(this.devEndpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: updatedContent }),
+        });
+      }
+
+      return res.ok;
+    } catch (err) {
+      console.warn('Content saved to local browser cache, server endpoint offline:', err);
+      return true;
     }
   }
 

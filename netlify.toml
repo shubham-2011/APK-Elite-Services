@@ -1,6 +1,27 @@
 [build]
   command = "npm run build"
   publish = "dist/my-website/browser"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/leads/*"
+  to = "/.netlify/functions/leads"
+  status = 200
+
+[[redirects]]
+  from = "/api/leads"
+  to = "/.netlify/functions/leads"
+  status = 200
+
+[[redirects]]
+  from = "/api/content/*"
+  to = "/.netlify/functions/content"
+  status = 200
+
+[[redirects]]
+  from = "/api/content"
+  to = "/.netlify/functions/content"
+  status = 200
 
 [[redirects]]
   from = "/*"
