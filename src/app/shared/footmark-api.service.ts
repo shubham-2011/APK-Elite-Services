@@ -96,6 +96,8 @@ export interface FootmarkStats {
   recentFootmarks: FootmarkEvent[];
   dailyTrends?: Array<{ date: string; label: string; views: number; visitors: number }>;
   auditScores?: Array<{ category: string; score: number; max: number; status: string; notes: string }>;
+  source?: string;
+  dbConnected?: boolean;
 }
 
 const STORAGE_KEY = 'apk_footmarks_v2';
@@ -484,25 +486,36 @@ export class FootmarkApiService {
   }
 
   /**
-   * Send event payload to remote Netlify Function or Next.js backend
+   * Send event payload to remote Netlify Function or Next.js backend with failover.
    */
-  private sendRemotePayload(payload: unknown): void {
-    try {
-      const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
+  private async sendRemotePayload(payload: unknown): Promise<void> {
+    const payloadStr = JSON.stringify(payload);
 
-      const payloadStr = JSON.stringify(payload);
-      if (typeof navigator.sendBeacon === 'function') {
-        const blob = new Blob([payloadStr], { type: 'application/json' });
-        navigator.sendBeacon(targetUrl, blob);
-      } else {
-        fetch(targetUrl, {
+    try {
+      const primaryUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
+      
+      // Use fetch with keepalive as primary robust transport (avoids serverless base64 blob translation)
+      let res = await fetch(primaryUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payloadStr,
+        keepalive: true
+      }).catch(() => null);
+
+      let isHtml = res ? (res.headers.get('content-type') || '').includes('text/html') : true;
+
+      // Failover to Netlify Functions endpoint directly if primary rewrite failed
+      if (!res || !res.ok || isHtml) {
+        await fetch(this.netlifyEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payloadStr,
           keepalive: true
         }).catch(() => {});
       }
-    } catch {}
+    } catch {
+      // Offline or network error: event is already persisted in local cache
+    }
   }
 
   /**
@@ -516,29 +529,40 @@ export class FootmarkApiService {
     try {
       const targetUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
 
-      let res = await fetch(targetUrl);
-      let isHtml = (res.headers.get('content-type') || '').includes('text/html');
-      if (!res.ok || isHtml) {
-        res = await fetch(this.netlifyEndpoint);
-        isHtml = (res.headers.get('content-type') || '').includes('text/html');
+      let res = await fetch(targetUrl).catch(() => null);
+      let isHtml = res ? (res.headers.get('content-type') || '').includes('text/html') : true;
+
+      if (!res || !res.ok || isHtml) {
+        res = await fetch(this.netlifyEndpoint).catch(() => null);
+        isHtml = res ? (res.headers.get('content-type') || '').includes('text/html') : true;
       }
 
-      if (res.ok && !isHtml) {
+      if (res && res.ok && !isHtml) {
         const data = await res.json();
-        if (data.success && data.stats && data.stats.totalFootmarks > 0) {
-          const stats = data.stats;
+        if (data.success && data.stats) {
+          const stats: FootmarkStats = data.stats;
+          stats.source = data.source || (data.dbConnected ? 'mongodb' : 'in-memory');
+          stats.dbConnected = Boolean(data.dbConnected || data.source === 'mongodb');
+
           if (!stats.dailyTrends || !stats.dailyTrends.length) {
             stats.dailyTrends = this.buildDailyTrends(stats.recentFootmarks || []);
           }
-          return stats;
+
+          // If remote MongoDB is connected, remote is source of truth
+          if (stats.dbConnected || stats.totalFootmarks > 0) {
+            return stats;
+          }
         }
       }
-    } catch {
-      // Fall through to local fallback
+    } catch (err) {
+      console.warn('Backend fetch failed, reading local footprint cache:', err);
     }
 
     const localEvents = this.getLocalEvents();
-    return this.generateDefaultStats(localEvents);
+    const fallbackStats = this.generateDefaultStats(localEvents);
+    fallbackStats.source = 'local-storage';
+    fallbackStats.dbConnected = false;
+    return fallbackStats;
   }
 
   /**

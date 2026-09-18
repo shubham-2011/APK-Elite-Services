@@ -69,7 +69,15 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    // Track on client navigation ends
+    // Immediately track initial landing page on first load
+    setTimeout(() => {
+      const initialPath = this.router.url && this.router.url !== '/' 
+        ? this.router.url 
+        : (window.location.pathname || '/');
+      this.footmarkApi.track(initialPath, document.title);
+    }, 150);
+
+    // Track on subsequent client navigation ends
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {

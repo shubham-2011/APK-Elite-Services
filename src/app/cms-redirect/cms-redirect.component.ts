@@ -76,6 +76,17 @@ const DEFAULT_PIN = '1234';
               <span class="status-dot pulse"></span>
               <span>All Systems Online</span>
             </div>
+            <div 
+              class="db-sync-status" 
+              [class.synced]="isDbConnected" 
+              [class.isolated]="!isDbConnected" 
+              (click)="showDbHelpModal = !showDbHelpModal"
+              title="Click to view Database & Cross-Device Sync Status"
+            >
+              <span class="db-dot"></span>
+              <span>{{ isDbConnected ? 'MongoDB Cloud Synced' : 'Local Storage Mode' }}</span>
+              <span class="db-badge-tag">{{ isDbConnected ? 'Live Multi-Device' : 'Need MONGODB_URI' }}</span>
+            </div>
           </div>
 
           <div class="header-right">
@@ -985,6 +996,50 @@ const DEFAULT_PIN = '1234';
           </div>
         </div>
 
+        <!-- DATABASE CONNECTION HELP MODAL -->
+        <div *ngIf="showDbHelpModal" class="db-modal-backdrop" (click)="showDbHelpModal = false">
+          <div class="db-modal-card" (click)="$event.stopPropagation()">
+            <div class="db-modal-header">
+              <h3 class="modal-title">Database &amp; Cross-Device Sync Status</h3>
+              <button type="button" (click)="showDbHelpModal = false" class="btn-close-modal">✕</button>
+            </div>
+            
+            <div class="db-modal-body">
+              <div class="db-status-callout" [class.ok]="isDbConnected" [class.warn]="!isDbConnected">
+                <div class="callout-icon">{{ isDbConnected ? '✅' : '⚠️' }}</div>
+                <div>
+                  <div class="callout-title">
+                    {{ isDbConnected ? 'MongoDB Atlas is Active & Connected' : 'Running in Local Storage Mode (Isolated)' }}
+                  </div>
+                  <div class="callout-sub">
+                    {{ isDbConnected 
+                      ? 'Visits from mobile phones, tablets, and laptops are automatically synced across devices.' 
+                      : 'Because MONGODB_URI is not set in Netlify, each device (phone vs. laptop) keeps its own visits locally.' }}
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="!isDbConnected" class="db-instructions">
+                <h4>How to Enable Multi-Device Sync (Phone to Laptop):</h4>
+                <ol>
+                  <li>Log in to your <strong>Netlify Dashboard</strong>.</li>
+                  <li>Go to <strong>Site configuration</strong> → <strong>Environment variables</strong>.</li>
+                  <li>Click <strong>Add a variable</strong>:
+                    <div class="code-pill">Key: <code>MONGODB_URI</code></div>
+                    <div class="code-pill">Value: <code>mongodb+srv://admin:&lt;password&gt;&#64;cluster.mongodb.net/apk_elite_services?retryWrites=true&amp;w=majority</code></div>
+                  </li>
+                  <li>Trigger a <strong>Deploy site</strong>. All phone visits will immediately sync to your laptop dashboard!</li>
+                </ol>
+              </div>
+
+              <div class="modal-footer-actions">
+                <button type="button" (click)="loadAllData()" class="btn-action">Check Connection Again</button>
+                <button type="button" (click)="showDbHelpModal = false" class="btn-action outline">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1238,6 +1293,166 @@ const DEFAULT_PIN = '1234';
       height: 7px;
       background: var(--ok);
       border-radius: 50%;
+    }
+
+    /* DB SYNC STATUS BADGE */
+    .db-sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--bd);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--s2);
+      color: var(--t1);
+    }
+    .db-sync-status:hover {
+      transform: scale(1.03);
+    }
+    .db-sync-status.synced {
+      background: var(--ok-bg);
+      border-color: #86efac;
+      color: var(--ok);
+    }
+    .db-sync-status.isolated {
+      background: var(--ac-light);
+      border-color: var(--ac-border);
+      color: var(--ac);
+    }
+    .db-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ac);
+    }
+    .db-sync-status.synced .db-dot {
+      background: var(--ok);
+    }
+    .db-badge-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.06);
+    }
+
+    /* DB HELP MODAL */
+    .db-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .db-modal-card {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
+      max-width: 580px;
+      width: 100%;
+      overflow: hidden;
+      animation: modalPop 0.2s ease-out;
+    }
+    @keyframes modalPop {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .db-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.1rem 1.4rem;
+      border-bottom: 1px solid var(--bd);
+      background: var(--s2);
+    }
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--t1);
+      margin: 0;
+    }
+    .btn-close-modal {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--t2);
+      cursor: pointer;
+    }
+    .db-modal-body {
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .db-status-callout {
+      display: flex;
+      gap: 0.85rem;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--bd);
+    }
+    .db-status-callout.ok {
+      background: var(--ok-bg);
+      border-color: #86efac;
+    }
+    .db-status-callout.warn {
+      background: var(--ac-light);
+      border-color: var(--ac-border);
+    }
+    .callout-icon { font-size: 1.4rem; line-height: 1; }
+    .callout-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--t1);
+      margin-bottom: 0.25rem;
+    }
+    .callout-sub {
+      font-size: 0.82rem;
+      color: var(--t2);
+      line-height: 1.4;
+    }
+    .db-instructions h4 {
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin: 0 0 0.6rem;
+      color: var(--t1);
+    }
+    .db-instructions ol {
+      margin: 0;
+      padding-left: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      font-size: 0.84rem;
+      color: var(--t2);
+    }
+    .code-pill {
+      margin-top: 0.35rem;
+      font-size: 0.78rem;
+      background: var(--s2);
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--bd);
+      color: var(--t1);
+      font-family: monospace;
+      word-break: break-all;
+    }
+    .modal-footer-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
     }
     .header-right {
       display: flex;
@@ -2486,6 +2701,11 @@ export class CmsRedirectComponent implements OnInit {
   newServiceName = '';
   savingContent = false;
   toastMessage = '';
+  showDbHelpModal = false;
+
+  get isDbConnected(): boolean {
+    return Boolean(this.footmarkStats?.dbConnected || this.footmarkStats?.source === 'mongodb');
+  }
 
   constructor(
     private seo: SeoService,

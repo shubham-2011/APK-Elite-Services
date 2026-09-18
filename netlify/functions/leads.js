@@ -176,7 +176,16 @@ exports.handler = async (event, context) => {
     // POST: Create a new lead
     // -------------------------------------------------------------
     if (event.httpMethod === 'POST') {
-      const body = JSON.parse(event.body || '{}');
+      let body = {};
+      try {
+        let rawBody = event.body || '{}';
+        if (event.isBase64Encoded) {
+          rawBody = Buffer.from(rawBody, 'base64').toString('utf-8');
+        }
+        body = JSON.parse(rawBody);
+      } catch {
+        body = {};
+      }
       if (!body.name || !body.phone) {
         return {
           statusCode: 400,

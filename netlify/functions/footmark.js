@@ -97,7 +97,11 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'POST') {
       let body = {};
       try {
-        body = JSON.parse(event.body || '{}');
+        let rawBody = event.body || '{}';
+        if (event.isBase64Encoded) {
+          rawBody = Buffer.from(rawBody, 'base64').toString('utf-8');
+        }
+        body = JSON.parse(rawBody);
       } catch {
         body = {};
       }
@@ -111,14 +115,23 @@ exports.handler = async (event) => {
         };
       }
 
+      // Detect device from body or fall back to incoming User-Agent header
+      let detectedDevice = (body.device || '').toLowerCase();
+      const ua = event.headers['user-agent'] || '';
+      if (!detectedDevice || (detectedDevice !== 'mobile' && detectedDevice !== 'desktop' && detectedDevice !== 'tablet')) {
+        if (/tablet|ipad|playbook|silk/i.test(ua)) detectedDevice = 'tablet';
+        else if (/mobile|iphone|ipod|android|blackberry|mini|windows\sce|palm/i.test(ua)) detectedDevice = 'mobile';
+        else detectedDevice = 'desktop';
+      }
+
       const footmarkData = {
         visitorId: body.visitorId || 'vis_' + Math.random().toString(36).substring(2, 8),
         sessionId: body.sessionId || 'sess_' + Math.random().toString(36).substring(2, 8),
         path: rawPath,
         pageTitle: body.pageTitle || 'APK Elite Services',
         referrer: body.referrer || 'Direct',
-        device: body.device || 'mobile',
-        browser: body.browser || 'Chrome',
+        device: detectedDevice,
+        browser: body.browser || 'Browser',
         os: body.os || 'Android',
         city: body.city || 'Pune',
         visitCount: body.visitCount || 1,
@@ -130,7 +143,7 @@ exports.handler = async (event) => {
         gclid: body.gclid || null,
         screenResolution: body.screenResolution || null,
         ip: event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'anonymous',
-        userAgent: event.headers['user-agent'] || '',
+        userAgent: ua,
         createdAt: body.createdAt ? new Date(body.createdAt) : new Date(),
       };
 
@@ -140,7 +153,7 @@ exports.handler = async (event) => {
         return {
           statusCode: 200,
           headers: CORS_HEADERS,
-          body: JSON.stringify({ success: true, source: 'mongodb', footmarkId: result.insertedId }),
+          body: JSON.stringify({ success: true, source: 'mongodb', dbConnected: true, footmarkId: result.insertedId }),
         };
       }
 
@@ -220,6 +233,7 @@ exports.handler = async (event) => {
           body: JSON.stringify({
             success: true,
             source: 'mongodb',
+            dbConnected: true,
             stats: {
               totalFootmarks,
               uniqueVisitors: allVisitors.length,
@@ -240,6 +254,7 @@ exports.handler = async (event) => {
         body: JSON.stringify({
           success: true,
           source: 'in-memory-fallback',
+          dbConnected: false,
           stats: getInMemoryStats(),
         }),
       };
