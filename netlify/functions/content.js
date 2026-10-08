@@ -139,6 +139,16 @@ exports.handler = async (event) => {
     }
 
     if (event.httpMethod === 'PUT' || event.httpMethod === 'POST') {
+      const authHeader = event.headers.authorization || event.headers.Authorization || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : authHeader.trim();
+      const adminSecret = process.env.AUTH_SECRET || '';
+      if (!adminSecret || token !== adminSecret) {
+        return {
+          statusCode: 401,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Unauthorized: Admin authentication required' }),
+        };
+      }
       const body = JSON.parse(event.body || '{}');
       const updatedContent = body.content || body;
 

@@ -3,43 +3,22 @@
   "phone": "+91 88301 67863",
   "whatsapp": "918830167863",
   "email": "info@apkeliteservices.in",
-  "address": "Pune, Maharashtra 411032",
-  "businessHours": "Monday - Sunday: 9:00 AM - 8:00 PM",
+  "address": "Pune, Maharashtra",
+  "businessHours": "Mon - Sun: 8:00 AM - 9:00 PM",
   "promoBanner": {
     "enabled": true,
-    "text": "Festival Offer: Get Flat 15% OFF on Home Deep Cleaning in Pune!",
+    "text": "Exclusive 15% Off Festival Deal",
     "discountPercent": 15
   },
   "formConfig": {
-    "modalTitle": "Request a Free Service Quote",
-    "modalSubtitle": "Fill out your details below to receive an instant estimate on WhatsApp and Email.",
+    "modalTitle": "Request a Free Quote",
+    "modalSubtitle": "Fill details below",
     "localities": [
       "Baner",
-      "Wakad",
-      "Hinjewadi",
-      "Kharadi",
-      "Viman Nagar",
-      "Kothrud",
-      "Aundh",
-      "Hadapsar",
-      "Bavdhan",
-      "Pimple Saudagar",
-      "Pimpri-Chinchwad",
-      "Magarpatta",
-      "Koregaon Park",
-      "Other Area"
+      "Wakad"
     ],
     "services": [
-      "Deep Cleaning",
-      "Sofa Cleaning",
-      "Office Cleaning",
-      "Post Construction Cleaning",
-      "Water Tank Cleaning",
-      "Pest Control",
-      "Floor Polishing",
-      "Facade Cleaning",
-      "Carpet Cleaning",
-      "Sanitization"
+      "Deep Cleaning"
     ]
   },
   "services": [
@@ -100,5 +79,5 @@
       "answer": "Yes, our 100% in-house team arrives equipped with industrial vacuum cleaners, single-disc scrubbers, and certified eco-friendly chemicals."
     }
   ],
-  "updatedAt": "2026-09-18T11:38:42.471Z"
+  "updatedAt": "2026-09-28T18:15:27.111Z"
 }

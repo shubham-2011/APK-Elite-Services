@@ -273,7 +273,7 @@ export class CmsRedirectComponent implements OnInit {
     }
 
     if (this.newPinInput || this.confirmPinInput) {
-      if (this.currentPinInput !== storedPin && this.currentPinInput !== 'apk2026') {
+      if (this.currentPinInput !== storedPin) {
         this.pinChangeError = 'Current Password / PIN is incorrect.';
         return;
       }
@@ -309,8 +309,8 @@ export class CmsRedirectComponent implements OnInit {
     const enteredUser = (this.loginUsername || '').trim().toLowerCase();
     const validUser = (this.adminUsername || '').trim().toLowerCase();
 
-    const isPinMatch = entered === validPin || entered === 'apk2026' || entered === '1234';
-    const isUserMatch = !enteredUser || enteredUser === validUser || enteredUser === 'admin' || enteredUser === 'shubhammisra800@gmail.com';
+    const isPinMatch = entered === validPin;
+    const isUserMatch = !enteredUser || enteredUser === validUser;
 
     if (isPinMatch && isUserMatch) {
       this.isAuthenticated = true;
@@ -325,10 +325,24 @@ export class CmsRedirectComponent implements OnInit {
     }
   }
 
-  logout() {
+  async logout() {
+    // 1. Revoke the server-side Next.js session token (server revocation list)
+    try {
+      await fetch('http://localhost:3000/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // Session revocation is best-effort; local cleanup always runs
+    }
+
+    // 2. Clear all local client-side session state
     this.isAuthenticated = false;
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem(PIN_STORAGE_KEY);
+      // Also clear any cached telemetry/session identifiers
+      sessionStorage.removeItem('apk_sid');
+      sessionStorage.removeItem('apk_sid_ts');
     }
   }
 

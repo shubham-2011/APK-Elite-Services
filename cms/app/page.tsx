@@ -38,6 +38,8 @@ import {
   Activity,
   MousePointerClick,
   TrendingUp,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
 import { DEFAULT_SITE_CONTENT, SiteContentData } from '@/lib/content-types';
 
@@ -156,17 +158,33 @@ export default function CMSDashboard() {
   });
   const [submittingNewLead, setSubmittingNewLead] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    } finally {
+      window.location.href = '/login';
+    }
+  };
+
   const fetchData = useCallback(async () => {
     try {
       setRefreshing(true);
       setError(null);
 
       const [leadsRes, statsRes, contentRes, footmarkRes] = await Promise.all([
-        fetch('/api/leads?limit=200'),
+        fetch('/api/leads?limit=100'),
         fetch('/api/stats'),
         fetch('/api/content'),
         fetch('/api/footmark'),
       ]);
+
+      // If unauthorized on any administrative route, redirect to login
+      if (leadsRes.status === 401 || statsRes.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
 
       const leadsJson = await leadsRes.json();
       const statsJson = await statsRes.json();
@@ -603,6 +621,23 @@ export default function CMSDashboard() {
                 <span>{savingContent ? 'Saving...' : 'Save Changes'}</span>
               </button>
             )}
+
+            {/* Admin Profile & Logout */}
+            <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+
+            <div className="hidden lg:flex items-center space-x-1.5 text-xs text-slate-600 bg-slate-100 py-1 px-2.5 rounded-lg border border-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="font-semibold text-slate-800">Admin</span>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-rose-200 text-xs font-semibold rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 transition shadow-sm"
+              title="Sign Out"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </div>
 

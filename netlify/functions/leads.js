@@ -139,11 +139,24 @@ exports.handler = async (event, context) => {
   const db = await getDb();
   const path = event.path || '';
 
+  // Auth verification helper for administrative actions
+  const authHeader = event.headers.authorization || event.headers.Authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : authHeader.trim();
+  const adminSecret = process.env.AUTH_SECRET || '';
+  const isAuth = adminSecret && token === adminSecret;
+
   try {
     // -------------------------------------------------------------
-    // GET: List all leads or single lead
+    // GET: List all leads or single lead (Protected)
     // -------------------------------------------------------------
     if (event.httpMethod === 'GET') {
+      if (!isAuth) {
+        return {
+          statusCode: 401,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Unauthorized: Admin authentication required' }),
+        };
+      }
       if (db) {
         const collection = db.collection(COLLECTION_NAME);
         const leads = await collection.find({}).sort({ createdAt: -1 }).limit(200).toArray();
@@ -250,6 +263,13 @@ exports.handler = async (event, context) => {
     // PATCH / PUT: Update lead status or add notes
     // -------------------------------------------------------------
     if (event.httpMethod === 'PATCH' || event.httpMethod === 'PUT') {
+      if (!isAuth) {
+        return {
+          statusCode: 401,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Unauthorized: Admin authentication required' }),
+        };
+      }
       const body = JSON.parse(event.body || '{}');
       const leadId = body.id || (event.queryStringParameters && event.queryStringParameters.id);
 
@@ -321,6 +341,13 @@ exports.handler = async (event, context) => {
     // DELETE: Delete lead
     // -------------------------------------------------------------
     if (event.httpMethod === 'DELETE') {
+      if (!isAuth) {
+        return {
+          statusCode: 401,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Unauthorized: Admin authentication required' }),
+        };
+      }
       const body = JSON.parse(event.body || '{}');
       const leadId = body.id || (event.queryStringParameters && event.queryStringParameters.id);
 

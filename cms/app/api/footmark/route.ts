@@ -2,40 +2,39 @@ import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Footmark from '@/models/Footmark';
 import { saveFallbackFootmark, getFallbackFootmarkStats } from '@/lib/fallback-store';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+import { verifyAdminSession, unauthorizedResponse } from '@/lib/auth';
+import { sanitizeString } from '@/lib/security';
+import { getAdminCorsHeaders, publicCorsHeaders } from '@/lib/cors';
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return NextResponse.json({}, { headers: publicCorsHeaders });
 }
 
+// -------------------------------------------------------------
+// POST /api/footmark - Public Visitor Analytics Beacon
+// -------------------------------------------------------------
 export async function POST(req: NextRequest) {
   try {
     let body: any = {};
     try {
       body = await req.json();
     } catch {
-      // In case of beacon with text/plain body
       const raw = await req.text();
       body = JSON.parse(raw || '{}');
     }
 
     const footmarkData = {
-      visitorId: body.visitorId || 'vis_' + Math.random().toString(36).substring(2, 8),
-      sessionId: body.sessionId || 'sess_' + Math.random().toString(36).substring(2, 8),
-      path: body.path || '/',
-      pageTitle: body.pageTitle || 'APK Elite Services',
-      referrer: body.referrer || 'Direct',
-      device: body.device || 'mobile',
-      browser: body.browser || 'Chrome',
-      os: body.os || 'Android',
-      city: body.city || 'Pune',
-      ip: body.ip || 'anonymous',
-      userAgent: body.userAgent || '',
+      visitorId: sanitizeString(body.visitorId || 'vis_' + Math.random().toString(36).substring(2, 8), 64),
+      sessionId: sanitizeString(body.sessionId || 'sess_' + Math.random().toString(36).substring(2, 8), 64),
+      path: sanitizeString(body.path || '/', 255),
+      pageTitle: sanitizeString(body.pageTitle || 'APK Elite Services', 150),
+      referrer: sanitizeString(body.referrer || 'Direct', 150),
+      device: sanitizeString(body.device || 'mobile', 30),
+      browser: sanitizeString(body.browser || 'Chrome', 50),
+      os: sanitizeString(body.os || 'Android', 50),
+      city: sanitizeString(body.city || 'Pune', 80),
+      ip: 'anonymous', // Do not store raw IP to respect privacy
+      userAgent: sanitizeString(body.userAgent || '', 300),
     };
 
     try {
@@ -43,24 +42,34 @@ export async function POST(req: NextRequest) {
       const newFootmark = await Footmark.create(footmarkData);
       return NextResponse.json(
         { success: true, source: 'mongodb', footmarkId: newFootmark._id },
-        { headers: corsHeaders }
+        { headers: publicCorsHeaders }
       );
     } catch {
-      const fallback = saveFallbackFootmark(footmarkData);
+      const fallback = saveFallbackFootmark(footmarkData as any);
       return NextResponse.json(
         { success: true, source: 'local_store', footmarkId: fallback._id },
-        { headers: corsHeaders }
+        { headers: publicCorsHeaders }
       );
     }
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err.message || 'Failed to record footmark' },
-      { status: 500, headers: corsHeaders }
+      { success: false, error: 'Failed to record visitor beacon' },
+      { status: 500, headers: publicCorsHeaders }
     );
   }
 }
 
-export async function GET() {
+// -------------------------------------------------------------
+// GET /api/footmark - Protected Admin Visitor Analytics
+// -------------------------------------------------------------
+export async function GET(req: NextRequest) {
+  const corsHeaders = getAdminCorsHeaders(req.headers.get('origin'));
+  // Enforce server-side authentication
+  const auth = await verifyAdminSession(req);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error || 'Authentication required to view visitor logs');
+  }
+
   try {
     await connectToDatabase();
 

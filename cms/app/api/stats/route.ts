@@ -1,43 +1,47 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Lead from '@/models/Lead';
 import Footmark from '@/models/Footmark';
 import { getFallbackLeads, getFallbackFootmarkStats } from '@/lib/fallback-store';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+import { verifyAdminSession, unauthorizedResponse } from '@/lib/auth';
+import { getAdminCorsHeaders, publicCorsHeaders } from '@/lib/cors';
 
 export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+  return NextResponse.json({}, { headers: publicCorsHeaders });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const corsHeaders = getAdminCorsHeaders(req.headers.get('origin'));
+  // Enforce server-side authentication
+  const auth = await verifyAdminSession(req);
+  if (!auth.authenticated) {
+    return unauthorizedResponse(auth.error || 'Authentication required to view dashboard statistics');
+  }
+
   try {
     await connectToDatabase();
 
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [totalLeads, todayLeads, totalFootmarks, todayFootmarks, statusCounts, localityCounts, serviceCounts] = await Promise.all([
-      Lead.countDocuments(),
-      Lead.countDocuments({ createdAt: { $gte: startOfToday } }),
-      Footmark.countDocuments().catch(() => 0),
-      Footmark.countDocuments({ createdAt: { $gte: startOfToday } }).catch(() => 0),
-      Lead.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-      Lead.aggregate([
-        { $group: { _id: '$locality', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 6 }
-      ]),
-      Lead.aggregate([
-        { $group: { _id: '$service', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 6 }
-      ]),
-    ]);
+    const [totalLeads, todayLeads, totalFootmarks, todayFootmarks, statusCounts, localityCounts, serviceCounts] =
+      await Promise.all([
+        Lead.countDocuments(),
+        Lead.countDocuments({ createdAt: { $gte: startOfToday } }),
+        Footmark.countDocuments().catch(() => 0),
+        Footmark.countDocuments({ createdAt: { $gte: startOfToday } }).catch(() => 0),
+        Lead.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+        Lead.aggregate([
+          { $group: { _id: '$locality', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 6 },
+        ]),
+        Lead.aggregate([
+          { $group: { _id: '$service', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 6 },
+        ]),
+      ]);
 
     const statusMap: Record<string, number> = {
       NEW: 0,
@@ -49,7 +53,9 @@ export async function GET() {
     };
 
     statusCounts.forEach((item) => {
-      if (item._id) statusMap[item._id] = item.count;
+      if (item._id && statusMap[item._id] !== undefined) {
+        statusMap[item._id] = item.count;
+      }
     });
 
     return NextResponse.json(
@@ -68,7 +74,7 @@ export async function GET() {
       { headers: corsHeaders }
     );
   } catch (mongoErr) {
-    // Fallback calculation
+    // Safe fallback calculation
     const leads = getFallbackLeads();
     const footmarkStats = getFallbackFootmarkStats();
     const statusMap: Record<string, number> = {
@@ -95,8 +101,16 @@ export async function GET() {
           totalFootmarks: footmarkStats.totalFootmarks,
           todayFootmarks: footmarkStats.todayFootmarks,
           statusMap,
-          topLocalities: [{ locality: 'Baner', count: 1 }, { locality: 'Wakad', count: 1 }, { locality: 'Hinjewadi', count: 1 }],
-          topServices: [{ service: 'Deep Cleaning', count: 1 }, { service: 'Sofa Cleaning', count: 1 }, { service: 'Office Cleaning', count: 1 }],
+          topLocalities: [
+            { locality: 'Baner', count: 1 },
+            { locality: 'Wakad', count: 1 },
+            { locality: 'Hinjewadi', count: 1 },
+          ],
+          topServices: [
+            { service: 'Deep Cleaning', count: 1 },
+            { service: 'Sofa Cleaning', count: 1 },
+            { service: 'Office Cleaning', count: 1 },
+          ],
         },
         source: 'local_store',
       },
@@ -104,4 +118,3 @@ export async function GET() {
     );
   }
 }
-
