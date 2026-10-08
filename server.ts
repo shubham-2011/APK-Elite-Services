@@ -17,17 +17,18 @@ export function app(): express.Express {
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
 
+  // Serve static files from /browser FIRST (before API routes)
+  // This ensures Angular's own assets (polyfills.js, main.js) are served correctly
+  server.get('**', express.static(browserDistFolder, {
+    maxAge: '1y',
+    index: false, // Don't serve index.html here — let SSR handle it
+  }));
+
   // Fallback Express Rest API endpoints for footmark & leads
   server.use(express.json());
   server.all('/api/**', (req, res) => {
     res.json({ success: true, message: 'handled' });
   });
-
-  // Serve static files from /browser
-  server.get('**', express.static(browserDistFolder, {
-    maxAge: '1y',
-    index: 'index.html',
-  }));
 
   // All regular routes use the Angular engine
   server.get('**', (req, res, next) => {

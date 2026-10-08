@@ -39,15 +39,33 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { username, password } = body;
 
-    if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+    // Strict server-side validation — blocks empty, whitespace-only, and too-short inputs
+    const usernameClean = typeof username === 'string' ? username.trim() : '';
+    const passwordClean = typeof password === 'string' ? password : '';
+
+    if (!usernameClean || !passwordClean) {
       return NextResponse.json(
         { success: false, error: 'Username and password are required' },
         { status: 400 }
       );
     }
 
+    if (usernameClean.length < 2 || usernameClean.length > 50) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
+    if (passwordClean.length < 6 || passwordClean.length > 200) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid credentials' },
+        { status: 401 }
+      );
+    }
+
     // 2a. Per-username rate limiting (defends against distributed IP attacks)
-    const userRateLimit = await checkRateLimit(`user:${username.toLowerCase()}`);
+    const userRateLimit = await checkRateLimit(`user:${usernameClean.toLowerCase()}`);
     if (!userRateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: 'Account temporarily locked. Please try again later.' },
@@ -56,14 +74,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 2b. Authenticate credentials with bcrypt
-    const authResult = await authenticateCredentials(username, password);
+    const authResult = await authenticateCredentials(usernameClean, passwordClean);
 
     if (!authResult.success) {
       await recordFailedAttempt(clientIp);
-      await recordFailedAttempt(`user:${username.toLowerCase()}`);
+      await recordFailedAttempt(`user:${usernameClean.toLowerCase()}`);
       logAudit({
         action: 'LOGIN_FAILURE',
-        adminId: username,
+        adminId: usernameClean,
         ip: clientIp,
         success: false,
         details: { reason: 'Invalid credentials' },
@@ -76,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Clear failed login attempts upon success (both IP and username keys)
     await resetRateLimit(clientIp);
-    await resetRateLimit(`user:${username.toLowerCase()}`);
+    await resetRateLimit(`user:${usernameClean.toLowerCase()}`);
 
     // 4. Create cryptographically signed revocable session token
     const { token, sessionId, expiresAt } = createSessionToken(authResult.username || 'admin');
