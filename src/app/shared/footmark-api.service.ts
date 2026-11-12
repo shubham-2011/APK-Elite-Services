@@ -558,17 +558,16 @@ export class FootmarkApiService {
           keepalive: true
         });
         const isHtml = (response.headers.get('content-type') || '').includes('text/html');
-        if (response.status >= 500) return false;
+        if (response.status >= 500) continue;
         if (!response.ok || isHtml) continue;
 
         const result = await response.json();
-        if (result.success) {
-          if (result.source && result.source !== 'mongodb') {
-            console.warn(`Visitor footmark stored by fallback source: ${result.source}`);
-          }
+        if (result.success && result.source === 'mongodb') {
           return true;
         }
-        return false;
+        if (result.success) {
+          console.warn(`Visitor footmark was not durably stored by source: ${result.source || 'unknown'}`);
+        }
       } catch {
         continue;
       }

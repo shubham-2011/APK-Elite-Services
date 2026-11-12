@@ -67,7 +67,7 @@ describe('FootmarkApiService storage retries', () => {
     await service['flushPendingFootmarks']();
     await settleRequests();
 
-    expect(fetchSpy.calls.count()).toBe(2);
+    expect(fetchSpy.calls.count()).toBe(3);
     expect(JSON.parse(localStorage.getItem('apk_pending_footmarks_v1') || '[]')).toEqual([]);
   });
 
@@ -83,5 +83,32 @@ describe('FootmarkApiService storage retries', () => {
     expect(fetchSpy.calls.count()).toBe(2);
     expect(fetchSpy.calls.argsFor(1)[0]).toBe('/.netlify/functions/footmark');
     expect(JSON.parse(localStorage.getItem('apk_pending_footmarks_v1') || '[]')).toEqual([]);
+  });
+
+  it('tries the durable endpoint after a primary server error', async () => {
+    fetchSpy.and.returnValues(
+      Promise.resolve(response(503, { success: false, source: 'mongodb' })),
+      Promise.resolve(response(200, { success: true, source: 'mongodb', dbConnected: true })),
+    );
+
+    service.track('/primary-outage');
+    await settleRequests();
+
+    expect(fetchSpy.calls.count()).toBe(2);
+    expect(fetchSpy.calls.argsFor(1)[0]).toBe('/.netlify/functions/footmark');
+    expect(JSON.parse(localStorage.getItem('apk_pending_footmarks_v1') || '[]')).toEqual([]);
+  });
+
+  it('does not discard a queue item acknowledged only by a non-durable source', async () => {
+    fetchSpy.and.returnValues(
+      Promise.resolve(response(200, { success: true, source: 'local_store' })),
+      Promise.resolve(response(200, { success: true, source: 'local_store' })),
+    );
+
+    service.track('/ephemeral-storage');
+    await settleRequests();
+
+    expect(fetchSpy.calls.count()).toBe(2);
+    expect(JSON.parse(localStorage.getItem('apk_pending_footmarks_v1') || '[]').length).toBe(1);
   });
 });

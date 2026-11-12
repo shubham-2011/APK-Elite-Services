@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Footmark from '@/models/Footmark';
-import { saveFallbackFootmark, getFallbackFootmarkStats } from '@/lib/fallback-store';
 import { verifyAdminSession, unauthorizedResponse } from '@/lib/auth';
 import { sanitizeString } from '@/lib/security';
 import { getAdminCorsHeaders, publicCorsHeaders } from '@/lib/cors';
@@ -44,11 +43,16 @@ export async function POST(req: NextRequest) {
         { success: true, source: 'mongodb', footmarkId: newFootmark._id },
         { headers: publicCorsHeaders }
       );
-    } catch {
-      const fallback = saveFallbackFootmark(footmarkData as any);
+    } catch (err) {
+      console.error('MongoDB write failed for visitor footmark:', err);
       return NextResponse.json(
-        { success: true, source: 'local_store', footmarkId: fallback._id },
-        { headers: publicCorsHeaders }
+        {
+          success: false,
+          source: 'mongodb',
+          dbConnected: false,
+          error: 'Traffic storage is unavailable; this visit was not saved.',
+        },
+        { status: 503, headers: publicCorsHeaders }
       );
     }
   } catch (err: any) {
@@ -145,15 +149,16 @@ export async function GET(req: NextRequest) {
       },
       { headers: corsHeaders }
     );
-  } catch (mongoErr) {
-    const fallbackStats = getFallbackFootmarkStats();
+  } catch (err) {
+    console.error('MongoDB read failed for visitor footmarks:', err);
     return NextResponse.json(
       {
-        success: true,
-        source: 'local_store',
-        stats: fallbackStats,
+        success: false,
+        source: 'mongodb',
+        dbConnected: false,
+        error: 'Traffic statistics are unavailable because MongoDB could not be reached.',
       },
-      { headers: corsHeaders }
+      { status: 503, headers: corsHeaders }
     );
   }
 }
