@@ -26,6 +26,7 @@
     "@angular/ssr": "^18.2.21",
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@lucide/angular": "^1.47.0",
+    "bcryptjs": "^3.0.3",
     "express": "^4.18.2",
     "mongodb": "^7.6.0",
     "rxjs": "~7.8.0",

@@ -9,44 +9,40 @@ import { findUserByUsername } from './user-store';
 export const SESSION_COOKIE_NAME = 'apk_cms_session';
 export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
-// Server-side only secrets (never exposed to browser)
-const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback-secret-key-change-in-production-min-32-chars';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-// This fallback hash is for 'CHANGE_ME_IN_ENV' — it will NEVER authenticate successfully.
-// Always set ADMIN_PASSWORD_HASH in your .env.local / environment variables.
-const ADMIN_PASSWORD_HASH =
-  process.env.ADMIN_PASSWORD_HASH ||
-  '$2b$10$PLACEHOLDER000000000000000000000000000000000000000000000';
+function getAuthSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  return typeof secret === 'string' && secret.length >= 32 ? secret : '';
+}
 
-// Production safety verification
-if (process.env.NODE_ENV === 'production') {
-  if (AUTH_SECRET === 'fallback-secret-key-change-in-production-min-32-chars') {
-    console.error('FATAL SECURITY WARNING: Default AUTH_SECRET used in production! Set AUTH_SECRET in environment.');
-  }
-  if (!process.env.ADMIN_PASSWORD_HASH) {
-    console.error('FATAL SECURITY WARNING: ADMIN_PASSWORD_HASH not set in environment! Admin login will fail.');
-  }
+export function isAuthConfigured(): boolean {
+  return Boolean(getAuthSecret());
 }
 
 /**
  * Creates a cryptographically signed revocable session token:
  * format: <base64url(payload)>.<signature>
  */
-export function createSessionToken(username: string): { token: string; sessionId: string; expiresAt: number } {
+export function createSessionToken(
+  username: string,
+  role: 'admin' | 'editor' = 'admin'
+): { token: string; sessionId: string; expiresAt: number } {
+  const secret = getAuthSecret();
+  if (!secret) throw new Error('AUTH_SECRET must contain at least 32 characters');
+
   const sessionId = crypto.randomUUID();
   const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
 
   const payload = {
     sid: sessionId,
     username,
-    role: 'admin',
+    role,
     iat: Math.floor(Date.now() / 1000),
     exp: expiresAt,
   };
 
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = crypto
-    .createHmac('sha256', AUTH_SECRET)
+    .createHmac('sha256', secret)
     .update(payloadB64)
     .digest('base64url');
 
@@ -63,11 +59,14 @@ export function createSessionToken(username: string): { token: string; sessionId
 export function verifySessionToken(token: string): {
   valid: boolean;
   username?: string;
+  role?: 'admin' | 'editor';
   sessionId?: string;
   exp?: number;
   error?: string;
 } {
-  if (!token || typeof token !== 'string') {
+  const secret = getAuthSecret();
+  if (!secret) return { valid: false, error: 'Authentication is not configured' };
+  if (!token || typeof token !== 'string' || token.length > 4096) {
     return { valid: false, error: 'No token provided' };
   }
 
@@ -80,7 +79,7 @@ export function verifySessionToken(token: string): {
 
   // Verify HMAC signature using timing-safe comparison
   const expectedSignature = crypto
-    .createHmac('sha256', AUTH_SECRET)
+    .createHmac('sha256', secret)
     .update(payloadB64)
     .digest('base64url');
 
@@ -97,13 +96,22 @@ export function verifySessionToken(token: string): {
 
     // Verify expiration
     const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
+    if (
+      typeof payload.username !== 'string' ||
+      !payload.username ||
+      typeof payload.sid !== 'string' ||
+      !payload.sid ||
+      !Number.isInteger(payload.exp) ||
+      payload.exp <= now ||
+      !['admin', 'editor'].includes(payload.role)
+    ) {
       return { valid: false, error: 'Token expired' };
     }
 
     return {
       valid: true,
       username: payload.username,
+      role: payload.role,
       sessionId: payload.sid,
       exp: payload.exp,
     };
@@ -118,29 +126,29 @@ export function verifySessionToken(token: string): {
 export async function authenticateCredentials(
   usernameInput: string,
   passwordInput: string
-): Promise<{ success: boolean; username?: string }> {
+): Promise<{ success: boolean; username?: string; role?: 'admin' | 'editor' }> {
   if (!usernameInput || !passwordInput) {
     return { success: false };
   }
 
   const cleanUsername = usernameInput.trim().toLowerCase();
 
-  // 1. Check registered CMS users in database / user store (includes admin and shubhammisra800@gmail.com)
+  // 1. Check registered CMS users in database / user store.
   const storedUser = await findUserByUsername(cleanUsername);
   if (storedUser && storedUser.passwordHash) {
     const isUserPasswordMatch = await bcrypt.compare(passwordInput, storedUser.passwordHash);
     if (isUserPasswordMatch) {
-      return { success: true, username: storedUser.username };
+      return { success: true, username: storedUser.username, role: storedUser.role };
     }
   }
 
   // 2. Check primary environment admin credentials fallback
-  const currentAdminUser = (process.env.ADMIN_USERNAME || ADMIN_USERNAME || 'admin').toLowerCase();
-  const currentAdminHash = process.env.ADMIN_PASSWORD_HASH || ADMIN_PASSWORD_HASH;
+  const currentAdminUser = (process.env.ADMIN_USERNAME || 'admin').trim().toLowerCase();
+  const currentAdminHash = process.env.ADMIN_PASSWORD_HASH || '';
   if (cleanUsername === currentAdminUser && currentAdminHash) {
     const isPasswordMatch = await bcrypt.compare(passwordInput, currentAdminHash);
     if (isPasswordMatch) {
-      return { success: true, username: process.env.ADMIN_USERNAME || ADMIN_USERNAME };
+      return { success: true, username: currentAdminUser, role: 'admin' };
     }
   }
 
@@ -203,6 +211,7 @@ function verifyCsrfSafety(req: NextRequest | Request, isCookieAuth: boolean): bo
 export interface AuthVerificationResult {
   authenticated: boolean;
   username?: string;
+  role?: 'admin' | 'editor';
   sessionId?: string;
   error?: string;
   isCsrfError?: boolean;
@@ -266,6 +275,10 @@ export async function verifyAdminSession(
     return { authenticated: false, error: `Unauthorized: ${verification.error}` };
   }
 
+  if (verification.role !== 'admin') {
+    return { authenticated: false, error: 'Unauthorized: Administrator role required' };
+  }
+
   // 5. Server-side Revocation Check (Ensures logout REALLY invalidates the token)
   if (verification.sessionId) {
     const isRevoked = await isSessionRevoked(verification.sessionId);
@@ -293,7 +306,12 @@ export async function verifyAdminSession(
     return { authenticated: false, isCsrfError: true, error: 'Forbidden: CSRF check failed' };
   }
 
-  return { authenticated: true, username: verification.username, sessionId: verification.sessionId };
+  return {
+    authenticated: true,
+    username: verification.username,
+    role: verification.role,
+    sessionId: verification.sessionId
+  };
 }
 
 /**

@@ -79,7 +79,12 @@ export default function LoginPage() {
 
       // Check for redirect param
       const params = new URLSearchParams(window.location.search);
-      const redirectPath = params.get('redirect') || '/';
+      const requestedPath = params.get('redirect') || '';
+      const redirectPath = requestedPath.startsWith('/') &&
+        !requestedPath.startsWith('//') &&
+        !requestedPath.includes('\\')
+        ? requestedPath
+        : '/';
 
       router.push(redirectPath);
       router.refresh();

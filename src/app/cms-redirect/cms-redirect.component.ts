@@ -13,7 +13,7 @@ const ADMIN_USERNAME_KEY = 'apk_cms_admin_username';
 const THEME_KEY = 'apk_cms_dark_mode';
 
 const DEFAULT_ADMIN_NAME = 'Shubham Misra';
-const DEFAULT_ADMIN_USERNAME = 'admin';
+const DEFAULT_ADMIN_USERNAME = '';
 
 export interface CmsUserItem {
   _id: string;
@@ -35,6 +35,7 @@ export class CmsRedirectComponent implements OnInit {
   loginUsername = '';
   enteredPin = '';
   pinError = false;
+  pinErrorMessage = 'Invalid username or password.';
   darkMode = true;
   readonly Math = Math;
 
@@ -217,11 +218,6 @@ export class CmsRedirectComponent implements OnInit {
         this.darkMode = storedTheme === 'true';
       }
 
-      if (sessionStorage.getItem('apk_cms_client_auth') === 'true') {
-        this.isAuthenticated = true;
-        this.loadAllData();
-      }
-
       fetch('/api/auth/me', { credentials: 'include' })
         .then(res => res.json())
         .then(data => {
@@ -319,18 +315,8 @@ export class CmsRedirectComponent implements OnInit {
 
   async onPinSubmit(event: Event) {
     event.preventDefault();
-    const entered = (this.enteredPin || '').trim();
+    const entered = this.enteredPin || '';
     const enteredUser = (this.loginUsername || '').trim();
-
-    // Built-in verified operators for APK Elite CMS
-    const VERIFIED_OPERATORS: Record<string, string> = {
-      'admin': 'Admin@ApkElite2026!',
-      'shubhammisra800@gmail.com': 'Shubham@ApkElite2026!',
-      'manager@apkeliteservices.in': 'ApkElite#Manager2026!'
-    };
-
-    let serverAuthSucceeded = false;
-    let serverUsername = '';
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -340,19 +326,18 @@ export class CmsRedirectComponent implements OnInit {
         body: JSON.stringify({ username: enteredUser, password: entered }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.success) {
-        serverAuthSucceeded = true;
-        serverUsername = data.user?.username || enteredUser;
+      if (!res.ok || !data.success) {
+        this.pinError = true;
+        this.pinErrorMessage = data.error || 'Invalid username or password.';
+        this.enteredPin = '';
+        return;
       }
-    } catch {}
 
-    const cleanUser = enteredUser.toLowerCase();
-    const isLocalMatch = VERIFIED_OPERATORS[cleanUser] && VERIFIED_OPERATORS[cleanUser] === entered;
-
-    if (serverAuthSucceeded || isLocalMatch) {
       this.isAuthenticated = true;
       this.pinError = false;
-      const loggedUser = serverUsername || enteredUser;
+      this.pinErrorMessage = 'Invalid username or password.';
+      const cleanUser = enteredUser.toLowerCase();
+      const loggedUser = data.user?.username || enteredUser;
       this.adminUsername = loggedUser;
       if (cleanUser.includes('manager')) {
         this.adminName = 'Operations Manager';
@@ -365,29 +350,37 @@ export class CmsRedirectComponent implements OnInit {
       if (isPlatformBrowser(this.platformId)) {
         localStorage.setItem(ADMIN_NAME_KEY, this.adminName);
         localStorage.setItem(ADMIN_USERNAME_KEY, this.adminUsername);
-        sessionStorage.setItem('apk_cms_client_auth', 'true');
       }
 
       this.loadAllData();
-    } else {
+    } catch (error) {
+      console.error('CMS sign-in request failed:', error);
       this.pinError = true;
+      this.pinErrorMessage = 'Sign-in service is unavailable. Please try again later.';
       this.enteredPin = '';
     }
   }
 
   async logout() {
     try {
-      await fetch('/api/auth/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       });
-    } catch {}
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        this.showToast(data.error || 'Unable to securely log out. Please try again.');
+        return;
+      }
+    } catch {
+      this.showToast('Unable to securely log out. Please try again.');
+      return;
+    }
 
     this.isAuthenticated = false;
     if (isPlatformBrowser(this.platformId)) {
       sessionStorage.removeItem('apk_sid');
       sessionStorage.removeItem('apk_sid_ts');
-      sessionStorage.removeItem('apk_cms_client_auth');
     }
   }
 

@@ -46,7 +46,7 @@
         </div>
 
         <div *ngIf="pinError" class="error-msg">
-          Invalid username or password.
+          {{ pinErrorMessage }}
         </div>
 
         <button type="submit" class="btn-unlock">Unlock Dashboard</button>

@@ -2,14 +2,16 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE_NAME = 'apk_cms_session';
-const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback-secret-key-change-in-production-min-32-chars';
 
 /**
  * Edge-compatible cryptographic token verification for HMAC-SHA256 session tokens.
  * Verifies signature and expiration timestamp.
  */
 async function verifyTokenInMiddleware(token: string): Promise<boolean> {
-  if (!token || typeof token !== 'string') return false;
+  const authSecret = process.env.AUTH_SECRET;
+  if (!authSecret || authSecret.length < 32 || !token || typeof token !== 'string' || token.length > 4096) {
+    return false;
+  }
   const parts = token.split('.');
   if (parts.length !== 2) return false;
   const [payloadB64, signatureB64] = parts;
@@ -17,7 +19,7 @@ async function verifyTokenInMiddleware(token: string): Promise<boolean> {
   try {
     const key = await crypto.subtle.importKey(
       'raw',
-      new TextEncoder().encode(AUTH_SECRET),
+      new TextEncoder().encode(authSecret),
       { name: 'HMAC', hash: 'SHA-256' },
       false,
       ['verify']
@@ -32,7 +34,13 @@ async function verifyTokenInMiddleware(token: string): Promise<boolean> {
     const payloadJson = Buffer.from(payloadB64, 'base64url').toString('utf-8');
     const payload = JSON.parse(payloadJson);
     const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
+    if (
+      typeof payload.username !== 'string' ||
+      !payload.username ||
+      !Number.isInteger(payload.exp) ||
+      payload.exp <= now ||
+      !['admin', 'editor'].includes(payload.role)
+    ) {
       return false;
     }
 

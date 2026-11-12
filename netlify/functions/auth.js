@@ -1,7 +1,15 @@
-const crypto = require('crypto');
 const { MongoClient } = require('mongodb');
+const bcrypt = require('bcryptjs');
+const {
+  SESSION_COOKIE_NAME,
+  SESSION_DURATION_SECONDS,
+  createSessionToken,
+  verifySessionToken,
+  isSessionRevoked,
+  revokeSession,
+  getSessionToken,
+} = require('../auth-session');
 
-const AUTH_SECRET = process.env.AUTH_SECRET || '8ce346ae38aed6ff58b5b9c04c07c647e7200eb5faeb9143af169382a9a6af89';
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const DB_NAME = process.env.MONGODB_DB || 'apk_elite_services';
 
@@ -11,20 +19,19 @@ async function getDb() {
   if (cachedDb) return cachedDb;
   try {
     const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 3000 });
-    await client.connect();
-    cachedDb = client.db(DB_NAME);
-    return cachedDb;
+    try {
+      await client.connect();
+      cachedDb = client.db(DB_NAME);
+      return cachedDb;
+    } catch (err) {
+      await client.close().catch(() => {});
+      throw err;
+    }
   } catch (err) {
+    console.error('CMS authentication database connection failed:', err.message);
     return null;
   }
 }
-
-// Built-in verified CMS users
-const VERIFIED_CREDENTIALS = {
-  'admin': 'Admin@ApkElite2026!',
-  'shubhammisra800@gmail.com': 'Shubham@ApkElite2026!',
-  'manager@apkeliteservices.in': 'ApkElite#Manager2026!'
-};
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -32,41 +39,6 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Content-Type': 'application/json'
 };
-
-function createSessionToken(username) {
-  const sessionId = crypto.randomUUID();
-  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7; // 7 days
-  const payload = {
-    sid: sessionId,
-    username,
-    role: 'admin',
-    iat: Math.floor(Date.now() / 1000),
-    exp: expiresAt
-  };
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const signature = crypto.createHmac('sha256', AUTH_SECRET).update(payloadB64).digest('base64url');
-  return `${payloadB64}.${signature}`;
-}
-
-function verifySessionToken(token) {
-  if (!token || typeof token !== 'string') return { valid: false };
-  const parts = token.split('.');
-  if (parts.length !== 2) return { valid: false };
-  const [payloadB64, signature] = parts;
-  const expectedSignature = crypto.createHmac('sha256', AUTH_SECRET).update(payloadB64).digest('base64url');
-  if (signature.length !== expectedSignature.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-    return { valid: false };
-  }
-  try {
-    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return { valid: false };
-    }
-    return { valid: true, payload };
-  } catch {
-    return { valid: false };
-  }
-}
 
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
@@ -79,18 +51,28 @@ exports.handler = async function (event) {
   // GET /api/auth/me
   // -------------------------------------------------------------
   if (event.httpMethod === 'GET' || path.includes('/me')) {
-    const authHeader = event.headers.authorization || event.headers.Authorization || '';
-    let token = '';
-    if (authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7).trim();
-    }
-    if (!token && event.headers.cookie) {
-      const match = event.headers.cookie.match(/apk_cms_session=([^;]+)/);
-      if (match) token = match[1];
-    }
-
+    const token = getSessionToken(event);
     const verification = verifySessionToken(token);
     if (verification.valid) {
+      try {
+        const db = await getDb();
+        if (!db) throw new Error('Authentication storage is unavailable');
+        if (await isSessionRevoked(db, verification.payload)) {
+          return {
+            statusCode: 200,
+            headers: CORS_HEADERS,
+            body: JSON.stringify({ success: true, authenticated: false })
+          };
+        }
+      } catch (err) {
+        console.error('CMS session verification failed:', err.message);
+        return {
+          statusCode: 503,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Authentication storage is unavailable. Please try again later.' })
+        };
+      }
+
       return {
         statusCode: 200,
         headers: CORS_HEADERS,
@@ -114,13 +96,30 @@ exports.handler = async function (event) {
   // POST /api/auth/logout
   // -------------------------------------------------------------
   if (path.includes('/logout')) {
+    let statusCode = 200;
+    let body = { success: true, message: 'Logged out successfully' };
+    const verification = verifySessionToken(getSessionToken(event));
+    if (verification.valid) {
+      try {
+        const db = await getDb();
+        if (!db) throw new Error('Authentication storage is unavailable');
+        await revokeSession(db, verification.payload);
+      } catch (err) {
+        console.error('CMS session revocation failed:', err.message);
+        statusCode = 503;
+        body = { success: false, error: 'Session could not be revoked because authentication storage is unavailable.' };
+      }
+    }
+
+    const headers = { ...CORS_HEADERS };
+    if (statusCode === 200) {
+      headers['Set-Cookie'] = `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0; Secure`;
+    }
+
     return {
-      statusCode: 200,
-      headers: {
-        ...CORS_HEADERS,
-        'Set-Cookie': 'apk_cms_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0'
-      },
-      body: JSON.stringify({ success: true, message: 'Logged out successfully' })
+      statusCode,
+      headers,
+      body: JSON.stringify(body)
     };
   }
 
@@ -130,42 +129,72 @@ exports.handler = async function (event) {
   if (event.httpMethod === 'POST') {
     let body = {};
     try {
-      body = JSON.parse(event.body || '{}');
+      const parsed = JSON.parse(event.body || '{}');
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) body = parsed;
     } catch {
-      body = {};
+      // Invalid JSON uses the same validation error as missing credentials.
     }
 
-    const username = (body.username || '').trim().toLowerCase();
-    const password = body.password || '';
+    const username = typeof body.username === 'string' ? body.username.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
 
-    if (!username || !password) {
+    if (typeof process.env.AUTH_SECRET !== 'string' || process.env.AUTH_SECRET.length < 32) {
+      return {
+        statusCode: 503,
+        headers: CORS_HEADERS,
+        body: JSON.stringify({ success: false, error: 'Authentication is not configured. AUTH_SECRET must contain at least 32 characters.' })
+      };
+    }
+
+    if (!username || !password || username.length > 100 || password.length > 200) {
       return {
         statusCode: 400,
         headers: CORS_HEADERS,
-        body: JSON.stringify({ success: false, error: 'Username and password required' })
+        body: JSON.stringify({ success: false, error: 'Username or password is invalid.' })
       };
     }
 
     let authenticated = false;
     let userRole = 'admin';
+    const adminUsername = (process.env.ADMIN_USERNAME || '').trim().toLowerCase();
+    const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH || '';
 
-    // 1. Check verified credentials map
-    if (VERIFIED_CREDENTIALS[username] && VERIFIED_CREDENTIALS[username] === password) {
-      authenticated = true;
+    if (adminUsername && adminPasswordHash && username === adminUsername) {
+      authenticated = await bcrypt.compare(password, adminPasswordHash).catch(() => false);
     }
 
-    // 2. Check MongoDB users if available
     if (!authenticated) {
+      const db = await getDb();
+      if (!db) {
+        return {
+          statusCode: 503,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Authentication storage is unavailable. Please try again later.' })
+        };
+      }
+
       try {
-        const db = await getDb();
-        if (db) {
-          const userDoc = await db.collection('users').findOne({ username });
-          if (userDoc && userDoc.password === password) {
-            authenticated = true;
-            userRole = userDoc.role || 'admin';
-          }
+        const userDoc = await db.collection('users').findOne({ username });
+        if (userDoc && typeof userDoc.passwordHash === 'string') {
+          authenticated = await bcrypt.compare(password, userDoc.passwordHash).catch(() => false);
+          userRole = userDoc.role === 'editor' ? 'editor' : 'admin';
+        } else if (userDoc && typeof userDoc.password === 'string' && userDoc.password === password) {
+          const passwordHash = await bcrypt.hash(password, 10);
+          await db.collection('users').updateOne(
+            { _id: userDoc._id },
+            { $set: { passwordHash }, $unset: { password: '' } }
+          );
+          authenticated = true;
+          userRole = userDoc.role === 'editor' ? 'editor' : 'admin';
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error('CMS credential lookup failed:', err.message);
+        return {
+          statusCode: 503,
+          headers: CORS_HEADERS,
+          body: JSON.stringify({ success: false, error: 'Authentication storage is unavailable. Please try again later.' })
+        };
+      }
     }
 
     if (!authenticated) {
@@ -176,8 +205,11 @@ exports.handler = async function (event) {
       };
     }
 
-    const token = createSessionToken(username);
-    const cookieHeader = `apk_cms_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`;
+    const token = createSessionToken(username, userRole);
+    const headers = event.headers || {};
+    const forwardedProto = headers['x-forwarded-proto'] || headers['X-Forwarded-Proto'] || '';
+    const secureCookie = forwardedProto.split(',')[0].trim() === 'https' ? '; Secure' : '';
+    const cookieHeader = `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_DURATION_SECONDS}${secureCookie}`;
 
     return {
       statusCode: 200,
@@ -187,7 +219,6 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         success: true,
-        token,
         user: {
           username,
           role: userRole
@@ -202,4 +233,3 @@ exports.handler = async function (event) {
     body: JSON.stringify({ success: false, error: 'Endpoint not found' })
   };
 };
-

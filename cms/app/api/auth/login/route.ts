@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   authenticateCredentials,
   createSessionToken,
+  isAuthConfigured,
   checkRateLimit,
   recordFailedAttempt,
   resetRateLimit,
@@ -13,6 +14,13 @@ import { getAdminCorsHeaders } from '@/lib/cors';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isAuthConfigured()) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication is not configured. AUTH_SECRET must contain at least 32 characters.' },
+        { status: 503 }
+      );
+    }
+
     const forwardedFor = req.headers.get('x-forwarded-for');
     const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
 
@@ -97,7 +105,10 @@ export async function POST(req: NextRequest) {
     await resetRateLimit(`user:${usernameClean.toLowerCase()}`);
 
     // 4. Create cryptographically signed revocable session token
-    const { token, sessionId, expiresAt } = createSessionToken(authResult.username || 'admin');
+    const { token, sessionId, expiresAt } = createSessionToken(
+      authResult.username || 'admin',
+      authResult.role || 'admin'
+    );
 
     logAudit({
       action: 'LOGIN_SUCCESS',
@@ -111,7 +122,6 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Login successful',
       user: { username: authResult.username },
-      token,
       expiresAt,
     });
 

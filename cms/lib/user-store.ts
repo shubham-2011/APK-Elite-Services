@@ -18,36 +18,7 @@ export type SafeUser = Omit<StoredUser, 'passwordHash'>;
 const DATA_DIR = path.join(process.cwd(), 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
-// Default initial users:
-// 1. admin -> Admin@ApkElite2026!
-// 2. shubhammisra800@gmail.com -> Shubham@ApkElite2026!
-// 3. manager@apkeliteservices.in -> ApkElite#Manager2026!
-const DEFAULT_INITIAL_USERS: StoredUser[] = [
-  {
-    _id: 'usr_admin',
-    username: 'admin',
-    passwordHash: '$2b$10$jjP8lIASzYd8CmCGRLjpXOO.xWBRF3YVf8MvdszMnGFg4VvpdMCe2',
-    role: 'admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'usr_initial_shubham',
-    username: 'shubhammisra800@gmail.com',
-    passwordHash: '$2b$10$K/JBGsrPKp4pqAHNlC1DEOOCJy1YY1kXJknYpc3fVjQSsi/2A7Up.',
-    role: 'admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'usr_initial_manager',
-    username: 'manager@apkeliteservices.in',
-    passwordHash: '$2b$10$NlKWbLCsbim5aQY7J2GEYekhjdeMKxknddemwaCFb4cehU26G8X9y',
-    role: 'admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+const DEFAULT_INITIAL_USERS: StoredUser[] = [];
 
 function ensureUsersFile(): StoredUser[] {
   if (!fs.existsSync(DATA_DIR)) {
