@@ -11,9 +11,14 @@ async function getDb() {
   if (cachedDb) return cachedDb;
   try {
     const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 4000 });
-    await client.connect();
-    cachedDb = client.db(DB_NAME);
-    return cachedDb;
+    try {
+      await client.connect();
+      cachedDb = client.db(DB_NAME);
+      return cachedDb;
+    } catch (err) {
+      await client.close().catch(() => {});
+      throw err;
+    }
   } catch (err) {
     console.warn('MongoDB connection failed for footmarks:', err.message);
     return null;
@@ -27,71 +32,24 @@ const CORS_HEADERS = {
   'Content-Type': 'application/json',
 };
 
-// In-memory fallback if MongoDB is not connected
-let inMemoryFootmarks = [];
-
-function getInMemoryStats() {
-  const totalFootmarks = inMemoryFootmarks.length;
-  const uniqueVisitorSet = new Set(inMemoryFootmarks.map((f) => f.visitorId));
-  const uniqueVisitors = uniqueVisitorSet.size;
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todayFootmarksList = inMemoryFootmarks.filter((f) => f.createdAt.startsWith(todayStr));
-  const todayFootmarks = todayFootmarksList.length;
-  const todayUniqueVisitors = new Set(todayFootmarksList.map((f) => f.visitorId)).size;
-
-  const pageMap = {};
-  inMemoryFootmarks.forEach((f) => {
-    if (!pageMap[f.path]) {
-      pageMap[f.path] = { count: 0, title: f.pageTitle || f.path };
-    }
-    pageMap[f.path].count++;
-  });
-  const topPages = Object.entries(pageMap)
-    .map(([path, data]) => ({
-      path,
-      title: data.title,
-      count: data.count,
-      percentage: totalFootmarks > 0 ? Math.round((data.count / totalFootmarks) * 100) : 0,
-    }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  const deviceCounts = { mobile: 0, desktop: 0, tablet: 0 };
-  inMemoryFootmarks.forEach((f) => {
-    const dev = (f.device || 'mobile').toLowerCase();
-    if (deviceCounts[dev] !== undefined) deviceCounts[dev]++;
-    else deviceCounts.mobile++;
-  });
-
-  const refMap = {};
-  inMemoryFootmarks.forEach((f) => {
-    const ref = f.referrer || 'Direct';
-    refMap[ref] = (refMap[ref] || 0) + 1;
-  });
-  const topReferrers = Object.entries(refMap)
-    .map(([referrer, count]) => ({ referrer, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6);
-
-  return {
-    totalFootmarks,
-    uniqueVisitors,
-    todayFootmarks,
-    todayUniqueVisitors,
-    topPages,
-    deviceCounts,
-    topReferrers,
-    recentFootmarks: inMemoryFootmarks.slice(0, 50),
-  };
-}
-
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: CORS_HEADERS, body: '' };
   }
 
   const db = await getDb();
+  if (!db) {
+    return {
+      statusCode: 503,
+      headers: CORS_HEADERS,
+      body: JSON.stringify({
+        success: false,
+        source: 'mongodb',
+        dbConnected: false,
+        error: 'Traffic storage is unavailable; this visit was not saved.',
+      }),
+    };
+  }
 
   try {
     if (event.httpMethod === 'POST') {
@@ -147,115 +105,86 @@ exports.handler = async (event) => {
         createdAt: body.createdAt ? new Date(body.createdAt) : new Date(),
       };
 
-      if (db) {
-        const col = db.collection(COLLECTION_NAME);
-        const result = await col.insertOne(footmarkData);
-        return {
-          statusCode: 200,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({ success: true, source: 'mongodb', dbConnected: true, footmarkId: result.insertedId }),
-        };
-      }
-
-      const memoryRecord = { 
-        ...footmarkData, 
-        _id: 'foot_mem_' + Date.now(), 
-        createdAt: footmarkData.createdAt.toISOString() 
-      };
-      inMemoryFootmarks.unshift(memoryRecord);
-      if (inMemoryFootmarks.length > 500) inMemoryFootmarks = inMemoryFootmarks.slice(0, 500);
-
+      const col = db.collection(COLLECTION_NAME);
+      const result = await col.insertOne(footmarkData);
       return {
         statusCode: 200,
         headers: CORS_HEADERS,
-        body: JSON.stringify({ success: true, source: 'in-memory', footmarkId: memoryRecord._id }),
+        body: JSON.stringify({ success: true, source: 'mongodb', dbConnected: true, footmarkId: result.insertedId }),
       };
     }
 
     if (event.httpMethod === 'GET') {
-      if (db) {
-        const col = db.collection(COLLECTION_NAME);
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
+      const col = db.collection(COLLECTION_NAME);
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
 
-        const [
-          totalFootmarks,
-          todayFootmarks,
-          allVisitors,
-          todayVisitors,
-          pageAgg,
-          deviceAgg,
-          referrerAgg,
-          recentFootmarks,
-        ] = await Promise.all([
-          col.countDocuments(),
-          col.countDocuments({ createdAt: { $gte: startOfToday } }),
-          col.distinct('visitorId'),
-          col.distinct('visitorId', { createdAt: { $gte: startOfToday } }),
-          col.aggregate([
-            { $group: { _id: '$path', title: { $first: '$pageTitle' }, count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 10 },
-          ]).toArray(),
-          col.aggregate([
-            { $group: { _id: '$device', count: { $sum: 1 } } },
-          ]).toArray(),
-          col.aggregate([
-            { $group: { _id: '$referrer', count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 6 },
-          ]).toArray(),
-          col.find().sort({ createdAt: -1 }).limit(50).toArray(),
-        ]);
+      const [
+        totalFootmarks,
+        todayFootmarks,
+        allVisitors,
+        todayVisitors,
+        pageAgg,
+        deviceAgg,
+        referrerAgg,
+        recentFootmarks,
+      ] = await Promise.all([
+        col.countDocuments(),
+        col.countDocuments({ createdAt: { $gte: startOfToday } }),
+        col.distinct('visitorId'),
+        col.distinct('visitorId', { createdAt: { $gte: startOfToday } }),
+        col.aggregate([
+          { $group: { _id: '$path', title: { $first: '$pageTitle' }, count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 10 },
+        ]).toArray(),
+        col.aggregate([
+          { $group: { _id: '$device', count: { $sum: 1 } } },
+        ]).toArray(),
+        col.aggregate([
+          { $group: { _id: '$referrer', count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+          { $limit: 6 },
+        ]).toArray(),
+        col.find().sort({ createdAt: -1 }).limit(50).toArray(),
+      ]);
 
-        const deviceCounts = { mobile: 0, desktop: 0, tablet: 0 };
-        deviceAgg.forEach((d) => {
-          const dev = (d._id || 'mobile').toLowerCase();
-          if (deviceCounts[dev] !== undefined) deviceCounts[dev] = d.count;
-          else deviceCounts.mobile += d.count;
-        });
+      const deviceCounts = { mobile: 0, desktop: 0, tablet: 0 };
+      deviceAgg.forEach((d) => {
+        const dev = (d._id || 'mobile').toLowerCase();
+        if (deviceCounts[dev] !== undefined) deviceCounts[dev] = d.count;
+        else deviceCounts.mobile += d.count;
+      });
 
-        const topPages = pageAgg.map((p) => ({
-          path: p._id || '/',
-          title: p.title || p._id || 'APK Elite Services',
-          count: p.count,
-          percentage: totalFootmarks > 0 ? Math.round((p.count / totalFootmarks) * 100) : 0,
-        }));
+      const topPages = pageAgg.map((p) => ({
+        path: p._id || '/',
+        title: p.title || p._id || 'APK Elite Services',
+        count: p.count,
+        percentage: totalFootmarks > 0 ? Math.round((p.count / totalFootmarks) * 100) : 0,
+      }));
 
-        const topReferrers = referrerAgg.map((r) => ({
-          referrer: r._id || 'Direct',
-          count: r.count,
-        }));
-
-        return {
-          statusCode: 200,
-          headers: CORS_HEADERS,
-          body: JSON.stringify({
-            success: true,
-            source: 'mongodb',
-            dbConnected: true,
-            stats: {
-              totalFootmarks,
-              uniqueVisitors: allVisitors.length,
-              todayFootmarks,
-              todayUniqueVisitors: todayVisitors.length,
-              topPages,
-              deviceCounts,
-              topReferrers,
-              recentFootmarks,
-            },
-          }),
-        };
-      }
+      const topReferrers = referrerAgg.map((r) => ({
+        referrer: r._id || 'Direct',
+        count: r.count,
+      }));
 
       return {
         statusCode: 200,
         headers: CORS_HEADERS,
         body: JSON.stringify({
           success: true,
-          source: 'in-memory-fallback',
-          dbConnected: false,
-          stats: getInMemoryStats(),
+          source: 'mongodb',
+          dbConnected: true,
+          stats: {
+            totalFootmarks,
+            uniqueVisitors: allVisitors.length,
+            todayFootmarks,
+            todayUniqueVisitors: todayVisitors.length,
+            topPages,
+            deviceCounts,
+            topReferrers,
+            recentFootmarks,
+          },
         }),
       };
     }

@@ -102,6 +102,8 @@ export interface FootmarkStats {
 
 const STORAGE_KEY = 'apk_footmarks_v2';
 const TELEMETRY_STORAGE_KEY = 'apk_telemetry_events_v1';
+const PENDING_STORAGE_KEY = 'apk_pending_footmarks_v1';
+const MAX_PENDING_FOOTMARKS = 500;
 const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes inactivity
 const APP_RELEASE_VERSION = '2.1.0-prod';
 
@@ -113,6 +115,7 @@ export class FootmarkApiService {
   private netlifyEndpoint = '/.netlify/functions/footmark';
   private lastTrackedPath = '';
   private lastTrackedTime = 0;
+  private flushingFootmarks = false;
 
   // Scroll milestones tracked for the current page
   private trackedScrollDepths = new Set<number>();
@@ -123,7 +126,11 @@ export class FootmarkApiService {
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private attribution: AttributionService
-  ) {}
+  ) {
+    if (this.isBrowser()) {
+      window.addEventListener('online', () => void this.flushPendingFootmarks());
+    }
+  }
 
   private isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
@@ -488,34 +495,86 @@ export class FootmarkApiService {
   /**
    * Send event payload to remote Netlify Function or Next.js backend with failover.
    */
-  private async sendRemotePayload(payload: unknown): Promise<void> {
-    const payloadStr = JSON.stringify(payload);
+  private async sendRemotePayload(payload: FootmarkEvent): Promise<void> {
+    this.enqueuePendingFootmark(payload);
+    await this.flushPendingFootmarks();
+  }
 
+  private enqueuePendingFootmark(footmark: FootmarkEvent): void {
     try {
-      const primaryUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
-      
-      // Use fetch with keepalive as primary robust transport (avoids serverless base64 blob translation)
-      let res = await fetch(primaryUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payloadStr,
-        keepalive: true
-      }).catch(() => null);
+      const pending = this.getPendingFootmarks();
+      if (!pending.some((item) => item._id === footmark._id)) {
+        pending.unshift(footmark);
+        localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(pending.slice(0, MAX_PENDING_FOOTMARKS)));
+      }
+    } catch (error) {
+      console.error('Could not queue unsent visitor footmark:', error);
+    }
+  }
 
-      let isHtml = res ? (res.headers.get('content-type') || '').includes('text/html') : true;
+  private getPendingFootmarks(): FootmarkEvent[] {
+    try {
+      const raw = localStorage.getItem(PENDING_STORAGE_KEY);
+      if (!raw) return [];
+      const pending = JSON.parse(raw);
+      return Array.isArray(pending) ? pending : [];
+    } catch (error) {
+      console.error('Could not read queued visitor footmarks:', error);
+      return [];
+    }
+  }
 
-      // Failover to Netlify Functions endpoint directly if primary rewrite failed
-      if (!res || !res.ok || isHtml) {
-        await fetch(this.netlifyEndpoint, {
+  private async flushPendingFootmarks(): Promise<void> {
+    if (!this.isBrowser() || this.flushingFootmarks || !navigator.onLine) return;
+
+    this.flushingFootmarks = true;
+    try {
+      const pending = this.getPendingFootmarks();
+      for (let index = 0; index < pending.length; index++) {
+        if (!(await this.postFootmark(pending[index]))) {
+          break;
+        }
+        pending.splice(index, 1);
+        index--;
+        localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(pending));
+      }
+    } catch (error) {
+      console.error('Could not flush queued visitor footmarks:', error);
+    } finally {
+      this.flushingFootmarks = false;
+    }
+  }
+
+  private async postFootmark(footmark: FootmarkEvent): Promise<boolean> {
+    const payload = JSON.stringify(footmark);
+    const primaryUrl = (window as any).__APK_TRACKING_ENDPOINT__ || this.endpoint;
+
+    for (const url of [primaryUrl, this.netlifyEndpoint]) {
+      try {
+        const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: payloadStr,
+          body: payload,
           keepalive: true
-        }).catch(() => {});
+        });
+        const isHtml = (response.headers.get('content-type') || '').includes('text/html');
+        if (response.status >= 500) return false;
+        if (!response.ok || isHtml) continue;
+
+        const result = await response.json();
+        if (result.success) {
+          if (result.source && result.source !== 'mongodb') {
+            console.warn(`Visitor footmark stored by fallback source: ${result.source}`);
+          }
+          return true;
+        }
+        return false;
+      } catch {
+        continue;
       }
-    } catch {
-      // Offline or network error: event is already persisted in local cache
     }
+
+    return false;
   }
 
   /**
@@ -861,4 +920,3 @@ export class FootmarkApiService {
   }
 
 }
-

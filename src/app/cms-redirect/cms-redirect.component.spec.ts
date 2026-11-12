@@ -267,7 +267,7 @@ describe('CmsRedirectComponent (CMS Dashboard Unit Test Suite)', () => {
       const updated = component.leads.find(l => l._id === 'lead_1');
       expect(updated?.notes.length).toBe(1);
       expect(updated?.notes[0].note).toBe('Customer requested callback on Saturday');
-      expect(updated?.notes[0].author).toBe('Admin');
+      expect(updated?.notes[0].author).toBe(component.adminName);
       expect(component.toastMessage).toBe('Note added');
     });
 
