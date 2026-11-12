@@ -5,15 +5,11 @@ import { getSiteContent, saveSiteContent, DEFAULT_SITE_CONTENT } from '@/lib/con
 import { verifyAdminSession, unauthorizedResponse } from '@/lib/auth';
 import { SiteContentSchema } from '@/lib/validation';
 import { logAudit } from '@/lib/audit-logger';
+import { getAdminCorsHeaders, publicCorsHeaders } from '@/lib/cors';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return NextResponse.json({}, { headers: getAdminCorsHeaders(origin) });
 }
 
 // -------------------------------------------------------------
@@ -27,15 +23,15 @@ export async function GET() {
       if (!content) {
         content = await SiteContent.create(DEFAULT_SITE_CONTENT);
       }
-      return NextResponse.json({ success: true, content }, { headers: corsHeaders });
+      return NextResponse.json({ success: true, content }, { headers: publicCorsHeaders });
     } catch {
       const content = getSiteContent();
-      return NextResponse.json({ success: true, content, source: 'local_store' }, { headers: corsHeaders });
+      return NextResponse.json({ success: true, content, source: 'local_store' }, { headers: publicCorsHeaders });
     }
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to retrieve site content', content: DEFAULT_SITE_CONTENT },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: publicCorsHeaders }
     );
   }
 }
@@ -44,10 +40,14 @@ export async function GET() {
 // PUT /api/content - Protected Admin Content Management
 // -------------------------------------------------------------
 export async function PUT(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getAdminCorsHeaders(origin);
+
   // 1. Enforce Server-Side Authentication
   const auth = await verifyAdminSession(req);
   if (!auth.authenticated) {
-    return unauthorizedResponse(auth.error || 'Authentication required to modify site configuration');
+    const status = auth.isCsrfError ? 403 : 401;
+    return unauthorizedResponse(auth.error || 'Authentication required to modify site configuration', status);
   }
 
   try {

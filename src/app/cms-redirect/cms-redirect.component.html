@@ -29,14 +29,14 @@
         </div>
 
         <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
-          <label for="pinInput" style="display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.35rem;">Password or PIN</label>
+          <label for="pinInput" style="display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.35rem;">Password</label>
           <input
             id="pinInput"
             type="password"
-            maxlength="25"
+            maxlength="100"
             [(ngModel)]="enteredPin"
             name="enteredPin"
-            placeholder="••••"
+            placeholder="••••••••"
             class="pin-input"
             style="width: 100%; box-sizing: border-box; text-align: center; font-size: 1.15rem; padding: 0.65rem;"
             autofocus
@@ -44,13 +44,12 @@
         </div>
 
         <div *ngIf="pinError" class="error-msg">
-          Invalid username or password/PIN.
+          Invalid username or password.
         </div>
 
         <button type="submit" class="btn-unlock">Unlock Dashboard</button>
 
         <div class="auth-hint">
-          <span>Login: <strong>{{ adminUsername }}</strong> · PIN: <strong>{{ getStoredPin() }}</strong></span>
           <a routerLink="/" class="back-link">← Return to Website</a>
         </div>
       </form>
@@ -189,6 +188,17 @@
             >
               <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg></span>
               <span class="nav-label">Content &amp; Pricing</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              (click)="activeSection = 'users'; closeMobileSidebar(); loadUsers();"
+              [class.active]="activeSection === 'users'"
+              class="nav-link"
+            >
+              <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></span>
+              <span class="nav-label">Team &amp; Users</span>
+              <span class="sidebar-pill-badge" *ngIf="cmsUsers.length > 0">{{ cmsUsers.length }}</span>
             </button>
           </li>
         </ul>
@@ -1062,6 +1072,181 @@
                 (keyup.enter)="addService()"
               />
               <button (click)="addService()" class="btn-subtle">+ Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- VIEW E: TEAM & USER MANAGEMENT                               -->
+      <!-- ============================================================ -->
+      <div *ngIf="activeSection === 'users'" class="umami-crm-content">
+        <div class="crm-top-bar">
+          <div>
+            <h2 class="section-title">Team &amp; User Access Management</h2>
+            <p class="section-sub">View all authorized operators, add new team accounts, and manage credentials</p>
+          </div>
+          <button (click)="loadUsers()" [disabled]="loadingUsers" class="btn-subtle" title="Refresh User List">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              {{ loadingUsers ? 'Refreshing...' : 'Refresh List' }}
+            </span>
+          </button>
+        </div>
+
+        <div class="dual-panel-grid" style="align-items: flex-start;">
+          <!-- ADD NEW USER CARD -->
+          <div class="umami-panel-card">
+            <h4 class="panel-main-title" style="display: flex; align-items: center; gap: 8px;">
+              <span>➕ Add New User</span>
+            </h4>
+            <p style="font-size: 0.82rem; color: #a1a1aa; margin-bottom: 1rem; line-height: 1.4;">
+              Create login credentials for a new team operator or administrator.
+            </p>
+
+            <form (submit)="createNewUser($event)" style="display: flex; flex-direction: column; gap: 0.85rem;">
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 0.35rem;">Username or Email *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="newStaffUser"
+                  name="newStaffUser"
+                  placeholder="e.g. rohit@apkeliteservices.in"
+                  class="umami-input"
+                  style="width: 100%; box-sizing: border-box;"
+                  required
+                />
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 0.35rem;">Password * <span style="font-size: 0.72rem; color: #71717a;">(Min 8 characters)</span></label>
+                <input
+                  type="password"
+                  [(ngModel)]="newStaffPass"
+                  name="newStaffPass"
+                  placeholder="e.g. Rohit@ApkElite2026!"
+                  class="umami-input"
+                  style="width: 100%; box-sizing: border-box;"
+                  required
+                />
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 0.35rem;">Assigned Role</label>
+                <select
+                  [(ngModel)]="newStaffRole"
+                  name="newStaffRole"
+                  class="umami-input"
+                  style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); color: inherit;"
+                >
+                  <option value="admin" style="background: #18181b; color: #fff;">Administrator (Full Access)</option>
+                  <option value="editor" style="background: #18181b; color: #fff;">Editor (Leads &amp; Content Only)</option>
+                </select>
+              </div>
+
+              <div *ngIf="userActionError" class="modal-error" style="margin: 0;">
+                {{ userActionError }}
+              </div>
+
+              <button type="submit" class="btn-primary-blue" style="width: 100%; margin-top: 0.5rem; justify-content: center;">
+                + Create User Account
+              </button>
+            </form>
+          </div>
+
+          <!-- ALL REGISTERED USERS LIST CARD -->
+          <div class="umami-panel-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <h4 class="panel-main-title" style="margin: 0;">
+                <span>👥 Registered Users</span>
+              </h4>
+              <span class="sidebar-pill-badge" style="font-size: 0.78rem;">{{ cmsUsers.length }} Active</span>
+            </div>
+            <p style="font-size: 0.82rem; color: #a1a1aa; margin-bottom: 1rem;">
+              Users authorized to authenticate into the CMS portal.
+            </p>
+
+            <div *ngIf="loadingUsers && cmsUsers.length === 0" style="padding: 1.5rem; text-align: center; color: #71717a;">
+              Loading user registry...
+            </div>
+
+            <div *ngIf="cmsUsers.length === 0 && !loadingUsers" class="panel-empty">
+              No users returned. Click "Refresh List" above.
+            </div>
+
+            <div *ngIf="cmsUsers.length > 0" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div
+                *ngFor="let u of cmsUsers"
+                style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0.85rem 1rem;"
+              >
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; color: #fff;">
+                      {{ (u.username[0] || 'U') | uppercase }}
+                    </div>
+                    <div>
+                      <div style="font-size: 0.92rem; font-weight: 600; color: #f4f4f5;">
+                        {{ u.username }}
+                        <span *ngIf="u.username === adminUsername" style="font-size: 0.68rem; background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); border-radius: 4px; padding: 1px 5px; margin-left: 6px;">YOU</span>
+                      </div>
+                      <div style="font-size: 0.75rem; color: #71717a; margin-top: 2px;">
+                        Created: {{ u.createdAt ? (u.createdAt | date:'mediumDate') : 'Initial Setup' }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span
+                      style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 4px;"
+                      [style.background]="u.role === 'admin' ? 'rgba(59,130,246,0.15)' : 'rgba(168,85,247,0.15)'"
+                      [style.color]="u.role === 'admin' ? '#60a5fa' : '#c084fc'"
+                      [style.border]="u.role === 'admin' ? '1px solid rgba(59,130,246,0.3)' : '1px solid rgba(168,85,247,0.3)'"
+                    >
+                      {{ (u.role || 'admin') | uppercase }}
+                    </span>
+
+                    <button
+                      type="button"
+                      (click)="togglePasswordChange(u.username)"
+                      class="btn-subtle"
+                      style="font-size: 0.75rem; padding: 4px 8px;"
+                      title="Update Password"
+                    >
+                      🔑 Reset Key
+                    </button>
+                  </div>
+                </div>
+
+                <!-- INLINE PASSWORD RESET DRAWER -->
+                <div
+                  *ngIf="selectedUserForPasswordChange === u.username"
+                  style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; gap: 8px; align-items: center;"
+                >
+                  <input
+                    type="password"
+                    [(ngModel)]="changePasswordInput"
+                    placeholder="New password (min 8 chars)"
+                    class="umami-input"
+                    style="flex: 1; font-size: 0.82rem; padding: 0.4rem 0.6rem;"
+                  />
+                  <button
+                    type="button"
+                    (click)="onUpdateUserPassword(u.username, changePasswordInput)"
+                    class="btn-primary-blue"
+                    style="font-size: 0.75rem; padding: 0.45rem 0.75rem;"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    (click)="togglePasswordChange(u.username)"
+                    class="btn-subtle"
+                    style="font-size: 0.75rem; padding: 0.45rem 0.6rem;"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

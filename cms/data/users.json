@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "usr_admin",
+    "username": "admin",
+    "passwordHash": "$2b$10$jjP8lIASzYd8CmCGRLjpXOO.xWBRF3YVf8MvdszMnGFg4VvpdMCe2",
+    "role": "admin",
+    "createdAt": "2026-11-12T07:13:13.209Z",
+    "updatedAt": "2026-11-12T07:13:13.209Z"
+  },
+  {
+    "_id": "usr_initial_shubham",
+    "username": "shubhammisra800@gmail.com",
+    "passwordHash": "$2b$10$K/JBGsrPKp4pqAHNlC1DEOOCJy1YY1kXJknYpc3fVjQSsi/2A7Up.",
+    "role": "admin",
+    "createdAt": "2026-11-12T07:13:13.209Z",
+    "updatedAt": "2026-11-12T07:13:13.209Z"
+  },
+  {
+    "_id": "usr_initial_manager",
+    "username": "manager@apkeliteservices.in",
+    "passwordHash": "$2b$10$NlKWbLCsbim5aQY7J2GEYekhjdeMKxknddemwaCFb4cehU26G8X9y",
+    "role": "admin",
+    "createdAt": "2026-11-12T07:32:00.000Z",
+    "updatedAt": "2026-11-12T07:32:00.000Z"
+  }
+]

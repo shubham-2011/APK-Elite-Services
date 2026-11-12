@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { logAudit } from './audit-logger';
 import { isSessionRevoked, revokeSession } from './session-revocation';
 import { checkRateLimit, recordFailedAttempt, resetRateLimit } from './persistent-rate-limiter';
+import { findUserByUsername } from './user-store';
 
 export const SESSION_COOKIE_NAME = 'apk_cms_session';
 export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -122,17 +123,28 @@ export async function authenticateCredentials(
     return { success: false };
   }
 
-  const isUsernameMatch = usernameInput.trim().toLowerCase() === ADMIN_USERNAME.toLowerCase();
-  if (!isUsernameMatch) {
-    return { success: false };
+  const cleanUsername = usernameInput.trim().toLowerCase();
+
+  // 1. Check registered CMS users in database / user store (includes admin and shubhammisra800@gmail.com)
+  const storedUser = await findUserByUsername(cleanUsername);
+  if (storedUser && storedUser.passwordHash) {
+    const isUserPasswordMatch = await bcrypt.compare(passwordInput, storedUser.passwordHash);
+    if (isUserPasswordMatch) {
+      return { success: true, username: storedUser.username };
+    }
   }
 
-  const isPasswordMatch = await bcrypt.compare(passwordInput, ADMIN_PASSWORD_HASH);
-  if (!isPasswordMatch) {
-    return { success: false };
+  // 2. Check primary environment admin credentials fallback
+  const currentAdminUser = (process.env.ADMIN_USERNAME || ADMIN_USERNAME || 'admin').toLowerCase();
+  const currentAdminHash = process.env.ADMIN_PASSWORD_HASH || ADMIN_PASSWORD_HASH;
+  if (cleanUsername === currentAdminUser && currentAdminHash) {
+    const isPasswordMatch = await bcrypt.compare(passwordInput, currentAdminHash);
+    if (isPasswordMatch) {
+      return { success: true, username: process.env.ADMIN_USERNAME || ADMIN_USERNAME };
+    }
   }
 
-  return { success: true, username: ADMIN_USERNAME };
+  return { success: false };
 }
 
 /**
@@ -156,33 +168,44 @@ function verifyCsrfSafety(req: NextRequest | Request, isCookieAuth: boolean): bo
     return true;
   }
 
-  // 2. Check Origin or Referer header against host
   const origin = req.headers.get('origin');
   const referer = req.headers.get('referer');
   const host = req.headers.get('host');
 
-  if (origin && host) {
+  // 2. Check Origin header against host
+  if (origin) {
     try {
       const originHost = new URL(origin).host;
-      if (originHost === host) return true;
-    } catch {}
+      if (host && originHost === host) return true;
+      // Cross-origin request detected!
+      return false;
+    } catch {
+      return false;
+    }
   }
 
-  if (referer && host) {
+  // 3. Check Referer header against host
+  if (referer) {
     try {
       const refererHost = new URL(referer).host;
-      if (refererHost === host) return true;
-    } catch {}
+      if (host && refererHost === host) return true;
+      // Cross-origin referer detected!
+      return false;
+    } catch {
+      return false;
+    }
   }
 
-  // If no origin/referer and no custom header on a mutating cookie request:
-  // Allow if Content-Type is application/json (browsers disallow simple cross-site JSON fetch without preflight)
-  const contentType = req.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    return true;
-  }
-
+  // If no custom header and no origin/referer on cookie-authenticated mutating request, reject
   return false;
+}
+
+export interface AuthVerificationResult {
+  authenticated: boolean;
+  username?: string;
+  sessionId?: string;
+  error?: string;
+  isCsrfError?: boolean;
 }
 
 /**
@@ -195,7 +218,7 @@ function verifyCsrfSafety(req: NextRequest | Request, isCookieAuth: boolean): bo
  */
 export async function verifyAdminSession(
   req: NextRequest | Request
-): Promise<{ authenticated: boolean; username?: string; sessionId?: string; error?: string }> {
+): Promise<AuthVerificationResult> {
   let token: string | undefined;
   let isCookieAuth = false;
 
@@ -267,17 +290,20 @@ export async function verifyAdminSession(
       success: false,
       details: { reason: 'CSRF verification failure' },
     });
-    return { authenticated: false, error: 'Forbidden: CSRF check failed' };
+    return { authenticated: false, isCsrfError: true, error: 'Forbidden: CSRF check failed' };
   }
 
   return { authenticated: true, username: verification.username, sessionId: verification.sessionId };
 }
 
 /**
- * Helper to build an unauthorized 401 response.
+ * Helper to build an unauthorized 401/403 response.
  */
-export function unauthorizedResponse(message = 'Unauthorized: Admin authentication required'): NextResponse {
-  return NextResponse.json({ success: false, error: message }, { status: 401 });
+export function unauthorizedResponse(
+  message = 'Unauthorized: Admin authentication required',
+  status = 401
+): NextResponse {
+  return NextResponse.json({ success: false, error: message }, { status });
 }
 
 // Re-export rate limiting helpers

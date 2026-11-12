@@ -6,6 +6,7 @@ import { verifyAdminSession, unauthorizedResponse } from '@/lib/auth';
 import { escapeRegex, sanitizeString } from '@/lib/security';
 import { logAudit } from '@/lib/audit-logger';
 import { getAdminCorsHeaders, publicCorsHeaders } from '@/lib/cors';
+import { checkRateLimit, recordFailedAttempt } from '@/lib/persistent-rate-limiter';
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: publicCorsHeaders });
@@ -19,7 +20,30 @@ const corsHeaders = publicCorsHeaders;
 // -------------------------------------------------------------
 export async function POST(req: NextRequest) {
   try {
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+
+    // 1. Rate Limiting on public lead submission
+    const rateLimitKey = `lead_submit:${clientIp}`;
+    const rateLimit = await checkRateLimit(rateLimitKey);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many lead submissions. Please try again later.' },
+        { status: 429, headers: corsHeaders }
+      );
+    }
+    await recordFailedAttempt(rateLimitKey);
+
     const body = await req.json().catch(() => ({}));
+
+    // 2. Anti-spam honeypot check (silently drop bot spam)
+    if (body.website || body.honeypot) {
+      return NextResponse.json(
+        { success: true, message: 'Lead received successfully', leadId: 'hp_filtered' },
+        { status: 200, headers: corsHeaders }
+      );
+    }
+
     const { name, phone, email, service, locality, propertyType, message, source } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {

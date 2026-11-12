@@ -18,15 +18,23 @@ if (!global.mongooseCache) {
   global.mongooseCache = cached;
 }
 
+let lastFailTime = 0;
+const FAIL_COOLDOWN_MS = 10000;
+
 export async function connectToDatabase(): Promise<typeof mongoose> {
   if (cached.conn) {
     return cached.conn;
   }
 
+  const now = Date.now();
+  if (now - lastFailTime < FAIL_COOLDOWN_MS) {
+    throw new Error('MongoDB offline (cached failure cooldown)');
+  }
+
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 1500,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
@@ -36,10 +44,10 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
 
   try {
     cached.conn = await cached.promise;
+    return cached.conn;
   } catch (e) {
     cached.promise = null;
+    lastFailTime = Date.now();
     throw e;
   }
-
-  return cached.conn;
 }

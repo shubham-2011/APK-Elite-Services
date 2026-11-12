@@ -7,24 +7,24 @@ import { verifyAdminSession, unauthorizedResponse } from '@/lib/auth';
 import { isValidId, sanitizeString } from '@/lib/security';
 import { LeadUpdateSchema } from '@/lib/validation';
 import { logAudit } from '@/lib/audit-logger';
+import { getAdminCorsHeaders } from '@/lib/cors';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PATCH, DELETE',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  return NextResponse.json({}, { headers: getAdminCorsHeaders(origin) });
 }
 
 // -------------------------------------------------------------
 // GET /api/leads/[id] - Fetch single lead
 // -------------------------------------------------------------
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getAdminCorsHeaders(origin);
+
   const auth = await verifyAdminSession(req);
   if (!auth.authenticated) {
-    return unauthorizedResponse(auth.error);
+    const status = auth.isCsrfError ? 403 : 401;
+    return unauthorizedResponse(auth.error, status);
   }
 
   const { id } = params;
@@ -62,9 +62,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 // PATCH /api/leads/[id] - Update status, locality, note
 // -------------------------------------------------------------
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getAdminCorsHeaders(origin);
+
   const auth = await verifyAdminSession(req);
   if (!auth.authenticated) {
-    return unauthorizedResponse(auth.error);
+    const status = auth.isCsrfError ? 403 : 401;
+    return unauthorizedResponse(auth.error, status);
   }
 
   const { id } = params;
@@ -134,10 +138,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 // DELETE /api/leads/[id] - Authorized Lead Deletion
 // -------------------------------------------------------------
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getAdminCorsHeaders(origin);
+
   // 1. Authentication check
   const auth = await verifyAdminSession(req);
   if (!auth.authenticated) {
-    return unauthorizedResponse(auth.error);
+    const status = auth.isCsrfError ? 403 : 401;
+    return unauthorizedResponse(auth.error, status);
   }
 
   const { id } = params;

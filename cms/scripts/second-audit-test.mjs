@@ -3,18 +3,49 @@
  * Specifically tests:
  * 1. Cryptographic session validity & expiration
  * 2. True Server-Side Session Revocation on Logout (Token reuse MUST fail)
- * 3. CSRF Protection for state-changing endpoints
+ * 3. CSRF Protection for state-changing endpoints (403 Forbidden on cross-site requests)
  * 4. Multi-instance persistent rate limiting
  */
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3002';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Automatically load cms/.env.local if present
+const envPath = path.resolve(__dirname, '../.env.local');
+if (fs.existsSync(envPath)) {
+  const content = fs.readFileSync(envPath, 'utf8');
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+      const idx = trimmed.indexOf('=');
+      const key = trimmed.slice(0, idx).trim();
+      const val = trimmed.slice(idx + 1).trim();
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+}
+
+const BASE_URL = process.env.BASE_URL || process.env.TEST_BASE_URL || 'http://localhost:3000';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  console.error('FATAL: TEST_ADMIN_PASSWORD environment variable is required.');
+  process.exit(1);
+}
 
 const results = [];
 
-function recordTest(name, passed, details = '') {
-  results.push({ name, passed, details });
+function recordTest(id, name, passed, details = '') {
+  results.push({ id, name, passed, details });
   const symbol = passed ? '✅ PASS' : '❌ FAIL';
-  console.log(`${symbol} | ${name} ${details ? '(' + details + ')' : ''}`);
+  console.log(`${symbol} | [${id}] ${name} ${details ? '(' + details + ')' : ''}`);
 }
 
 async function runAuditTests() {
@@ -30,12 +61,12 @@ async function runAuditTests() {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'wrong' }),
+      body: JSON.stringify({ username: ADMIN_USERNAME, password: 'WrongPassword999!' }),
     });
     const pass = res.status === 401;
-    recordTest('Test 1: Invalid password rejected with 401', pass);
+    recordTest('P2-01', 'Invalid password rejected with 401 Unauthorized', pass);
   } catch (e) {
-    recordTest('Test 1: Invalid password rejected with 401', false, e.message);
+    recordTest('P2-01', 'Invalid password rejected with 401 Unauthorized', false, e.message);
   }
 
   // ----------------------------------------------------
@@ -47,15 +78,15 @@ async function runAuditTests() {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'Admin@ApkElite2026!' }),
+      body: JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
     });
     const data = await res.json().catch(() => ({}));
     sessionToken = data.token;
     cookieHeader = res.headers.get('set-cookie');
     const pass = res.status === 200 && data.success === true && !!sessionToken;
-    recordTest('Test 2: Successful login returns cryptographic token & HttpOnly cookie', pass, `Cookie set: ${!!cookieHeader}`);
+    recordTest('P2-02', 'Successful login returns cryptographic token & HttpOnly cookie', pass, `Cookie set: ${!!cookieHeader}`);
   } catch (e) {
-    recordTest('Test 2: Successful login returns cryptographic token', false, e.message);
+    recordTest('P2-02', 'Successful login returns cryptographic token', false, e.message);
   }
 
   // ----------------------------------------------------
@@ -69,9 +100,9 @@ async function runAuditTests() {
     });
     const data = await res.json().catch(() => ({}));
     const pass = res.status === 200 && data.success === true;
-    recordTest('Test 3: Active session accesses protected /api/leads with 200 OK', pass);
+    recordTest('P2-03', 'Active session accesses protected /api/leads with 200 OK', pass);
   } catch (e) {
-    recordTest('Test 3: Active session accesses protected /api/leads', false, e.message);
+    recordTest('P2-03', 'Active session accesses protected /api/leads', false, e.message);
   }
 
   // ----------------------------------------------------
@@ -85,9 +116,9 @@ async function runAuditTests() {
       },
     });
     const pass = res.status === 200;
-    recordTest('Test 4: Logout triggers server-side session revocation', pass);
+    recordTest('P2-04', 'Logout triggers server-side session revocation', pass);
   } catch (e) {
-    recordTest('Test 4: Logout triggers server-side session revocation', false, e.message);
+    recordTest('P2-04', 'Logout triggers server-side session revocation', false, e.message);
   }
 
   // ----------------------------------------------------
@@ -101,9 +132,9 @@ async function runAuditTests() {
     });
     const data = await res.json().catch(() => ({}));
     const pass = res.status === 401 && data.success === false;
-    recordTest('Test 5: Reusing old session after logout MUST fail with 401 Unauthorized', pass, `Status: ${res.status} | Error: ${data.error}`);
+    recordTest('P2-05', 'Reusing old session after logout MUST fail with 401 Unauthorized', pass, `Status: ${res.status}`);
   } catch (e) {
-    recordTest('Test 5: Reusing old session after logout MUST fail', false, e.message);
+    recordTest('P2-05', 'Reusing old session after logout MUST fail', false, e.message);
   }
 
   // ----------------------------------------------------
@@ -114,37 +145,35 @@ async function runAuditTests() {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'Admin@ApkElite2026!' }),
+      body: JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD }),
     });
     const rawCookie = res.headers.get('set-cookie');
     if (rawCookie) {
       freshCookie = rawCookie.split(';')[0];
     }
     const pass = res.status === 200 && !!freshCookie;
-    recordTest('Test 6: Authenticated fresh cookie session established', pass);
+    recordTest('P2-06', 'Authenticated fresh cookie session established', pass);
   } catch (e) {
-    recordTest('Test 6: Authenticated fresh cookie session established', false, e.message);
+    recordTest('P2-06', 'Authenticated fresh cookie session established', false, e.message);
   }
 
   // ----------------------------------------------------
-  // TEST 7: Cross-Site Request (CSRF Attack Simulation)
-  // Cross-origin request with evil Origin header and no custom header
+  // TEST 7: Cross-Site Request (CSRF Attack Simulation) -> 403 Forbidden
   // ----------------------------------------------------
   try {
     const res = await fetch(`${BASE_URL}/api/content`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'text/plain', // simple cross-site content type (bypasses browser CORS preflight)
+        'Content-Type': 'application/json',
         Cookie: freshCookie,
         Origin: 'https://evil-attacker-website.com',
       },
       body: JSON.stringify({ companyName: 'Defaced Site' }),
     });
-    // Should be rejected because origin does not match host and no custom header
-    const pass = res.status === 401 || res.status === 400;
-    recordTest('Test 7: Cross-origin CSRF attempt blocked', pass, `Status: ${res.status}`);
+    const pass = res.status === 403;
+    recordTest('P2-07', 'Cross-origin CSRF attempt strictly blocked with 403 Forbidden', pass, `Status: ${res.status}`);
   } catch (e) {
-    recordTest('Test 7: Cross-origin CSRF attempt blocked', false, e.message);
+    recordTest('P2-07', 'Cross-origin CSRF attempt blocked', false, e.message);
   }
 
   // ----------------------------------------------------
@@ -164,14 +193,15 @@ async function runAuditTests() {
         whatsapp: '918830167863',
         email: 'info@apkeliteservices.in',
         address: 'Pune, Maharashtra',
+        businessHours: 'Mon - Sun: 8:00 AM - 9:00 PM',
         promoBanner: { enabled: true, text: 'Clean Home Offer', discountPercent: 15 },
         formConfig: { modalTitle: 'Quote', modalSubtitle: 'Details', localities: [], services: [] },
       }),
     });
     const pass = res.status === 200;
-    recordTest('Test 8: Legitimate state-changing request succeeds with 200', pass, `Status: ${res.status}`);
+    recordTest('P2-08', 'Legitimate state-changing request succeeds with 200 OK', pass, `Status: ${res.status}`);
   } catch (e) {
-    recordTest('Test 8: Legitimate state-changing request succeeds', false, e.message);
+    recordTest('P2-08', 'Legitimate state-changing request succeeds', false, e.message);
   }
 
   // Summary

@@ -2,8 +2,47 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const SESSION_COOKIE_NAME = 'apk_cms_session';
+const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback-secret-key-change-in-production-min-32-chars';
 
-export function middleware(request: NextRequest) {
+/**
+ * Edge-compatible cryptographic token verification for HMAC-SHA256 session tokens.
+ * Verifies signature and expiration timestamp.
+ */
+async function verifyTokenInMiddleware(token: string): Promise<boolean> {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const [payloadB64, signatureB64] = parts;
+
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(AUTH_SECRET),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const sigBuf = Buffer.from(signatureB64, 'base64url');
+    const dataBuf = new TextEncoder().encode(payloadB64);
+
+    const isValidSig = await crypto.subtle.verify('HMAC', key, sigBuf, dataBuf);
+    if (!isValidSig) return false;
+
+    const payloadJson = Buffer.from(payloadB64, 'base64url').toString('utf-8');
+    const payload = JSON.parse(payloadJson);
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
@@ -40,6 +79,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Pass OPTIONS preflights to route handlers
+  if (method === 'OPTIONS') {
+    return NextResponse.next();
+  }
+
   // 4. Check for session cookie or Bearer token
   const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const authHeader = request.headers.get('authorization');
@@ -47,8 +91,11 @@ export function middleware(request: NextRequest) {
 
   const token = sessionCookie || bearerToken;
 
-  // If no session token present:
-  if (!token) {
+  // Cryptographically verify token validity & expiration
+  const isValid = token ? await verifyTokenInMiddleware(token) : false;
+
+  // If unauthenticated or token is invalid/tampered/expired:
+  if (!isValid) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
         {

@@ -10,6 +10,8 @@ export type AuditAction =
   | 'VIEW_LEADS'
   | 'UPDATE_CONTENT'
   | 'DELETE_LEAD'
+  | 'CREATE_USER'
+  | 'UPDATE_PASSWORD'
   | 'UNAUTHORIZED_ACCESS';
 
 export interface AuditEntry {

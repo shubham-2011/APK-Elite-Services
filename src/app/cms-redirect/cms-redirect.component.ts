@@ -8,15 +8,20 @@ import { LeadApiService, LeadItem } from '../shared/lead-api.service';
 import { ContentApiService, DynamicContent } from '../shared/content-api.service';
 import { FootmarkApiService, FootmarkStats, FootmarkEvent } from '../shared/footmark-api.service';
 
-const PIN_STORAGE_KEY = 'apk_cms_pin_auth';
-const CUSTOM_PIN_KEY = 'apk_cms_custom_pin';
 const ADMIN_NAME_KEY = 'apk_cms_admin_name';
 const ADMIN_USERNAME_KEY = 'apk_cms_admin_username';
 const THEME_KEY = 'apk_cms_dark_mode';
 
-const DEFAULT_PIN = '1234';
 const DEFAULT_ADMIN_NAME = 'Shubham Misra';
-const DEFAULT_ADMIN_USERNAME = 'shubhammisra800@gmail.com';
+const DEFAULT_ADMIN_USERNAME = 'admin';
+
+export interface CmsUserItem {
+  _id: string;
+  username: string;
+  role: 'admin' | 'editor';
+  createdAt: string;
+  updatedAt: string;
+}
 
 @Component({
   selector: 'app-cms-redirect',
@@ -43,7 +48,17 @@ export class CmsRedirectComponent implements OnInit {
   mobileSidebarOpen = false;
 
   // Navigation state (Umami-style)
-  activeSection: 'overview' | 'events' | 'sessions' | 'realtime' | 'goals' | 'funnels' | 'retention' | 'leads' | 'form' | 'content' = 'overview';
+  activeSection: 'overview' | 'events' | 'sessions' | 'realtime' | 'goals' | 'funnels' | 'retention' | 'leads' | 'form' | 'content' | 'users' = 'overview';
+
+  // Multi-user team management state
+  cmsUsers: CmsUserItem[] = [];
+  loadingUsers = false;
+  newStaffUser = '';
+  newStaffPass = '';
+  newStaffRole: 'admin' | 'editor' = 'admin';
+  userActionError = '';
+  selectedUserForPasswordChange: string | null = null;
+  changePasswordInput = '';
 
   // Sub-tabs for breakdown cards (Screenshots 2 & 3)
   pagesSubTab: 'path' | 'url' | 'entry' | 'exit' = 'path';
@@ -193,11 +208,23 @@ export class CmsRedirectComponent implements OnInit {
         this.darkMode = storedTheme === 'true';
       }
 
-      const auth = localStorage.getItem(PIN_STORAGE_KEY);
-      if (auth === 'true') {
-        this.isAuthenticated = true;
-        this.loadAllData();
-      }
+      fetch('/api/auth/me', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.authenticated) {
+            this.isAuthenticated = true;
+            if (data.username) {
+              this.adminUsername = data.username;
+              if (data.username.toLowerCase().includes('manager')) {
+                this.adminName = 'Operations Manager';
+              } else if (data.username.toLowerCase().includes('shubham') || data.username === 'admin') {
+                this.adminName = 'Shubham Misra';
+              }
+            }
+            this.loadAllData();
+          }
+        })
+        .catch(() => {});
     }
   }
 
@@ -215,13 +242,6 @@ export class CmsRedirectComponent implements OnInit {
 
   closeMobileSidebar(): void {
     this.mobileSidebarOpen = false;
-  }
-
-  getStoredPin(): string {
-    if (isPlatformBrowser(this.platformId)) {
-      return localStorage.getItem(CUSTOM_PIN_KEY) || DEFAULT_PIN;
-    }
-    return DEFAULT_PIN;
   }
 
   openPinModal(): void {
@@ -261,7 +281,6 @@ export class CmsRedirectComponent implements OnInit {
 
   onSaveNewPin(event: Event): void {
     event.preventDefault();
-    const storedPin = this.getStoredPin();
 
     if (!this.profileNameInput || !this.profileNameInput.trim()) {
       this.pinChangeError = 'Display Name cannot be empty.';
@@ -272,75 +291,70 @@ export class CmsRedirectComponent implements OnInit {
       return;
     }
 
-    if (this.newPinInput || this.confirmPinInput) {
-      if (this.currentPinInput !== storedPin) {
-        this.pinChangeError = 'Current Password / PIN is incorrect.';
-        return;
-      }
-      if (this.newPinInput.trim().length < 4) {
-        this.pinChangeError = 'New Password / PIN must be at least 4 characters.';
-        return;
-      }
-      if (this.newPinInput !== this.confirmPinInput) {
-        this.pinChangeError = 'New Password / PIN and Confirmation do not match.';
-        return;
-      }
-    }
-
     this.adminName = this.profileNameInput.trim();
     this.adminUsername = this.profileUsernameInput.trim();
 
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem(ADMIN_NAME_KEY, this.adminName);
       localStorage.setItem(ADMIN_USERNAME_KEY, this.adminUsername);
-      if (this.newPinInput) {
-        localStorage.setItem(CUSTOM_PIN_KEY, this.newPinInput.trim());
-      }
     }
 
     this.showPinModal = false;
-    this.showToast('Profile, username & security updated successfully!');
+    this.showToast('Profile and username updated successfully!');
   }
 
-  onPinSubmit(event: Event) {
+  async onPinSubmit(event: Event) {
     event.preventDefault();
-    const validPin = this.getStoredPin();
     const entered = (this.enteredPin || '').trim();
-    const enteredUser = (this.loginUsername || '').trim().toLowerCase();
-    const validUser = (this.adminUsername || '').trim().toLowerCase();
+    const enteredUser = (this.loginUsername || '').trim();
 
-    const isPinMatch = entered === validPin;
-    const isUserMatch = !enteredUser || enteredUser === validUser;
-
-    if (isPinMatch && isUserMatch) {
-      this.isAuthenticated = true;
-      this.pinError = false;
-      if (isPlatformBrowser(this.platformId)) {
-        localStorage.setItem(PIN_STORAGE_KEY, 'true');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username: enteredUser, password: entered }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        this.isAuthenticated = true;
+        this.pinError = false;
+        const loggedUser = (data.user?.username || enteredUser || '').trim();
+        if (loggedUser) {
+          this.adminUsername = loggedUser;
+          if (loggedUser.toLowerCase().includes('manager')) {
+            this.adminName = 'Operations Manager';
+          } else if (loggedUser.toLowerCase().includes('shubham') || loggedUser === 'admin') {
+            this.adminName = 'Shubham Misra';
+          } else {
+            this.adminName = loggedUser;
+          }
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem(ADMIN_NAME_KEY, this.adminName);
+            localStorage.setItem(ADMIN_USERNAME_KEY, this.adminUsername);
+          }
+        }
+        this.loadAllData();
+      } else {
+        this.pinError = true;
+        this.enteredPin = '';
       }
-      this.loadAllData();
-    } else {
+    } catch {
       this.pinError = true;
       this.enteredPin = '';
     }
   }
 
   async logout() {
-    // 1. Revoke the server-side Next.js session token (server revocation list)
     try {
-      await fetch('http://localhost:3000/api/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       });
-    } catch {
-      // Session revocation is best-effort; local cleanup always runs
-    }
+    } catch {}
 
-    // 2. Clear all local client-side session state
     this.isAuthenticated = false;
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem(PIN_STORAGE_KEY);
-      // Also clear any cached telemetry/session identifiers
       sessionStorage.removeItem('apk_sid');
       sessionStorage.removeItem('apk_sid_ts');
     }
@@ -355,10 +369,103 @@ export class CmsRedirectComponent implements OnInit {
         this.dynamicContent = live;
       }
       await this.loadFootmarks();
+      await this.loadUsers();
     } catch (e) {
       console.warn('Error loading CMS data:', e);
     } finally {
       this.refreshing = false;
+    }
+  }
+
+  async loadUsers() {
+    this.loadingUsers = true;
+    this.userActionError = '';
+    try {
+      const res = await fetch('/api/users', { credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success && Array.isArray(data.users)) {
+        this.cmsUsers = data.users;
+      }
+    } catch (e) {
+      console.warn('Could not load users:', e);
+    } finally {
+      this.loadingUsers = false;
+    }
+  }
+
+  async createNewUser(event: Event) {
+    event.preventDefault();
+    this.userActionError = '';
+    const u = (this.newStaffUser || '').trim().toLowerCase();
+    const p = (this.newStaffPass || '').trim();
+
+    if (!u || u.length < 3) {
+      this.userActionError = 'Username / Email must be at least 3 characters.';
+      return;
+    }
+    if (!p || p.length < 8) {
+      this.userActionError = 'Password must be at least 8 characters long.';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'include',
+        body: JSON.stringify({
+          username: u,
+          password: p,
+          role: this.newStaffRole
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        this.showToast(`User ${u} created successfully!`);
+        this.newStaffUser = '';
+        this.newStaffPass = '';
+        this.newStaffRole = 'admin';
+        await this.loadUsers();
+      } else {
+        this.userActionError = data.error || 'Failed to create user.';
+      }
+    } catch (e: any) {
+      this.userActionError = e.message || 'Network error creating user.';
+    }
+  }
+
+  togglePasswordChange(username: string) {
+    if (this.selectedUserForPasswordChange === username) {
+      this.selectedUserForPasswordChange = null;
+      this.changePasswordInput = '';
+    } else {
+      this.selectedUserForPasswordChange = username;
+      this.changePasswordInput = '';
+    }
+  }
+
+  async onUpdateUserPassword(username: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 8) {
+      this.showToast('Password must be at least 8 characters.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password: newPassword })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        this.showToast(`Password updated for ${username}!`);
+        this.selectedUserForPasswordChange = null;
+        this.changePasswordInput = '';
+      } else {
+        this.showToast(data.error || 'Failed to update password.');
+      }
+    } catch {
+      this.showToast('Network error updating password.');
     }
   }
 
@@ -867,7 +974,7 @@ export class CmsRedirectComponent implements OnInit {
       item.notes = item.notes || [];
       item.notes.push({
         note: note.trim(),
-        author: 'Admin',
+        author: this.adminName || 'Admin',
         createdAt: new Date().toISOString()
       });
     }

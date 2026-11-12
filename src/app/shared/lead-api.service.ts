@@ -54,8 +54,6 @@ export interface LeadPayload {
   visit_count?: number;
 }
 
-const STORAGE_KEY = 'apk_elite_leads_cache';
-
 @Injectable({
   providedIn: 'root'
 })
@@ -63,6 +61,9 @@ export class LeadApiService {
   private apiEndpoint = '/api/leads';
   private netlifyEndpoint = '/.netlify/functions/leads';
   private devEndpoint = 'http://localhost:3000/api/leads';
+
+  // In-memory cache for current session (preventing unencrypted PII persistence to localStorage)
+  private memoryLeads: LeadItem[] = [];
 
   private isBrowser(): boolean {
     return isPlatformBrowser(this.platformId);
@@ -236,11 +237,7 @@ export class LeadApiService {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    // Update local cache with latest merged set
-    if (merged.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-    }
-
+    this.memoryLeads = merged;
     return merged;
   }
 
@@ -248,13 +245,11 @@ export class LeadApiService {
   async updateStatus(id: string, status: LeadItem['status']): Promise<boolean> {
     if (!this.isBrowser()) return false;
 
-    // Update local cache
-    const local = this.getLocalLeads();
-    const item = local.find(l => l._id === id);
+    // Update in-memory cache
+    const item = this.memoryLeads.find(l => l._id === id);
     if (item) {
       item.status = status;
       item.updatedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
     }
 
     // Attempt remote update
@@ -287,13 +282,11 @@ export class LeadApiService {
       createdAt: new Date().toISOString()
     };
 
-    const local = this.getLocalLeads();
-    const item = local.find(l => l._id === id);
+    const item = this.memoryLeads.find(l => l._id === id);
     if (item) {
       item.notes = item.notes || [];
       item.notes.push(noteObj);
       item.updatedAt = new Date().toISOString();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
     }
 
     try {
@@ -319,8 +312,7 @@ export class LeadApiService {
   async deleteLead(id: string): Promise<boolean> {
     if (!this.isBrowser()) return false;
 
-    const local = this.getLocalLeads().filter(l => l._id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+    this.memoryLeads = this.memoryLeads.filter(l => l._id !== id);
 
     try {
       let res = await fetch(this.apiEndpoint, {
@@ -341,23 +333,15 @@ export class LeadApiService {
     return true;
   }
 
-  // Local storage helpers
+  // In-memory session helpers (protects customer PII from persisting in unencrypted localStorage)
   private getLocalLeads(): LeadItem[] {
-    try {
-      const data = localStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
+    return this.memoryLeads;
   }
 
   private saveLocalLead(lead: LeadItem) {
-    try {
-      const list = this.getLocalLeads();
-      list.unshift(lead);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 300)));
-    } catch (e) {
-      console.warn('LocalStorage error:', e);
+    this.memoryLeads.unshift(lead);
+    if (this.memoryLeads.length > 300) {
+      this.memoryLeads.pop();
     }
   }
 }
