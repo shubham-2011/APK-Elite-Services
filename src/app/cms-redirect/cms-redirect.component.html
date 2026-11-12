@@ -15,30 +15,32 @@
       <p class="auth-sub">Enterprise Analytics &amp; CMS Portal</p>
 
       <form (submit)="onPinSubmit($event)" class="pin-form">
-        <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
-          <label for="usernameInput" style="display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.35rem;">Username or Email</label>
+        <div class="form-group" style="text-align: left; margin-bottom: 1rem;">
+          <label for="usernameInput" style="display: block; font-size: 0.8rem; font-weight: 500; color: #a1a1aa; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em;">Username or Email</label>
           <input
             id="usernameInput"
             type="text"
             [(ngModel)]="loginUsername"
             name="loginUsername"
-            placeholder="e.g. admin or username"
-            class="pin-input"
-            style="width: 100%; box-sizing: border-box; text-align: left; font-size: 0.95rem; padding: 0.65rem 0.85rem;"
+            placeholder="e.g. shubhammisra800@gmail.com"
+            class="login-input"
+            required
+            autocomplete="username"
           />
         </div>
 
-        <div class="form-group" style="text-align: left; margin-bottom: 0.85rem;">
-          <label for="pinInput" style="display: block; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 0.35rem;">Password</label>
+        <div class="form-group" style="text-align: left; margin-bottom: 1.25rem;">
+          <label for="pinInput" style="display: block; font-size: 0.8rem; font-weight: 500; color: #a1a1aa; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em;">Password</label>
           <input
             id="pinInput"
             type="password"
             maxlength="100"
             [(ngModel)]="enteredPin"
             name="enteredPin"
-            placeholder="••••••••"
-            class="pin-input"
-            style="width: 100%; box-sizing: border-box; text-align: center; font-size: 1.15rem; padding: 0.65rem;"
+            placeholder="Enter your password"
+            class="login-input"
+            required
+            autocomplete="current-password"
             autofocus
           />
         </div>
