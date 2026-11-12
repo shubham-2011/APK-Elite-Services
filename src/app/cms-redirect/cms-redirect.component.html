@@ -1026,56 +1026,239 @@
       <!-- VIEW D: FORM CONTROLS & CONTENT PRICING                      -->
       <!-- ============================================================ -->
       <div *ngIf="activeSection === 'form' || activeSection === 'content'" class="umami-crm-content">
+        <!-- TOP BAR -->
         <div class="crm-top-bar">
           <div>
-            <h2 class="section-title">Dynamic Website Content &amp; Pricing</h2>
-            <p class="section-sub">Edit live form dropdowns and promotional copy</p>
+            <h2 class="section-title">Website Content Editor</h2>
+            <p class="section-sub">Edit all live content — contact info, banner, pricing, services, localities &amp; more</p>
           </div>
           <button (click)="saveContentChanges()" [disabled]="savingContent" class="btn-primary-blue">
-            {{ savingContent ? 'Saving...' : 'Save All Changes' }}
+            {{ savingContent ? 'Saving...' : '💾 Save All Changes' }}
           </button>
         </div>
 
-        <div class="dual-panel-grid">
-          <div class="umami-panel-card">
-            <h4 class="panel-main-title">Service Localities in Pune</h4>
-            <div class="tag-cloud">
-              <span *ngFor="let loc of dynamicContent.formConfig.localities; let idx = index" class="tag-pill">
-                {{ loc }}
-                <button (click)="removeLocality(idx)" class="tag-x">✕</button>
-              </span>
+        <!-- CONTENT SUB-TAB NAV -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:0.75rem;">
+          <button *ngFor="let t of contentTabs" (click)="contentSubTab=t.id"
+            [style.background]="contentSubTab===t.id ? 'rgba(37,99,235,0.18)' : 'transparent'"
+            [style.border]="contentSubTab===t.id ? '1px solid rgba(37,99,235,0.5)' : '1px solid rgba(255,255,255,0.08)'"
+            style="padding:5px 14px;border-radius:6px;font-size:0.82rem;cursor:pointer;color:inherit;transition:all .2s;">
+            {{ t.label }}
+          </button>
+        </div>
+
+        <!-- ── TAB: CONTACT INFO ── -->
+        <div *ngIf="contentSubTab==='contact'">
+          <div class="dual-panel-grid">
+            <div class="umami-panel-card">
+              <h4 class="panel-main-title">📞 Contact &amp; Business Info</h4>
+              <div style="display:flex;flex-direction:column;gap:0.9rem;margin-top:0.5rem;">
+                <div>
+                  <label class="cms-field-label">Company Name</label>
+                  <input type="text" [(ngModel)]="dynamicContent.companyName" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="APK Elite Services"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">Phone Number</label>
+                  <input type="text" [(ngModel)]="dynamicContent.phone" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="+91 88301 67863"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">WhatsApp Number <span style="font-size:0.72rem;color:#71717a;">(digits only, e.g. 918830167863)</span></label>
+                  <input type="text" [(ngModel)]="dynamicContent.whatsapp" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="918830167863"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">Email Address</label>
+                  <input type="email" [(ngModel)]="dynamicContent.email" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="info@apkeliteservices.in"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">Business Address</label>
+                  <textarea [(ngModel)]="dynamicContent.address" class="umami-input" rows="2" style="width:100%;box-sizing:border-box;resize:vertical;" placeholder="Shop No 4, Datta Mandir Rd, Wakad, Pune..."></textarea>
+                </div>
+                <div>
+                  <label class="cms-field-label">Business Hours</label>
+                  <input type="text" [(ngModel)]="dynamicContent.businessHours" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="Mon - Sun: 8:00 AM - 9:00 PM"/>
+                </div>
+              </div>
             </div>
-            <div class="tag-add-row">
-              <input
-                type="text"
-                [(ngModel)]="newLocalityName"
-                placeholder="Add locality (e.g. Aundh)"
-                class="umami-input"
-                (keyup.enter)="addLocality()"
-              />
-              <button (click)="addLocality()" class="btn-subtle">+ Add</button>
+
+            <div class="umami-panel-card">
+              <h4 class="panel-main-title">📢 Promo Banner</h4>
+              <div style="display:flex;flex-direction:column;gap:0.9rem;margin-top:0.5rem;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="checkbox" [(ngModel)]="dynamicContent.promoBanner.enabled" id="bannerEnabled" style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb;"/>
+                  <label for="bannerEnabled" style="font-size:0.88rem;cursor:pointer;">Show banner on website</label>
+                </div>
+                <div>
+                  <label class="cms-field-label">Banner Text</label>
+                  <textarea [(ngModel)]="dynamicContent.promoBanner.text" class="umami-input" rows="3" style="width:100%;box-sizing:border-box;resize:vertical;" placeholder="Festival Offer: Get Flat 15% OFF..."></textarea>
+                </div>
+                <div>
+                  <label class="cms-field-label">Discount % (shown in badge)</label>
+                  <input type="number" [(ngModel)]="dynamicContent.promoBanner.discountPercent" class="umami-input" style="width:100%;box-sizing:border-box;" min="0" max="100" placeholder="15"/>
+                </div>
+                <div *ngIf="dynamicContent.promoBanner.enabled" style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.3);border-radius:8px;padding:0.65rem 1rem;font-size:0.84rem;color:#93c5fd;">
+                  Preview: {{ dynamicContent.promoBanner.text }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB: QUOTE FORM ── -->
+        <div *ngIf="contentSubTab==='form'">
+          <div class="umami-panel-card" style="margin-bottom:1.25rem;">
+            <h4 class="panel-main-title">📋 Quote Form Labels</h4>
+            <div style="display:flex;flex-direction:column;gap:0.9rem;margin-top:0.5rem;">
+              <div>
+                <label class="cms-field-label">Modal Title</label>
+                <input type="text" [(ngModel)]="dynamicContent.formConfig.modalTitle" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="Request a Free Service Quote"/>
+              </div>
+              <div>
+                <label class="cms-field-label">Modal Subtitle</label>
+                <textarea [(ngModel)]="dynamicContent.formConfig.modalSubtitle" class="umami-input" rows="2" style="width:100%;box-sizing:border-box;resize:vertical;" placeholder="Fill out your details..."></textarea>
+              </div>
             </div>
           </div>
 
-          <div class="umami-panel-card">
-            <h4 class="panel-main-title">Offered Cleaning Services</h4>
-            <div class="tag-cloud">
-              <span *ngFor="let s of dynamicContent.formConfig.services; let idx = index" class="tag-pill">
-                {{ s }}
-                <button (click)="removeService(idx)" class="tag-x">✕</button>
-              </span>
+          <div class="dual-panel-grid">
+            <div class="umami-panel-card">
+              <h4 class="panel-main-title">📍 Service Localities</h4>
+              <p style="font-size:0.8rem;color:#a1a1aa;margin-bottom:0.75rem;">These appear in the "Select Locality" dropdown on the quote form.</p>
+              <div class="tag-cloud">
+                <span *ngFor="let loc of dynamicContent.formConfig.localities; let idx = index" class="tag-pill">
+                  {{ loc }}
+                  <button (click)="removeLocality(idx)" class="tag-x">✕</button>
+                </span>
+              </div>
+              <div class="tag-add-row">
+                <input type="text" [(ngModel)]="newLocalityName" placeholder="Add locality (e.g. Aundh)" class="umami-input" (keyup.enter)="addLocality()"/>
+                <button (click)="addLocality()" class="btn-subtle">+ Add</button>
+              </div>
             </div>
-            <div class="tag-add-row">
-              <input
-                type="text"
-                [(ngModel)]="newServiceName"
-                placeholder="Add service (e.g. Carpet Shampooing)"
-                class="umami-input"
-                (keyup.enter)="addService()"
-              />
-              <button (click)="addService()" class="btn-subtle">+ Add</button>
+
+            <div class="umami-panel-card">
+              <h4 class="panel-main-title">🧹 Services Offered</h4>
+              <p style="font-size:0.8rem;color:#a1a1aa;margin-bottom:0.75rem;">These appear in the "Select Service" dropdown on the quote form.</p>
+              <div class="tag-cloud">
+                <span *ngFor="let s of dynamicContent.formConfig.services; let idx = index" class="tag-pill">
+                  {{ s }}
+                  <button (click)="removeService(idx)" class="tag-x">✕</button>
+                </span>
+              </div>
+              <div class="tag-add-row">
+                <input type="text" [(ngModel)]="newServiceName" placeholder="Add service (e.g. Pest Control)" class="umami-input" (keyup.enter)="addService()"/>
+                <button (click)="addService()" class="btn-subtle">+ Add</button>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- ── TAB: PRICING ── -->
+        <div *ngIf="contentSubTab==='pricing'">
+          <div class="umami-panel-card" style="margin-bottom:1.25rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+              <h4 class="panel-main-title" style="margin:0;">💰 Service Pricing Table</h4>
+              <button (click)="addPricingRow()" class="btn-subtle">+ Add Price Row</button>
+            </div>
+            <p style="font-size:0.8rem;color:#a1a1aa;margin-bottom:1rem;">These prices display on the website pricing/calculator section. Toggle active to show/hide a row.</p>
+
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:0.84rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <th style="text-align:left;padding:8px 6px;color:#a1a1aa;font-weight:500;">Service Name</th>
+                    <th style="text-align:left;padding:8px 6px;color:#a1a1aa;font-weight:500;">Price (₹)</th>
+                    <th style="text-align:left;padding:8px 6px;color:#a1a1aa;font-weight:500;">Unit</th>
+                    <th style="text-align:center;padding:8px 6px;color:#a1a1aa;font-weight:500;">Active</th>
+                    <th style="padding:8px 6px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let p of dynamicContent.pricing; let pi = index"
+                    style="border-bottom:1px solid rgba(255,255,255,0.05);"
+                    [style.opacity]="p.active ? '1' : '0.45'">
+                    <td style="padding:6px;">
+                      <input type="text" [(ngModel)]="p.service" class="umami-input" style="width:100%;box-sizing:border-box;min-width:160px;" placeholder="e.g. Deep Cleaning (2 BHK)"/>
+                    </td>
+                    <td style="padding:6px;">
+                      <input type="number" [(ngModel)]="p.startingPrice" class="umami-input" style="width:90px;" min="0" placeholder="2499"/>
+                    </td>
+                    <td style="padding:6px;">
+                      <input type="text" [(ngModel)]="p.unit" class="umami-input" style="width:110px;" placeholder="per flat"/>
+                    </td>
+                    <td style="padding:6px;text-align:center;">
+                      <input type="checkbox" [(ngModel)]="p.active" style="width:15px;height:15px;cursor:pointer;accent-color:#2563eb;"/>
+                    </td>
+                    <td style="padding:6px;">
+                      <button (click)="removePricingRow(pi)" style="background:transparent;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:2px 6px;" title="Remove">✕</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div *ngIf="!dynamicContent.pricing || dynamicContent.pricing!.length===0" style="padding:2rem;text-align:center;color:#71717a;font-size:0.85rem;">
+                No pricing rows yet. Click "+ Add Price Row" to begin.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB: PROJECTS / SHOWCASE ── -->
+        <div *ngIf="contentSubTab==='showcase'">
+          <div class="umami-panel-card" style="margin-bottom:1.25rem;">
+            <h4 class="panel-main-title">🏆 Showcase Section Headings</h4>
+            <div style="display:flex;flex-direction:column;gap:0.9rem;margin-top:0.5rem;">
+              <div>
+                <label class="cms-field-label">Section Heading</label>
+                <input type="text" [(ngModel)]="dynamicContent.showcase!.heading" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="Recent Cleaning Projects in Pune"/>
+              </div>
+              <div>
+                <label class="cms-field-label">Section Subheading</label>
+                <textarea [(ngModel)]="dynamicContent.showcase!.subheading" class="umami-input" rows="2" style="width:100%;box-sizing:border-box;resize:vertical;" placeholder="Explore recent residential and commercial..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+            <h4 style="margin:0;font-size:0.95rem;color:#f4f4f5;">📸 Project Cards</h4>
+            <button (click)="addShowcaseProject()" class="btn-subtle">+ Add Project</button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div *ngFor="let proj of dynamicContent.showcase!.projects; let pi = index" class="umami-panel-card" style="position:relative;">
+              <button (click)="removeShowcaseProject(pi)" style="position:absolute;top:10px;right:10px;background:transparent;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:2px 6px;" title="Remove project">✕</button>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-top:0.25rem;">
+                <div>
+                  <label class="cms-field-label">Project Title</label>
+                  <input type="text" [(ngModel)]="proj.title" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="3BHK Vacant Apartment Deep Clean"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">Location</label>
+                  <input type="text" [(ngModel)]="proj.location" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="Baner, Pune"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">Category</label>
+                  <input type="text" [(ngModel)]="proj.category" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="Deep Cleaning"/>
+                </div>
+                <div>
+                  <label class="cms-field-label">Image URL / Path</label>
+                  <input type="text" [(ngModel)]="proj.imageUrl" class="umami-input" style="width:100%;box-sizing:border-box;" placeholder="/assets/images/deep-clean.webp"/>
+                </div>
+                <div style="grid-column:1/-1;">
+                  <label class="cms-field-label">Description</label>
+                  <textarea [(ngModel)]="proj.description" class="umami-input" rows="2" style="width:100%;box-sizing:border-box;resize:vertical;" placeholder="Complete floor scrubbing, kitchen degreasing..."></textarea>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!dynamicContent.showcase!.projects || dynamicContent.showcase!.projects.length===0" class="panel-empty">
+              No projects yet. Click "+ Add Project" to add one.
+            </div>
+          </div>
+        </div>
+
+        <!-- SAVE BUTTON (bottom) -->
+        <div style="margin-top:2rem;display:flex;justify-content:flex-end;">
+          <button (click)="saveContentChanges()" [disabled]="savingContent" class="btn-primary-blue" style="min-width:160px;justify-content:center;">
+            {{ savingContent ? '⏳ Saving...' : '💾 Save All Changes' }}
+          </button>
         </div>
       </div>
 

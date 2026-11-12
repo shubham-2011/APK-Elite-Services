@@ -131,6 +131,15 @@ export class CmsRedirectComponent implements OnInit {
   newServiceName = '';
   savingContent = false;
 
+  // Content editor sub-tabs
+  contentSubTab: 'contact' | 'form' | 'pricing' | 'showcase' = 'contact';
+  contentTabs: Array<{ id: 'contact' | 'form' | 'pricing' | 'showcase'; label: string }> = [
+    { id: 'contact',  label: '📞 Contact & Banner' },
+    { id: 'form',     label: '📋 Quote Form'       },
+    { id: 'pricing',  label: '💰 Pricing Table'    },
+    { id: 'showcase', label: '🏆 Projects'          },
+  ];
+
   get isDbConnected(): boolean {
     return Boolean(this.footmarkStats?.dbConnected || this.footmarkStats?.source === 'mongodb');
   }
@@ -1096,6 +1105,36 @@ export class CmsRedirectComponent implements OnInit {
 
   removeService(index: number) {
     this.dynamicContent.formConfig.services.splice(index, 1);
+  }
+
+  // Pricing table CRUD
+  addPricingRow() {
+    if (!this.dynamicContent.pricing) this.dynamicContent.pricing = [];
+    this.dynamicContent.pricing.push({ service: '', startingPrice: 0, unit: 'per flat', active: true });
+  }
+
+  removePricingRow(index: number) {
+    if (this.dynamicContent.pricing) this.dynamicContent.pricing.splice(index, 1);
+  }
+
+  // Showcase projects CRUD
+  addShowcaseProject() {
+    if (!this.dynamicContent.showcase) {
+      this.dynamicContent.showcase = { heading: '', subheading: '', projects: [] };
+    }
+    this.dynamicContent.showcase.projects.push({
+      title: '',
+      location: '',
+      category: '',
+      imageUrl: '/assets/images/',
+      description: ''
+    });
+  }
+
+  removeShowcaseProject(index: number) {
+    if (this.dynamicContent.showcase) {
+      this.dynamicContent.showcase.projects.splice(index, 1);
+    }
   }
 
   async saveContentChanges() {
